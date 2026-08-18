@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     return Response.json({ success: true, user_id: newProfile.id }, { status: 201 });
   } catch (err: any) {
     console.error(err);
-    if (err.code === '23505') { // unique violation
+    if (err.code === '23505' || (err.message && err.message.includes('duplicate key'))) { // unique violation
       return Response.json({ error: 'Email already exists' }, { status: 400 });
     }
     return Response.json({ error: 'Internal server error' }, { status: 500 });

@@ -6,7 +6,7 @@ import { FilePlus, Clock, CheckCircle2, AlertCircle, ArrowRight, ChevronRight } 
 import type { Metadata } from 'next';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-import { sourceRequests } from '@/lib/db/schema';
+import { sourceRequests, requiredReviews } from '@/lib/db/schema';
 import { eq, desc, and, or, inArray } from 'drizzle-orm';
 
 export const metadata: Metadata = { title: 'Dashboard' };
@@ -23,14 +23,40 @@ export default async function DashboardPage() {
       conditions.push(eq(sourceRequests.requester_id, user.id));
       break;
     case 'hod':
-      conditions.push(
-        and(
-          eq(sourceRequests.department_id, user.department_id),
-          eq(sourceRequests.current_assignee_role, 'hod')
-        )
-      );
+      // HOD sees their own department's pending requests, OR requests assigned to their dept for Required Review
+      const pendingReviews = await db.query.requiredReviews.findMany({
+        where: and(
+          eq(requiredReviews.department_id, user.department_id),
+          eq(requiredReviews.status, 'Pending')
+        ),
+        columns: { request_id: true }
+      });
+      const reviewReqIds = pendingReviews.map((r: any) => r.request_id);
+
+      if (reviewReqIds.length > 0) {
+        conditions.push(
+          or(
+            and(
+              eq(sourceRequests.department_id, user.department_id),
+              eq(sourceRequests.current_assignee_role, 'hod')
+            ),
+            inArray(sourceRequests.id, reviewReqIds)
+          )
+        );
+      } else {
+        conditions.push(
+          and(
+            eq(sourceRequests.department_id, user.department_id),
+            eq(sourceRequests.current_assignee_role, 'hod')
+          )
+        );
+      }
       break;
     case 'final_head':
+      // Final head sees things where role is final_head, OR where status is Under Required Review and all reviews are approved
+      // To simplify, we rely on the fact that if a request is Under Required Review and all are approved, it should be in their view.
+      // But we can't easily query that in Drizzle without complex joins. Instead, we can fetch them.
+      // Actually, when the last review is approved, we could change current_assignee_role to 'final_head'. Let's do that in the API route later.
       conditions.push(eq(sourceRequests.current_assignee_role, 'final_head'));
       break;
     case 'procurement_manager':
@@ -48,7 +74,6 @@ export default async function DashboardPage() {
       );
       break;
     case 'admin':
-      // Admin sees nothing in "pending" usually
       break;
   }
 

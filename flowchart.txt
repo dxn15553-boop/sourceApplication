@@ -1,0 +1,31 @@
+Based on the detailed flowchart you provided, this is a comprehensive, enterprise-grade **End-to-End Procurement Workflow** (ProcurexManager Portal). It covers the entire lifecycle of a request—from the moment an employee asks for something, all the way to vendor selection, payment, delivery, and performance tracking.
+
+Here is my breakdown of how the workflow operates, divided into five main phases:
+
+### Phase 1: Creation & Multi-Tier Approvals (Steps 1–5)
+1. **Creation:** A user creates a "Source" request with a description and attachments. The system generates an automatic Source Number.
+2. **FPIC Review:** The Creator's Head (First Point Internal Check) reviews and approves or returns the request.
+3. **Cross-Functional Reviews:** This is a complex parallel step. The Creator selects applicable departments (EHS, Admin, QA, Legal, etc.) to review the request. The system creates individual tasks for each, and all must approve before it moves forward.
+4. **RHoF Approval:** The Regional Head of Factories gives their executive approval.
+5. **Purchase Manager:** The Purchase Manager accepts the request into the procurement pipeline.
+
+### Phase 2: Assignment & Sourcing (Steps 6–8)
+6. **Nomination:** The Section Manager (Indirect Procurement) accepts the source and assigns it to a specific Procurement Handler.
+7. **Acceptance:** The Handler receives an automated notification and accepts the task.
+8. **Vendor Evaluation:** The Handler conducts market surveys/RFQs and enters pricing for L1 (lowest bidder), L2, and L3 vendors. They select a vendor and must provide a reason if they don't choose the cheapest (L1) option.
+
+### Phase 3: Financial Requisitions (Steps 9–11)
+9. **PR Creation:** A Purchase Requisition (PR) is generated with strict Turnaround Time (TAT) and Service Level Agreement (SLA) tracking.
+10. **PO Creation:** A Purchase Order (PO) is subsequently created, also heavily tracked against SLAs.
+11. **PRL (Pre-Receipt Logistics):** A crucial control mechanism—Payment cannot be approved or processed until a PRL is completed (where applicable).
+
+### Phase 4: Payment & Fulfillment (Steps 12–14)
+12. **Payment:** The Finance Team tracks when payment approval is received (PAR) and when the payment is actually done (PDD).
+13. **Delivery & QC:** The system tracks promised vs. actual delivery dates. The goods go through QC inspection (tracking ordered vs. accepted vs. rejected quantities).
+14. **Work Completion:** The department that requested the item logs the final Work Completion Date (WCD).
+
+### Phase 5: Closure & Analytics (Step 15)
+15. **System Closure:** The system closes the source request and automatically calculates massive KPI metrics: overall TAT, SLA adherence, On-Time Delivery %, Rejection %, and Cost Savings %.
+
+
+

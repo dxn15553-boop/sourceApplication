@@ -33,7 +33,12 @@ export const WORKFLOW_TRANSITIONS: WorkflowTransition[] = [
   { from: 'Procurement Approved', action: 'assign',   to: 'Assigned',                next_assignee_role: 'employee',             requires_comment: false },
 
   // Employee processes
-  { from: 'Assigned',             action: 'complete', to: 'Completed',               next_assignee_role: null,                   requires_comment: false },
+  { from: 'Assigned',             action: 'evaluate_vendor', to: 'Vendor Evaluation', next_assignee_role: 'employee',             requires_comment: false },
+  { from: 'Vendor Evaluation',    action: 'create_pr',       to: 'PR Created',        next_assignee_role: 'employee',             requires_comment: false },
+  { from: 'PR Created',           action: 'create_po',       to: 'PO Created',        next_assignee_role: 'employee',             requires_comment: false },
+  { from: 'PO Created',           action: 'log_payment',     to: 'Payment Pending',   next_assignee_role: 'employee',             requires_comment: false },
+  { from: 'Payment Pending',      action: 'log_delivery',    to: 'Delivered',         next_assignee_role: 'employee',             requires_comment: false },
+  { from: 'Delivered',            action: 'close_request',   to: 'Completed',         next_assignee_role: null,                   requires_comment: false },
 ];
 
 // ============================================================
@@ -76,7 +81,22 @@ export function getAvailableActions(
 
     case 'employee':
       if (status === 'Assigned' && isAssignedEmployee) {
-        actions.push('complete');
+        actions.push('evaluate_vendor');
+      }
+      if (status === 'Vendor Evaluation' && isAssignedEmployee) {
+        actions.push('create_pr');
+      }
+      if (status === 'PR Created' && isAssignedEmployee) {
+        actions.push('create_po');
+      }
+      if (status === 'PO Created' && isAssignedEmployee) {
+        actions.push('log_payment');
+      }
+      if (status === 'Payment Pending' && isAssignedEmployee) {
+        actions.push('log_delivery');
+      }
+      if (status === 'Delivered' && isAssignedEmployee) {
+        actions.push('close_request');
       }
       break;
 
@@ -113,6 +133,7 @@ export const STATUS_CONFIG: Record<WorkflowStatus, {
   'HOD Approved':              { label: 'HOD Approved',              color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
   'HOD Rejected':              { label: 'HOD Rejected',              color: 'text-red-300',     bg: 'bg-red-500/10',     border: 'border-red-500/30',     dot: 'bg-red-400'     },
   'HOD Returned':              { label: 'Returned by HOD',           color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
+  'Under Required Review':     { label: 'Under Required Review',     color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
   'Final Head Review':         { label: 'Final Head Review',         color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
   'Final Head Approved':       { label: 'Final Head Approved',       color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
   'Final Head Rejected':       { label: 'Final Head Rejected',       color: 'text-red-300',     bg: 'bg-red-500/10',     border: 'border-red-500/30',     dot: 'bg-red-400'     },
@@ -123,8 +144,14 @@ export const STATUS_CONFIG: Record<WorkflowStatus, {
   'Procurement Returned':      { label: 'Returned by Procurement',   color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
   'Section Manager Assignment':{ label: 'Awaiting Assignment',       color: 'text-purple-300',  bg: 'bg-purple-500/10',  border: 'border-purple-500/30',  dot: 'bg-purple-400'  },
   'Assigned':                  { label: 'Assigned',                  color: 'text-purple-300',  bg: 'bg-purple-500/10',  border: 'border-purple-500/30',  dot: 'bg-purple-400'  },
+  'Vendor Evaluation':         { label: 'Vendor Evaluation',         color: 'text-indigo-300',  bg: 'bg-indigo-500/10',  border: 'border-indigo-500/30',  dot: 'bg-indigo-400'  },
+  'PR Created':                { label: 'PR Created',                color: 'text-teal-300',    bg: 'bg-teal-500/10',    border: 'border-teal-500/30',    dot: 'bg-teal-400'    },
+  'PO Created':                { label: 'PO Created',                color: 'text-teal-300',    bg: 'bg-teal-500/10',    border: 'border-teal-500/30',    dot: 'bg-teal-400'    },
+  'Payment Pending':           { label: 'Payment Pending',           color: 'text-amber-300',   bg: 'bg-amber-500/10',   border: 'border-amber-500/30',   dot: 'bg-amber-400'   },
+  'Delivered':                 { label: 'Delivered',                 color: 'text-lime-300',    bg: 'bg-lime-500/10',    border: 'border-lime-500/30',    dot: 'bg-lime-400'    },
   'Processing':                { label: 'Processing',                color: 'text-cyan-300',    bg: 'bg-cyan-500/10',    border: 'border-cyan-500/30',    dot: 'bg-cyan-400'    },
   'Completed':                 { label: 'Completed',                 color: 'text-emerald-300', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', dot: 'bg-emerald-400' },
+  'Closed':                    { label: 'Closed',                    color: 'text-slate-400',   bg: 'bg-slate-500/10',   border: 'border-slate-500/30',   dot: 'bg-slate-500'   },
   'Cancelled':                 { label: 'Cancelled',                 color: 'text-slate-400',   bg: 'bg-slate-500/10',   border: 'border-slate-500/30',   dot: 'bg-slate-500'   },
 };
 
@@ -154,6 +181,12 @@ export function getActionLabel(action: string): string {
     returned:           'Returned for Correction',
     resubmitted:        'Resubmitted',
     assigned:           'Assigned to Employee',
+    vendor_selected:    'Vendor Evaluated',
+    pr_created:         'PR Created',
+    po_created:         'PO Created',
+    payment_done:       'Payment Logged',
+    delivered:          'Delivery Logged',
+    closed:             'Request Closed',
     processing_started: 'Processing Started',
     completed:          'Completed',
   };

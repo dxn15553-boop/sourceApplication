@@ -17,6 +17,7 @@ export type WorkflowStatus =
   | 'HOD Approved'
   | 'HOD Rejected'
   | 'HOD Returned'
+  | 'Under Required Review'
   | 'Final Head Review'
   | 'Final Head Approved'
   | 'Final Head Rejected'
@@ -27,8 +28,14 @@ export type WorkflowStatus =
   | 'Procurement Returned'
   | 'Section Manager Assignment'
   | 'Assigned'
+  | 'Vendor Evaluation'
+  | 'PR Created'
+  | 'PO Created'
+  | 'Payment Pending'
+  | 'Delivered'
   | 'Processing'
   | 'Completed'
+  | 'Closed'
   | 'Cancelled';
 
 // What is stored in the audit trail (past tense)
@@ -40,15 +47,27 @@ export type WorkflowAction =
   | 'resubmitted'
   | 'assigned'
   | 'processing_started'
-  | 'completed';
+  | 'vendor_selected'
+  | 'pr_created'
+  | 'po_created'
+  | 'prl_completed'
+  | 'payment_done'
+  | 'delivered'
+  | 'completed'
+  | 'closed';
 
-// What the user triggers (present tense — matched in API and workflow state machine)
 export type WorkflowTrigger =
   | 'approve'
   | 'reject'
   | 'return'
   | 'resubmit'
   | 'assign'
+  | 'evaluate_vendor'
+  | 'create_pr'
+  | 'create_po'
+  | 'log_payment'
+  | 'log_delivery'
+  | 'close_request'
   | 'complete';
 
 export interface Department {
