@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-import { departments, profiles } from '@/lib/db/schema';
+import { departments, profileDepartments } from '@/lib/db/schema';
 import AdminDepartmentsClient from '@/app/admin/departments/AdminDepartmentsClient';
 import { eq } from 'drizzle-orm';
 
@@ -16,13 +16,13 @@ export default async function AdminDepartmentsPage() {
   const allDepts = await db.select().from(departments).orderBy(departments.name);
 
   // We should also get the count of users per department to show in the table
-  const allProfiles = await db.select({
-    id: profiles.id,
-    department_id: profiles.department_id,
-  }).from(profiles);
+  const allProfilesDepts = await db.select({
+    id: profileDepartments.profile_id,
+    department_id: profileDepartments.department_id,
+  }).from(profileDepartments);
 
   const departmentsWithCounts = allDepts.map(dept => {
-    const userCount = allProfiles.filter(p => p.department_id === dept.id).length;
+    const userCount = allProfilesDepts.filter(p => p.department_id === dept.id).length;
     return { ...dept, userCount };
   });
 

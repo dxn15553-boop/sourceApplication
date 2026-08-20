@@ -3,7 +3,7 @@ import Sidebar from './Sidebar';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { departments } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import type { Profile } from '@/lib/types';
 
 interface AppShellProps {
@@ -25,18 +25,18 @@ export default async function AppShell({
   const user = session.user as any;
   let departmentName = '';
 
-  if (user.department_id) {
-    const dept = await db.query.departments.findFirst({
-      where: eq(departments.id, user.department_id),
+  if (user.departmentIds && user.departmentIds.length > 0) {
+    const depts = await db.query.departments.findMany({
+      where: inArray(departments.id, user.departmentIds),
     });
-    if (dept) departmentName = dept.name;
+    if (depts.length) departmentName = depts.map(d => d.name).join(', ');
   }
 
   const profile: Profile = {
     id: user.id,
     full_name: user.name,
     role: user.role,
-    department_id: user.department_id,
+    departmentIds: user.departmentIds || [],
     created_at: new Date().toISOString(), // Mocked as not needed in sidebar
   };
 

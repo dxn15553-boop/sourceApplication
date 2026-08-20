@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
-import { profiles } from '@/lib/db/schema';
+import { profiles, profileDepartments } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { authConfig } from './auth.config';
@@ -32,13 +32,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
+        const depts = await db.select().from(profileDepartments).where(eq(profileDepartments.profile_id, user.id));
+        const departmentIds = depts.map(d => d.department_id);
+
         // Return object matches the session user type
         return {
           id: user.id,
           email: user.email,
           name: user.full_name,
           role: user.role,
-          department_id: user.department_id,
+          departmentIds: departmentIds,
         } as any;
       }
     })
@@ -47,7 +50,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     jwt({ token, user }) {
       if (user) {
         token.role = (user as any).role;
-        token.department_id = (user as any).department_id;
+        token.departmentIds = (user as any).departmentIds;
       }
       return token;
     },
@@ -55,7 +58,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (token && session.user) {
         session.user.id = token.sub!;
         (session.user as any).role = token.role;
-        (session.user as any).department_id = token.department_id;
+        (session.user as any).departmentIds = token.departmentIds;
       }
       return session;
     }

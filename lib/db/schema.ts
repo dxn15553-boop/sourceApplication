@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, boolean, foreignKey, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, integer, boolean, foreignKey, pgEnum, primaryKey } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Enums
@@ -20,7 +20,8 @@ export const workflowStatusEnum = pgEnum('workflow_status', [
   'PO Created',
   'Payment Pending',
   'Delivered',
-  'Completed', 'Closed', 'Cancelled'
+  'Completed', 'Closed', 'Cancelled',
+  'Returned to Regional Head', 'Returned to HOD', 'Returned to Requester'
 ]);
 
 export const workflowActionEnum = pgEnum('workflow_action', [
@@ -37,19 +38,34 @@ export const departments = pgTable('departments', {
   name: text('name').notNull().unique(),
 });
 
+export const staff = pgTable('staff', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  full_name: text('full_name').notNull(),
+  department_id: uuid('department_id').notNull().references(() => departments.id, { onDelete: 'cascade' }),
+  is_hod: boolean('is_hod').notNull().default(false),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+});
+
 export const profiles = pgTable('profiles', {
   id: uuid('id').defaultRandom().primaryKey(),
   email: text('email').notNull().unique(),
   password_hash: text('password_hash').notNull(),
   full_name: text('full_name').notNull(),
   role: roleEnum('role').notNull().default('user'),
-  department_id: uuid('department_id').references(() => departments.id),
   created_at: timestamp('created_at').defaultNow().notNull(),
 });
+
+export const profileDepartments = pgTable('profile_departments', {
+  profile_id: uuid('profile_id').notNull().references(() => profiles.id, { onDelete: 'cascade' }),
+  department_id: uuid('department_id').notNull().references(() => departments.id, { onDelete: 'cascade' }),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.profile_id, t.department_id] })
+}));
 
 export const sourceRequests = pgTable('source_requests', {
   id: text('id').primaryKey(), // SRC-YYYY-XXXX
   requester_id: uuid('requester_id').notNull().references(() => profiles.id),
+  staff_requester_id: uuid('staff_requester_id').references(() => staff.id),
   department_id: uuid('department_id').notNull().references(() => departments.id),
   description: text('description').notNull(),
   attachment_path: text('attachment_path'),
@@ -109,6 +125,7 @@ export const workflowActions = pgTable('workflow_actions', {
   id: uuid('id').defaultRandom().primaryKey(),
   request_id: text('request_id').notNull().references(() => sourceRequests.id, { onDelete: 'cascade' }),
   actor_id: uuid('actor_id').notNull().references(() => profiles.id),
+  staff_actor_id: uuid('staff_actor_id').references(() => staff.id),
   action: workflowActionEnum('action').notNull(),
   comment: text('comment'),
   created_at: timestamp('created_at').defaultNow().notNull(),
@@ -121,16 +138,23 @@ export const requestCounter = pgTable('request_counter', {
 
 // Relations
 export const departmentsRelations = relations(departments, ({ many }) => ({
-  profiles: many(profiles),
+  profileDepartments: many(profileDepartments),
   sourceRequests: many(sourceRequests),
   requiredReviews: many(requiredReviews),
+  staff: many(staff),
 }));
 
-export const profilesRelations = relations(profiles, ({ one, many }) => ({
+export const staffRelations = relations(staff, ({ one, many }) => ({
   department: one(departments, {
-    fields: [profiles.department_id],
+    fields: [staff.department_id],
     references: [departments.id],
   }),
+  sourceRequests: many(sourceRequests),
+  workflowActions: many(workflowActions),
+}));
+
+export const profilesRelations = relations(profiles, ({ many }) => ({
+  profileDepartments: many(profileDepartments),
   requestsSubmitted: many(sourceRequests, { relationName: 'requester' }),
   requestsAssigned: many(sourceRequests, { relationName: 'assigned_employee' }),
   actions: many(workflowActions),
@@ -143,6 +167,10 @@ export const sourceRequestsRelations = relations(sourceRequests, ({ one, many })
     fields: [sourceRequests.requester_id],
     references: [profiles.id],
     relationName: 'requester',
+  }),
+  staff_requester: one(staff, {
+    fields: [sourceRequests.staff_requester_id],
+    references: [staff.id],
   }),
   department: one(departments, {
     fields: [sourceRequests.department_id],
@@ -197,5 +225,20 @@ export const workflowActionsRelations = relations(workflowActions, ({ one }) => 
   actor: one(profiles, {
     fields: [workflowActions.actor_id],
     references: [profiles.id],
+  }),
+  staff_actor: one(staff, {
+    fields: [workflowActions.staff_actor_id],
+    references: [staff.id],
+  }),
+}));
+
+export const profileDepartmentsRelations = relations(profileDepartments, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [profileDepartments.profile_id],
+    references: [profiles.id],
+  }),
+  department: one(departments, {
+    fields: [profileDepartments.department_id],
+    references: [departments.id],
   }),
 }));

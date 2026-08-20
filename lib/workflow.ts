@@ -18,15 +18,24 @@ export const WORKFLOW_TRANSITIONS: WorkflowTransition[] = [
   { from: 'HOD Approved',         action: 'reject',   to: 'Final Head Rejected',     next_assignee_role: null,                   requires_comment: true  },
   { from: 'HOD Approved',         action: 'return',   to: 'Final Head Returned',     next_assignee_role: 'user',                 requires_comment: true  },
 
-  // Final Head Returned → User resubmits
+  // Final Head Returned -> User resubmits (Deprecated in favor of Returned to Requester)
   { from: 'Final Head Returned',  action: 'resubmit', to: 'Submitted',               next_assignee_role: 'hod',                  requires_comment: false },
 
   // Procurement Manager review
   { from: 'Final Head Approved',  action: 'approve',  to: 'Procurement Approved',    next_assignee_role: 'section_manager',      requires_comment: false },
   { from: 'Final Head Approved',  action: 'reject',   to: 'Procurement Rejected',    next_assignee_role: null,                   requires_comment: true  },
-  { from: 'Final Head Approved',  action: 'return',   to: 'Procurement Returned',    next_assignee_role: 'user',                 requires_comment: true  },
+  { from: 'Final Head Approved',  action: 'return',   to: 'Returned to Regional Head', next_assignee_role: 'final_head',         requires_comment: true  },
 
-  // Procurement Returned → User resubmits
+  // New Return Flows (Reverse Step-by-Step)
+  { from: 'Returned to Regional Head', action: 'resubmit', to: 'Final Head Approved', next_assignee_role: 'procurement_manager', requires_comment: false },
+  { from: 'Returned to Regional Head', action: 'return',   to: 'Returned to HOD',     next_assignee_role: 'hod',                 requires_comment: true  },
+
+  { from: 'Returned to HOD',           action: 'resubmit', to: 'HOD Approved',        next_assignee_role: 'final_head',          requires_comment: false },
+  { from: 'Returned to HOD',           action: 'return',   to: 'Returned to Requester', next_assignee_role: 'user',              requires_comment: true  },
+
+  { from: 'Returned to Requester',     action: 'resubmit', to: 'Submitted',           next_assignee_role: 'hod',                 requires_comment: false },
+
+  // Procurement Returned -> User resubmits (Deprecated in favor of Returned to Requester)
   { from: 'Procurement Returned', action: 'resubmit', to: 'Submitted',               next_assignee_role: 'hod',                  requires_comment: false },
 
   // Section Manager assigns
@@ -59,11 +68,17 @@ export function getAvailableActions(
       if (status === 'Submitted' && isHodOfDept) {
         actions.push('approve', 'reject', 'return');
       }
+      if (status === 'Returned to HOD' && isHodOfDept) {
+        actions.push('resubmit', 'return');
+      }
       break;
 
     case 'final_head':
       if (status === 'HOD Approved') {
         actions.push('approve', 'reject', 'return');
+      }
+      if (status === 'Returned to Regional Head') {
+        actions.push('resubmit', 'return');
       }
       break;
 
@@ -103,7 +118,7 @@ export function getAvailableActions(
     case 'user':
       if (
         isRequester &&
-        (status === 'HOD Returned' || status === 'Final Head Returned' || status === 'Procurement Returned')
+        (status === 'HOD Returned' || status === 'Final Head Returned' || status === 'Procurement Returned' || status === 'Returned to Requester')
       ) {
         actions.push('resubmit');
       }
@@ -153,6 +168,9 @@ export const STATUS_CONFIG: Record<WorkflowStatus, {
   'Completed':                 { label: 'Completed',                 color: 'text-emerald-300', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', dot: 'bg-emerald-400' },
   'Closed':                    { label: 'Closed',                    color: 'text-slate-400',   bg: 'bg-slate-500/10',   border: 'border-slate-500/30',   dot: 'bg-slate-500'   },
   'Cancelled':                 { label: 'Cancelled',                 color: 'text-slate-400',   bg: 'bg-slate-500/10',   border: 'border-slate-500/30',   dot: 'bg-slate-500'   },
+  'Returned to Regional Head': { label: 'Returned to Regional Head', color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
+  'Returned to HOD':           { label: 'Returned to HOD',           color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
+  'Returned to Requester':     { label: 'Returned to Requester',     color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
 };
 
 // ============================================================

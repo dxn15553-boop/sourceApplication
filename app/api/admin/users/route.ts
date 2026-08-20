@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-import { profiles } from '@/lib/db/schema';
+import { profiles, profileDepartments } from '@/lib/db/schema';
 import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { email, password, full_name, role, department_id } = body;
+    const { email, password, full_name, role, departmentIds } = body;
 
     if (!email || !password || !full_name || !role) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -27,8 +27,15 @@ export async function POST(request: Request) {
       password_hash,
       full_name,
       role,
-      department_id: department_id || null,
     }).returning();
+
+    if (departmentIds && Array.isArray(departmentIds) && departmentIds.length > 0) {
+      const mappings = departmentIds.map((deptId: string) => ({
+        profile_id: newProfile.id,
+        department_id: deptId,
+      }));
+      await db.insert(profileDepartments).values(mappings);
+    }
 
     return Response.json({ success: true, user_id: newProfile.id }, { status: 201 });
   } catch (err: any) {

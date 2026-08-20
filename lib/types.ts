@@ -36,7 +36,10 @@ export type WorkflowStatus =
   | 'Processing'
   | 'Completed'
   | 'Closed'
-  | 'Cancelled';
+  | 'Cancelled'
+  | 'Returned to Regional Head'
+  | 'Returned to HOD'
+  | 'Returned to Requester';
 
 // What is stored in the audit trail (past tense)
 export type WorkflowAction =
@@ -79,8 +82,8 @@ export interface Profile {
   id: string;
   full_name: string;
   role: Role;
-  department_id: string | null;
-  department?: Department;
+  departmentIds?: string[];
+  department?: Department; // Keeping for backwards compatibility where needed
   created_at: string;
 }
 
@@ -123,6 +126,8 @@ export interface WorkflowTransition {
 // ---- API payloads ----
 
 export interface CreateRequestPayload {
+  department_id?: string;
+  staff_requester_id?: string;
   description: string;
   attachment_path?: string;
   attachment_name?: string;

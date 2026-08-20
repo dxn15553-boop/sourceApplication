@@ -6,7 +6,7 @@ import Textarea from '@/components/ui/Textarea';
 import FileUpload from '@/components/ui/FileUpload';
 import { FilePlus, Send, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function NewRequestForm() {
+export default function NewRequestForm({ userDepartments, availableStaff }: { userDepartments: { id: string, name: string }[], availableStaff: any[] }) {
   const router = useRouter();
   const [description, setDescription] = useState('');
   const [descError, setDescError] = useState('');
@@ -14,11 +14,18 @@ export default function NewRequestForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [departmentId, setDepartmentId] = useState(userDepartments.length > 0 ? userDepartments[0].id : '');
+  const [staffRequesterId, setStaffRequesterId] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setDescError('');
+
+    if (!staffRequesterId) {
+      setError('Please select who is submitting this request.');
+      return;
+    }
 
     if (!description.trim()) {
       setDescError('Description is required. Please describe what you are requesting.');
@@ -43,7 +50,13 @@ export default function NewRequestForm() {
       const res = await fetch('/api/requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ description: description.trim(), attachment_path: attachmentPath, attachment_name: attachmentName }),
+        body: JSON.stringify({ 
+          department_id: departmentId,
+          staff_requester_id: staffRequesterId,
+          description: description.trim(), 
+          attachment_path: attachmentPath, 
+          attachment_name: attachmentName 
+        }),
       });
       const json = await res.json();
 
@@ -88,8 +101,50 @@ export default function NewRequestForm() {
       <form onSubmit={handleSubmit}>
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ padding: '12px 16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
-            ℹ️ Your name and department are automatically included from your profile.
+            ℹ️ Please select who you are submitting this request on behalf of.
           </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="staffRequesterId">Submitting On Behalf Of <span style={{ color: 'var(--danger)' }}>*</span></label>
+            <select 
+              id="staffRequesterId"
+              className="form-input form-select" 
+              value={staffRequesterId} 
+              onChange={(e) => {
+                const staffId = e.target.value;
+                setStaffRequesterId(staffId);
+                const staffMember = availableStaff.find(s => s.id === staffId);
+                if (staffMember) {
+                  setDepartmentId(staffMember.department_id);
+                }
+              }}
+              required
+            >
+              <option value="">— Select Staff Member —</option>
+              {availableStaff.map((staff) => (
+                <option key={staff.id} value={staff.id}>{staff.full_name}</option>
+              ))}
+            </select>
+          </div>
+
+          {userDepartments.length > 1 && (
+            <div className="form-group">
+              <label className="form-label" htmlFor="departmentId">Department <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <select 
+                id="departmentId"
+                className="form-input form-select" 
+                value={departmentId} 
+                onChange={(e) => setDepartmentId(e.target.value)}
+                required
+                disabled
+              >
+                {userDepartments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>{dept.name}</option>
+                ))}
+              </select>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Auto-selected based on the staff member.</p>
+            </div>
+          )}
 
           <Textarea
             id="description"

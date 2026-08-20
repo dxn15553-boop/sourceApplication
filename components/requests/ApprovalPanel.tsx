@@ -10,6 +10,7 @@ import type { SourceRequest } from '@/lib/types';
 interface ApprovalPanelProps {
   request: SourceRequest;
   userRole: string;
+  availableStaff?: any[];
 }
 
 type ActionType = 'approve' | 'reject' | 'return' | null;
@@ -20,11 +21,30 @@ const ACTION_CONFIG = {
   return:  { label: 'Return',         icon: <RotateCcw size={15} />,    btnClass: 'btn-warning', title: 'Return for Correction',        requiresComment: true  },
 };
 
-export default function ApprovalPanel({ request, userRole }: ApprovalPanelProps) {
+const RETURN_OPTIONS: Record<string, { label: string, value: string }[]> = {
+  procurement_manager: [
+    { label: 'Regional Head (1 step back)', value: 'final_head' },
+    { label: 'Head of Department (2 steps back)', value: 'hod' },
+    { label: 'Requester (Start over)', value: 'user' },
+  ],
+  final_head: [
+    { label: 'Head of Department (1 step back)', value: 'hod' },
+    { label: 'Requester (Start over)', value: 'user' },
+  ],
+  hod: [
+    { label: 'Requester', value: 'user' }
+  ]
+};
+
+export default function ApprovalPanel({ request, userRole, availableStaff = [] }: ApprovalPanelProps) {
   const router = useRouter();
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [comment, setComment] = useState('');
   const [commentError, setCommentError] = useState('');
+  const [staffActorId, setStaffActorId] = useState('');
+  const [staffActorError, setStaffActorError] = useState('');
+  const [returnTo, setReturnTo] = useState('');
+  const [returnToError, setReturnToError] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,13 +57,26 @@ export default function ApprovalPanel({ request, userRole }: ApprovalPanelProps)
       return;
     }
 
+    if (availableStaff.length > 0 && !staffActorId) {
+      setStaffActorError('Please select who is taking this action.');
+      return;
+    }
+
+    if (activeAction === 'return') {
+      const options = RETURN_OPTIONS[userRole] || [];
+      if (options.length > 0 && !returnTo) {
+        setReturnToError('Please select who to return the request to.');
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(`/api/requests/${request.id}/action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, comment: comment.trim() || undefined }),
+        body: JSON.stringify({ action, comment: comment.trim() || undefined, staff_actor_id: staffActorId || undefined, return_to: returnTo || undefined }),
       });
       const json = await res.json();
       if (!res.ok) { setError(json.error ?? 'Action failed.'); return; }
@@ -98,6 +131,50 @@ export default function ApprovalPanel({ request, userRole }: ApprovalPanelProps)
           <div style={{ padding: '12px 16px', background: 'var(--bg-base)', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
             Request: <strong style={{ color: 'var(--text-primary)' }}>{request.id}</strong>
           </div>
+
+          {availableStaff.length > 0 && (
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" htmlFor="staffActorId">Reviewing As <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <select 
+                id="staffActorId"
+                className="form-input form-select" 
+                value={staffActorId} 
+                onChange={(e) => {
+                  setStaffActorId(e.target.value);
+                  if (e.target.value) setStaffActorError('');
+                }}
+                required
+              >
+                <option value="">— Select Staff Member —</option>
+                {availableStaff.map((staff) => (
+                  <option key={staff.id} value={staff.id}>{staff.full_name}</option>
+                ))}
+              </select>
+              {staffActorError && <p style={{ fontSize: 13, color: 'var(--danger)', marginTop: 4 }}>{staffActorError}</p>}
+            </div>
+          )}
+
+          {activeAction === 'return' && RETURN_OPTIONS[userRole] && RETURN_OPTIONS[userRole].length > 0 && (
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" htmlFor="returnTo">Return To <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <select 
+                id="returnTo"
+                className="form-input form-select" 
+                value={returnTo} 
+                onChange={(e) => {
+                  setReturnTo(e.target.value);
+                  if (e.target.value) setReturnToError('');
+                }}
+                required
+              >
+                <option value="">— Select Recipient —</option>
+                {RETURN_OPTIONS[userRole].map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              {returnToError && <p style={{ fontSize: 13, color: 'var(--danger)', marginTop: 4 }}>{returnToError}</p>}
+            </div>
+          )}
 
           {activeAction && ACTION_CONFIG[activeAction].requiresComment && (
             <Textarea

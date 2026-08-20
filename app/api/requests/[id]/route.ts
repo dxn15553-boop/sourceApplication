@@ -16,8 +16,7 @@ export async function GET(
       where: eq(sourceRequests.id, id),
       with: {
         requester: {
-          columns: { id: true, full_name: true, role: true },
-          with: { department: { columns: { id: true, name: true } } }
+          with: { profileDepartments: { with: { department: { columns: { id: true, name: true } } } } }
         },
         department: { columns: { id: true, name: true } },
         assigned_employee: { columns: { id: true, full_name: true, role: true } },

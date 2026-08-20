@@ -23,10 +23,14 @@ export default async function DashboardPage() {
       conditions.push(eq(sourceRequests.requester_id, user.id));
       break;
     case 'hod':
+      if (!user.departmentIds || user.departmentIds.length === 0) {
+        conditions.push(eq(sourceRequests.id, 'none'));
+        break;
+      }
       // HOD sees their own department's pending requests, OR requests assigned to their dept for Required Review
       const pendingReviews = await db.query.requiredReviews.findMany({
         where: and(
-          eq(requiredReviews.department_id, user.department_id),
+          inArray(requiredReviews.department_id, user.departmentIds),
           eq(requiredReviews.status, 'Pending')
         ),
         columns: { request_id: true }
@@ -37,7 +41,7 @@ export default async function DashboardPage() {
         conditions.push(
           or(
             and(
-              eq(sourceRequests.department_id, user.department_id),
+              inArray(sourceRequests.department_id, user.departmentIds),
               eq(sourceRequests.current_assignee_role, 'hod')
             ),
             inArray(sourceRequests.id, reviewReqIds)
@@ -46,7 +50,7 @@ export default async function DashboardPage() {
       } else {
         conditions.push(
           and(
-            eq(sourceRequests.department_id, user.department_id),
+            inArray(sourceRequests.department_id, user.departmentIds),
             eq(sourceRequests.current_assignee_role, 'hod')
           )
         );
@@ -90,7 +94,13 @@ export default async function DashboardPage() {
   // Stats query
   const statsConditions = [];
   if (user.role === 'user') statsConditions.push(eq(sourceRequests.requester_id, user.id));
-  if (user.role === 'hod') statsConditions.push(eq(sourceRequests.department_id, user.department_id));
+  if (user.role === 'hod') {
+    if (user.departmentIds && user.departmentIds.length > 0) {
+      statsConditions.push(inArray(sourceRequests.department_id, user.departmentIds));
+    } else {
+      statsConditions.push(eq(sourceRequests.id, 'none'));
+    }
+  }
 
   const allRequests = await db.query.sourceRequests.findMany({
     where: statsConditions.length > 0 ? and(...statsConditions) : undefined,

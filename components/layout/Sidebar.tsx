@@ -24,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/search',         label: 'Search',          icon: <Search size={18} /> },
   { href: '/admin/users',    label: 'Manage Users',    icon: <Users size={18} />,      roles: ['admin'] },
   { href: '/admin/departments', label: 'Manage Depts', icon: <Building2 size={18} />,  roles: ['admin'] },
+  { href: '/admin/staff',    label: 'Staff Directory', icon: <Users size={18} />,      roles: ['admin'] },
 ];
 
 interface SidebarProps {

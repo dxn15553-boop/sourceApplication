@@ -22,10 +22,10 @@ interface UserForm {
   password: string;
   full_name: string;
   role: Role;
-  department_id: string;
+  departmentIds: string[];
 }
 
-const emptyForm = (): UserForm => ({ email: '', password: '', full_name: '', role: 'user', department_id: '' });
+const emptyForm = (): UserForm => ({ email: '', password: '', full_name: '', role: 'user', departmentIds: [] });
 
 export default function AdminUsersClient({ users, departments }: AdminUsersClientProps) {
   const router = useRouter();
@@ -35,7 +35,7 @@ export default function AdminUsersClient({ users, departments }: AdminUsersClien
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  function set(key: keyof UserForm, val: string) {
+  function set(key: keyof UserForm, val: any) {
     setForm(prev => ({ ...prev, [key]: val }));
   }
 
@@ -43,7 +43,7 @@ export default function AdminUsersClient({ users, departments }: AdminUsersClien
     e.preventDefault();
     setError(null);
     if (!form.email || !form.password || !form.full_name) { setError('Email, password, and name are required.'); return; }
-    if (DEPT_REQUIRED_ROLES.includes(form.role) && !form.department_id) { setError('Department is required for this role.'); return; }
+    if (DEPT_REQUIRED_ROLES.includes(form.role) && form.departmentIds.length === 0) { setError('At least one department is required for this role.'); return; }
 
     setSaving(true);
     try {
@@ -101,7 +101,7 @@ export default function AdminUsersClient({ users, departments }: AdminUsersClien
                   <span className="role-badge">{ROLE_LABELS[u.role]}</span>
                 </td>
                 <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
-                  {(u as any).department?.name ?? '—'}
+                  {(u as any).profileDepartments?.map((pd: any) => pd.department.name).join(', ') || '—'}
                 </td>
                 <td style={{ padding: '14px 16px' }}>
                   <button className="btn btn-ghost btn-sm" title="Edit user (coming soon)" disabled>
@@ -149,11 +149,14 @@ export default function AdminUsersClient({ users, departments }: AdminUsersClien
 
           {DEPT_REQUIRED_ROLES.includes(form.role) && (
             <div className="form-group">
-              <label className="form-label">Department <span style={{ color: 'var(--danger)' }}>*</span></label>
-              <select className="form-input form-select" value={form.department_id} onChange={e => set('department_id', e.target.value)}>
-                <option value="">— Select department —</option>
+              <label className="form-label">Department(s) <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <select multiple className="form-input form-select" value={form.departmentIds} onChange={e => {
+                const options = Array.from(e.target.selectedOptions, option => option.value);
+                set('departmentIds', options);
+              }} style={{ height: '80px' }}>
                 {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Hold Ctrl/Cmd to select multiple</p>
             </div>
           )}
 

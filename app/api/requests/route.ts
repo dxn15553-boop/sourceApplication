@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { sourceRequests, profiles, departments, requestCounter, workflowActions } from '@/lib/db/schema';
-import { eq, desc, ilike, and, or, sql } from 'drizzle-orm';
+import { eq, desc, ilike, and, or, sql, inArray } from 'drizzle-orm';
 import type { CreateRequestPayload } from '@/lib/types';
 
 export async function GET(request: Request) {
@@ -22,7 +22,11 @@ export async function GET(request: Request) {
         conditions.push(eq(sourceRequests.requester_id, user.id));
         break;
       case 'hod':
-        conditions.push(eq(sourceRequests.department_id, user.department_id));
+        if (user.departmentIds && user.departmentIds.length > 0) {
+          conditions.push(inArray(sourceRequests.department_id, user.departmentIds));
+        } else {
+          conditions.push(eq(sourceRequests.id, 'none')); // If no departments, return empty
+        }
         break;
       case 'admin':
         break; // Sees all
@@ -65,11 +69,18 @@ export async function POST(request: Request) {
     if (user.role !== 'user' && user.role !== 'admin') {
       return Response.json({ error: 'Only users can create source requests' }, { status: 403 });
     }
-    if (!user.department_id) {
-      return Response.json({ error: 'You must be assigned to a department' }, { status: 400 });
+    if (!user.departmentIds || user.departmentIds.length === 0) {
+      return Response.json({ error: 'You must be assigned to at least one department' }, { status: 400 });
     }
 
     const body: CreateRequestPayload = await request.json();
+    
+    // Use provided department_id or default to the first one the user has
+    const targetDeptId = body.department_id || user.departmentIds[0];
+    
+    if (!user.departmentIds.includes(targetDeptId)) {
+      return Response.json({ error: 'Invalid department selection' }, { status: 403 });
+    }
 
     if (!body.description?.trim()) {
       return Response.json({ error: 'Description is required' }, { status: 400 });
@@ -94,7 +105,8 @@ export async function POST(request: Request) {
     const [newRequest] = await db.insert(sourceRequests).values({
       id: srcId,
       requester_id: user.id,
-      department_id: user.department_id,
+      staff_requester_id: body.staff_requester_id ?? null,
+      department_id: targetDeptId,
       description: body.description.trim(),
       attachment_path: body.attachment_path ?? null,
       attachment_name: body.attachment_name ?? null,

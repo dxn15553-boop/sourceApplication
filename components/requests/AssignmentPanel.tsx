@@ -66,7 +66,7 @@ export default function AssignmentPanel({ request, availableEmployees }: Assignm
             <option value="">— Select employee —</option>
             {availableEmployees.map(emp => (
               <option key={emp.id} value={emp.id}>
-                {emp.full_name} {(emp as any).department?.name ? `(${(emp as any).department.name})` : ''}
+                {emp.full_name} {(emp as any).profileDepartments?.length ? `(${(emp as any).profileDepartments.map((pd: any) => pd.department.name).join(', ')})` : ''}
               </option>
             ))}
           </select>

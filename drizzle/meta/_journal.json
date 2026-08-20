@@ -15,6 +15,13 @@
       "when": 1787032683337,
       "tag": "0001_careless_shotgun",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787200969679,
+      "tag": "0002_curious_mongoose",
+      "breakpoints": true
     }
   ]
 }

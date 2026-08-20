@@ -18,8 +18,8 @@ import Link from 'next/link';
 import type { SourceRequest } from '@/lib/types';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-import { sourceRequests, profiles } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { sourceRequests, profiles, staff } from '@/lib/db/schema';
+import { eq, inArray } from 'drizzle-orm';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -41,11 +41,15 @@ export default async function RequestDetailPage({
     where: eq(sourceRequests.id, id),
     with: {
       requester: { columns: { id: true, full_name: true, role: true } },
+      staff_requester: { columns: { id: true, full_name: true } },
       department: { columns: { id: true, name: true } },
       assigned_employee: { columns: { id: true, full_name: true, role: true } },
       workflow_actions: {
         columns: { id: true, action: true, comment: true, created_at: true },
-        with: { actor: { columns: { id: true, full_name: true, role: true } } },
+        with: { 
+          actor: { columns: { id: true, full_name: true, role: true } },
+          staff_actor: { columns: { id: true, full_name: true } }
+        },
         orderBy: (actions: any, { asc }: any) => [asc(actions.created_at)],
       },
       required_reviews: {
@@ -62,6 +66,7 @@ export default async function RequestDetailPage({
 
   const req = reqData as unknown as SourceRequest & {
     requester: { id: string; full_name: string; role: string };
+    staff_requester?: { id: string; full_name: string };
     department: { id: string; name: string };
     assigned_employee?: { id: string; full_name: string; role: string };
     required_reviews?: any[];
@@ -89,7 +94,10 @@ export default async function RequestDetailPage({
 
   const canResubmit =
     isRequester &&
-    ['HOD Returned', 'Final Head Returned', 'Procurement Returned'].includes(req.status);
+    ['HOD Returned', 'Final Head Returned', 'Procurement Returned', 'Returned to Requester'].includes(req.status);
+    
+  const canHodResubmit = profile.role === 'hod' && isHodOfDept && req.status === 'Returned to HOD';
+  const canFinalHeadResubmit = profile.role === 'final_head' && req.status === 'Returned to Regional Head';
 
   const canEvaluateVendor = profile.role === 'employee' && isAssignedEmployee && req.status === 'Assigned';
   const canCreatePr = profile.role === 'employee' && isAssignedEmployee && req.status === 'Vendor Evaluation';
@@ -107,7 +115,7 @@ export default async function RequestDetailPage({
   if (canAssign) {
     allEmployees = await db.query.profiles.findMany({
       where: eq(profiles.role, 'employee'),
-      with: { department: { columns: { name: true } } },
+      with: { profileDepartments: { with: { department: { columns: { name: true } } } } },
       orderBy: (p: any, { asc }: any) => [asc(p.full_name)],
     });
   }
@@ -117,6 +125,20 @@ export default async function RequestDetailPage({
     allDepartments = await db.query.departments.findMany({
       orderBy: (d: any, { asc }: any) => [asc(d.name)],
     });
+  }
+
+  let availableStaffForApproval: any[] = [];
+  if (canApprove) {
+    if (user.departmentIds && user.departmentIds.length > 0) {
+      availableStaffForApproval = await db.query.staff.findMany({
+        where: inArray(staff.department_id, user.departmentIds),
+        orderBy: (s: any, { asc }: any) => [asc(s.full_name)],
+      });
+    } else {
+      availableStaffForApproval = await db.query.staff.findMany({
+        orderBy: (s: any, { asc }: any) => [asc(s.full_name)],
+      });
+    }
   }
 
   return (
@@ -147,7 +169,7 @@ export default async function RequestDetailPage({
 
           {/* Metadata Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 24 }}>
-            <MetaItem icon={<User size={16} />} label="Requester" value={req.requester?.full_name ?? '—'} />
+            <MetaItem icon={<User size={16} />} label="Requester" value={req.staff_requester ? req.staff_requester.full_name : (req.requester?.full_name ?? '—')} />
             <MetaItem icon={<Building2 size={16} />} label="Department" value={req.department?.name ?? '—'} />
             <MetaItem icon={<Clock size={16} />} label="Time" value={createdDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} />
             {req.assigned_employee && (
@@ -226,7 +248,8 @@ export default async function RequestDetailPage({
             {canAssignRequiredReviews && <SelectReviewersPanel requestId={req.id} departments={allDepartments} />}
             {pendingReviewForUser && <ReviewPanel reviewId={pendingReviewForUser.id} departmentName={pendingReviewForUser.department.name} />}
 
-            {canApprove && <ApprovalPanel request={req} userRole={profile.role} />}
+            {canApprove && <ApprovalPanel request={req} userRole={profile.role} availableStaff={availableStaffForApproval} />}
+            {(canHodResubmit || canFinalHeadResubmit) && <ResubmitPanel request={req} />}
             {canAssign && <AssignmentPanel request={req} availableEmployees={allEmployees} />}
             {canEvaluateVendor && <VendorEvaluationPanel requestId={req.id} />}
             {canCreatePr && <PRCreationPanel requestId={req.id} />}

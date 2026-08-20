@@ -69,7 +69,7 @@ export default function WorkflowTimeline({ entries }: WorkflowTimelineProps) {
                   </p>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 3, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color }}>
-                      {(entry as any).actor?.full_name ?? 'System'}
+                      {(entry as any).staff_actor ? (entry as any).staff_actor.full_name : ((entry as any).actor?.full_name ?? 'System')}
                     </span>
                     {(entry as any).actor?.role && (
                       <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
