@@ -16,26 +16,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+        if (!credentials?.email || !credentials?.password) return null;
 
         const userProfiles = await db.select().from(profiles).where(eq(profiles.email, credentials.email as string)).limit(1);
         const user = userProfiles[0];
-        
-        if (!user) {
-          return null;
-        }
+        if (!user) return null;
 
         const passwordsMatch = await bcrypt.compare(credentials.password as string, user.password_hash);
-        if (!passwordsMatch) {
-          return null;
-        }
+        if (!passwordsMatch) return null;
 
         const depts = await db.select().from(profileDepartments).where(eq(profileDepartments.profile_id, user.id));
         const departmentIds = depts.map(d => d.department_id);
 
-        // Return object matches the session user type
         return {
           id: user.id,
           email: user.email,

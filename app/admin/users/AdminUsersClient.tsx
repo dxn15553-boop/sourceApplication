@@ -30,6 +30,8 @@ const emptyForm = (): UserForm => ({ email: '', password: '', full_name: '', rol
 export default function AdminUsersClient({ users, departments }: AdminUsersClientProps) {
   const router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [form, setForm] = useState<UserForm>(emptyForm());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,25 +41,65 @@ export default function AdminUsersClient({ users, departments }: AdminUsersClien
     setForm(prev => ({ ...prev, [key]: val }));
   }
 
-  async function handleCreate(e: React.FormEvent) {
+  function handleEditClick(u: any) {
+    setForm({
+      email: u.email,
+      password: '',
+      full_name: u.full_name,
+      role: u.role,
+      departmentIds: u.profileDepartments?.map((pd: any) => pd.department.id) || [],
+    });
+    setEditingUserId(u.id);
+    setError(null);
+    setSuccess(null);
+    setShowEdit(true);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!form.email || !form.password || !form.full_name) { setError('Email, password, and name are required.'); return; }
+    if (!form.email || !form.full_name) { setError('Email and name are required.'); return; }
+    if (!showEdit && !form.password) { setError('Password is required.'); return; }
     if (DEPT_REQUIRED_ROLES.includes(form.role) && form.departmentIds.length === 0) { setError('At least one department is required for this role.'); return; }
 
     setSaving(true);
     try {
-      // Use Supabase Auth admin API via server action substitute
-      const res = await fetch('/api/admin/users', {
-        method: 'POST',
+      const url = '/api/admin/users';
+      const method = showEdit ? 'PUT' : 'POST';
+      const body = showEdit ? { ...form, id: editingUserId } : form;
+      
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
       const json = await res.json();
-      if (!res.ok) { setError(json.error ?? 'Failed to create user.'); return; }
-      setSuccess(`User "${form.full_name}" created successfully.`);
-      setForm(emptyForm());
-      setTimeout(() => { setSuccess(null); setShowCreate(false); router.refresh(); }, 1800);
+      if (!res.ok) { setError(json.error ?? (showEdit ? 'Failed to update user.' : 'Failed to create user.')); return; }
+      setSuccess(`User "${form.full_name}" ${showEdit ? 'updated' : 'created'} successfully.`);
+      if (!showEdit) setForm(emptyForm());
+      setTimeout(() => { 
+        setSuccess(null); 
+        if (showEdit) setShowEdit(false); else setShowCreate(false); 
+        router.refresh(); 
+      }, 1500);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteUser(id: string, name: string) {
+    if (!confirm(`Are you sure you want to delete user "${name}"? This action cannot be undone.`)) return;
+    
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      const json = await res.json();
+      if (!res.ok) { alert(json.error ?? 'Failed to delete user.'); return; }
+      router.refresh();
     } finally {
       setSaving(false);
     }
@@ -104,9 +146,14 @@ export default function AdminUsersClient({ users, departments }: AdminUsersClien
                   {(u as any).profileDepartments?.map((pd: any) => pd.department.name).join(', ') || '—'}
                 </td>
                 <td style={{ padding: '14px 16px' }}>
-                  <button className="btn btn-ghost btn-sm" title="Edit user (coming soon)" disabled>
-                    <Pencil size={13} />
-                  </button>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button className="btn btn-ghost btn-sm" title="Edit user" onClick={() => handleEditClick(u)}>
+                      <Pencil size={13} />
+                    </button>
+                    <button className="btn btn-ghost btn-sm" title="Delete user" onClick={() => handleDeleteUser(u.id, u.full_name)}>
+                      <Trash2 size={13} style={{ color: 'var(--danger)' }} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -120,9 +167,9 @@ export default function AdminUsersClient({ users, departments }: AdminUsersClien
         )}
       </div>
 
-      {/* Create user modal */}
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Add New User">
-        <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* User modal */}
+      <Modal open={showCreate || showEdit} onClose={() => { setShowCreate(false); setShowEdit(false); }} title={showEdit ? "Edit User" : "Add New User"}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {error && (
             <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8 }}>
               <AlertCircle size={15} style={{ color: 'var(--danger)', flexShrink: 0 }} />
@@ -138,7 +185,9 @@ export default function AdminUsersClient({ users, departments }: AdminUsersClien
 
           <Input id="full_name" label="Full Name" required placeholder="e.g. Ahmad Faris" value={form.full_name} onChange={e => set('full_name', e.target.value)} />
           <Input id="email" label="Email Address" type="email" required placeholder="user@dxn.com" value={form.email} onChange={e => set('email', e.target.value)} />
-          <Input id="password" label="Temporary Password" type="password" required placeholder="Min. 8 characters" value={form.password} onChange={e => set('password', e.target.value)} />
+          {!showEdit && (
+            <Input id="password" label="Temporary Password" type="password" required placeholder="Min. 8 characters" value={form.password} onChange={e => set('password', e.target.value)} />
+          )}
 
           <div className="form-group">
             <label className="form-label">Role <span style={{ color: 'var(--danger)' }}>*</span></label>
@@ -161,9 +210,9 @@ export default function AdminUsersClient({ users, departments }: AdminUsersClien
           )}
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowCreate(false)}>Cancel</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setShowCreate(false); setShowEdit(false); }}>Cancel</button>
             <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-              {saving ? 'Creating…' : <><UserPlus size={14} /> Create User</>}
+              {saving ? 'Saving…' : (showEdit ? <><Pencil size={14} /> Update User</> : <><UserPlus size={14} /> Create User</>)}
             </button>
           </div>
         </form>

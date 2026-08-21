@@ -38,13 +38,7 @@ export const departments = pgTable('departments', {
   name: text('name').notNull().unique(),
 });
 
-export const staff = pgTable('staff', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  full_name: text('full_name').notNull(),
-  department_id: uuid('department_id').notNull().references(() => departments.id, { onDelete: 'cascade' }),
-  is_hod: boolean('is_hod').notNull().default(false),
-  created_at: timestamp('created_at').defaultNow().notNull(),
-});
+
 
 export const profiles = pgTable('profiles', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -64,9 +58,9 @@ export const profileDepartments = pgTable('profile_departments', {
 
 export const sourceRequests = pgTable('source_requests', {
   id: text('id').primaryKey(), // SRC-YYYY-XXXX
-  requester_id: uuid('requester_id').notNull().references(() => profiles.id),
-  staff_requester_id: uuid('staff_requester_id').references(() => staff.id),
-  department_id: uuid('department_id').notNull().references(() => departments.id),
+  requester_id: uuid('requester_id').references(() => profiles.id).notNull(),
+  department_id: uuid('department_id').references(() => departments.id).notNull(),
+  requester_name: text('requester_name'),
   description: text('description').notNull(),
   attachment_path: text('attachment_path'),
   attachment_name: text('attachment_name'),
@@ -124,8 +118,7 @@ export const vendorEvaluations = pgTable('vendor_evaluations', {
 export const workflowActions = pgTable('workflow_actions', {
   id: uuid('id').defaultRandom().primaryKey(),
   request_id: text('request_id').notNull().references(() => sourceRequests.id, { onDelete: 'cascade' }),
-  actor_id: uuid('actor_id').notNull().references(() => profiles.id),
-  staff_actor_id: uuid('staff_actor_id').references(() => staff.id),
+  actor_id: uuid('actor_id').references(() => profiles.id),
   action: workflowActionEnum('action').notNull(),
   comment: text('comment'),
   created_at: timestamp('created_at').defaultNow().notNull(),
@@ -141,17 +134,9 @@ export const departmentsRelations = relations(departments, ({ many }) => ({
   profileDepartments: many(profileDepartments),
   sourceRequests: many(sourceRequests),
   requiredReviews: many(requiredReviews),
-  staff: many(staff),
 }));
 
-export const staffRelations = relations(staff, ({ one, many }) => ({
-  department: one(departments, {
-    fields: [staff.department_id],
-    references: [departments.id],
-  }),
-  sourceRequests: many(sourceRequests),
-  workflowActions: many(workflowActions),
-}));
+
 
 export const profilesRelations = relations(profiles, ({ many }) => ({
   profileDepartments: many(profileDepartments),
@@ -167,10 +152,6 @@ export const sourceRequestsRelations = relations(sourceRequests, ({ one, many })
     fields: [sourceRequests.requester_id],
     references: [profiles.id],
     relationName: 'requester',
-  }),
-  staff_requester: one(staff, {
-    fields: [sourceRequests.staff_requester_id],
-    references: [staff.id],
   }),
   department: one(departments, {
     fields: [sourceRequests.department_id],
@@ -226,10 +207,6 @@ export const workflowActionsRelations = relations(workflowActions, ({ one }) => 
     fields: [workflowActions.actor_id],
     references: [profiles.id],
   }),
-  staff_actor: one(staff, {
-    fields: [workflowActions.staff_actor_id],
-    references: [staff.id],
-  }),
 }));
 
 export const profileDepartmentsRelations = relations(profileDepartments, ({ one }) => ({
@@ -242,3 +219,5 @@ export const profileDepartmentsRelations = relations(profileDepartments, ({ one 
     references: [departments.id],
   }),
 }));
+
+// Trigger hot reload

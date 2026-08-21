@@ -19,7 +19,11 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await signIn('credentials', { redirect: false, email, password });
-      if (res?.error) { setError('Incorrect email or password. Please try again.'); return; }
+      if (res?.error) { 
+        setError('Incorrect Login ID or Password. Please try again.'); 
+        return; 
+      }
+      
       router.push('/dashboard');
       router.refresh();
     } finally {
@@ -187,31 +191,22 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-            {/* Email */}
+            {/* Email / Login ID */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <label htmlFor="email" style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Email Address
+                Login ID / Email
               </label>
               <div style={{ position: 'relative' }}>
                 <Mail size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.25)', pointerEvents: 'none' }} />
                 <input
                   id="email"
-                  type="email"
+                  type="text"
                   style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '13px 14px 13px 42px',
-                    borderRadius: 12,
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#fff',
-                    fontSize: 14,
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
-                    fontFamily: 'inherit',
+                    width: '100%', boxSizing: 'border-box', padding: '13px 14px 13px 42px',
+                    borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#fff', fontSize: 14, outline: 'none', transition: 'border-color 0.2s', fontFamily: 'inherit',
                   }}
-                  placeholder="your.email@dxn.com"
+                  placeholder="e.g. requester@dxn.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
@@ -233,17 +228,9 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '13px 46px 13px 42px',
-                    borderRadius: 12,
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#fff',
-                    fontSize: 14,
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
-                    fontFamily: 'inherit',
+                    width: '100%', boxSizing: 'border-box', padding: '13px 46px 13px 42px',
+                    borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#fff', fontSize: 14, outline: 'none', transition: 'border-color 0.2s', fontFamily: 'inherit',
                   }}
                   placeholder="Enter your password"
                   value={password}

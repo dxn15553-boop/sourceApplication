@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { sourceRequests, workflowActions } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import type { WorkflowActionPayload, WorkflowStatus, Role, WorkflowTrigger } from '@/lib/types';
 
 const TRANSITIONS: Record<string, {
@@ -59,7 +59,7 @@ export async function POST(
     if (!srcRequest) return Response.json({ error: 'Request not found' }, { status: 404 });
 
     const body = await request.json();
-    const { action, comment, staff_actor_id, assigned_employee_id, return_to } = body;
+    const { action, comment, assigned_employee_id, return_to } = body;
 
     const transitionKey = `${action}:${user.role}`;
     const transition = TRANSITIONS[transitionKey];
@@ -112,7 +112,6 @@ export async function POST(
     await db.insert(workflowActions).values({
       request_id: id,
       actor_id: user.id,
-      staff_actor_id: staff_actor_id || null,
       action: ACTION_MAP[action as WorkflowTrigger],
       comment: comment?.trim() || null,
     });

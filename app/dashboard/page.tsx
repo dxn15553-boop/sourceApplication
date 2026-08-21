@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import AppShell from '@/components/layout/AppShell';
 import StatusBadge from '@/components/requests/StatusBadge';
@@ -16,44 +17,52 @@ export default async function DashboardPage() {
   if (!session?.user) redirect('/login');
   const user = session.user as any;
 
+  const cookieStore = await cookies();
+  const activeDeptCookie = cookieStore.get('active_department_id');
+  const activeDepartmentId = activeDeptCookie?.value || user.departmentIds?.[0] || null;
+
   const conditions = [];
 
   switch (user.role) {
     case 'user':
-      conditions.push(eq(sourceRequests.requester_id, user.id));
-      break;
-    case 'hod':
-      if (!user.departmentIds || user.departmentIds.length === 0) {
-        conditions.push(eq(sourceRequests.id, 'none'));
-        break;
-      }
-      // HOD sees their own department's pending requests, OR requests assigned to their dept for Required Review
-      const pendingReviews = await db.query.requiredReviews.findMany({
-        where: and(
-          inArray(requiredReviews.department_id, user.departmentIds),
-          eq(requiredReviews.status, 'Pending')
-        ),
-        columns: { request_id: true }
-      });
-      const reviewReqIds = pendingReviews.map((r: any) => r.request_id);
-
-      if (reviewReqIds.length > 0) {
-        conditions.push(
-          or(
-            and(
-              inArray(sourceRequests.department_id, user.departmentIds),
-              eq(sourceRequests.current_assignee_role, 'hod')
-            ),
-            inArray(sourceRequests.id, reviewReqIds)
-          )
-        );
+      if (activeDepartmentId) {
+        conditions.push(eq(sourceRequests.department_id, activeDepartmentId));
       } else {
-        conditions.push(
-          and(
-            inArray(sourceRequests.department_id, user.departmentIds),
-            eq(sourceRequests.current_assignee_role, 'hod')
-          )
-        );
+        conditions.push(eq(sourceRequests.id, 'none')); // id is text, this is safe
+      }
+      break;
+
+    case 'hod':
+      if (activeDepartmentId) {
+        const pendingReviews = await db.query.requiredReviews.findMany({
+          where: and(
+            eq(requiredReviews.department_id, activeDepartmentId),
+            eq(requiredReviews.status, 'Pending')
+          ),
+          columns: { request_id: true }
+        });
+        const reviewReqIds = pendingReviews.map((r: any) => r.request_id);
+
+        if (reviewReqIds.length > 0) {
+          conditions.push(
+            or(
+              and(
+                eq(sourceRequests.department_id, activeDepartmentId),
+                eq(sourceRequests.current_assignee_role, 'hod')
+              ),
+              inArray(sourceRequests.id, reviewReqIds)
+            )
+          );
+        } else {
+          conditions.push(
+            and(
+              eq(sourceRequests.department_id, activeDepartmentId),
+              eq(sourceRequests.current_assignee_role, 'hod')
+            )
+          );
+        }
+      } else {
+        conditions.push(eq(sourceRequests.id, 'none'));
       }
       break;
     case 'final_head':
@@ -93,13 +102,14 @@ export default async function DashboardPage() {
 
   // Stats query
   const statsConditions = [];
-  if (user.role === 'user') statsConditions.push(eq(sourceRequests.requester_id, user.id));
+  if (user.role === 'user') {
+    if (activeDepartmentId) statsConditions.push(eq(sourceRequests.department_id, activeDepartmentId));
+    else statsConditions.push(eq(sourceRequests.id, 'none'));
+  }
+
   if (user.role === 'hod') {
-    if (user.departmentIds && user.departmentIds.length > 0) {
-      statsConditions.push(inArray(sourceRequests.department_id, user.departmentIds));
-    } else {
-      statsConditions.push(eq(sourceRequests.id, 'none'));
-    }
+    if (activeDepartmentId) statsConditions.push(eq(sourceRequests.department_id, activeDepartmentId));
+    else statsConditions.push(eq(sourceRequests.id, 'none'));
   }
 
   const allRequests = await db.query.sourceRequests.findMany({

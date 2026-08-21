@@ -125,13 +125,14 @@ export interface WorkflowTransition {
 
 // ---- API payloads ----
 
-export interface CreateRequestPayload {
+export type CreateRequestPayload = {
   department_id?: string;
+  requester_name?: string;
   staff_requester_id?: string;
   description: string;
   attachment_path?: string;
   attachment_name?: string;
-}
+};
 
 export interface WorkflowActionPayload {
   action: WorkflowTrigger;

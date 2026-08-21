@@ -18,7 +18,7 @@ import Link from 'next/link';
 import type { SourceRequest } from '@/lib/types';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-import { sourceRequests, profiles, staff } from '@/lib/db/schema';
+import { sourceRequests, profiles } from '@/lib/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -41,14 +41,13 @@ export default async function RequestDetailPage({
     where: eq(sourceRequests.id, id),
     with: {
       requester: { columns: { id: true, full_name: true, role: true } },
-      staff_requester: { columns: { id: true, full_name: true } },
+
       department: { columns: { id: true, name: true } },
       assigned_employee: { columns: { id: true, full_name: true, role: true } },
       workflow_actions: {
         columns: { id: true, action: true, comment: true, created_at: true },
         with: { 
-          actor: { columns: { id: true, full_name: true, role: true } },
-          staff_actor: { columns: { id: true, full_name: true } }
+          actor: { columns: { id: true, full_name: true, role: true } }
         },
         orderBy: (actions: any, { asc }: any) => [asc(actions.created_at)],
       },
@@ -66,7 +65,7 @@ export default async function RequestDetailPage({
 
   const req = reqData as unknown as SourceRequest & {
     requester: { id: string; full_name: string; role: string };
-    staff_requester?: { id: string; full_name: string };
+
     department: { id: string; name: string };
     assigned_employee?: { id: string; full_name: string; role: string };
     required_reviews?: any[];
@@ -127,19 +126,7 @@ export default async function RequestDetailPage({
     });
   }
 
-  let availableStaffForApproval: any[] = [];
-  if (canApprove) {
-    if (user.departmentIds && user.departmentIds.length > 0) {
-      availableStaffForApproval = await db.query.staff.findMany({
-        where: inArray(staff.department_id, user.departmentIds),
-        orderBy: (s: any, { asc }: any) => [asc(s.full_name)],
-      });
-    } else {
-      availableStaffForApproval = await db.query.staff.findMany({
-        orderBy: (s: any, { asc }: any) => [asc(s.full_name)],
-      });
-    }
-  }
+
 
   return (
     <AppShell pageTitle={req.id} pageSubtitle={`Source Request · ${req.department?.name}`}>
@@ -169,7 +156,7 @@ export default async function RequestDetailPage({
 
           {/* Metadata Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 24 }}>
-            <MetaItem icon={<User size={16} />} label="Requester" value={req.staff_requester ? req.staff_requester.full_name : (req.requester?.full_name ?? '—')} />
+            <MetaItem icon={<User size={16} />} label="Requester" value={((req as any).requester_name || req.requester?.full_name) ?? '—'} />
             <MetaItem icon={<Building2 size={16} />} label="Department" value={req.department?.name ?? '—'} />
             <MetaItem icon={<Clock size={16} />} label="Time" value={createdDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} />
             {req.assigned_employee && (
@@ -248,7 +235,7 @@ export default async function RequestDetailPage({
             {canAssignRequiredReviews && <SelectReviewersPanel requestId={req.id} departments={allDepartments} />}
             {pendingReviewForUser && <ReviewPanel reviewId={pendingReviewForUser.id} departmentName={pendingReviewForUser.department.name} />}
 
-            {canApprove && <ApprovalPanel request={req} userRole={profile.role} availableStaff={availableStaffForApproval} />}
+            {canApprove && <ApprovalPanel request={req} userRole={profile.role} />}
             {(canHodResubmit || canFinalHeadResubmit) && <ResubmitPanel request={req} />}
             {canAssign && <AssignmentPanel request={req} availableEmployees={allEmployees} />}
             {canEvaluateVendor && <VendorEvaluationPanel requestId={req.id} />}

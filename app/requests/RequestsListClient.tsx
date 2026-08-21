@@ -123,7 +123,7 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
                     {(req as any).department?.name}
                   </span>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    by {(req as any).requester?.full_name}
+                    by {(req as any).requester_name || (req as any).requester?.full_name}
                   </span>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                     {new Date(req.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}

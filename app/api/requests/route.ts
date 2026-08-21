@@ -2,6 +2,7 @@ import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { sourceRequests, profiles, departments, requestCounter, workflowActions } from '@/lib/db/schema';
 import { eq, desc, ilike, and, or, sql, inArray } from 'drizzle-orm';
+import { cookies } from 'next/headers';
 import type { CreateRequestPayload } from '@/lib/types';
 
 export async function GET(request: Request) {
@@ -9,6 +10,10 @@ export async function GET(request: Request) {
     const session = await auth();
     if (!session?.user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const user = session.user as any;
+
+    const cookieStore = await cookies();
+    const activeDeptCookie = cookieStore.get('active_department_id');
+    const activeDepartmentId = activeDeptCookie?.value || user.departmentIds?.[0] || null;
 
     const url = new URL(request.url);
     const status = url.searchParams.get('status');
@@ -19,14 +24,13 @@ export async function GET(request: Request) {
     // Role-based filtering
     switch (user.role) {
       case 'user':
-        conditions.push(eq(sourceRequests.requester_id, user.id));
+        if (activeDepartmentId) conditions.push(eq(sourceRequests.department_id, activeDepartmentId));
+        else conditions.push(eq(sourceRequests.id, 'none'));
         break;
+
       case 'hod':
-        if (user.departmentIds && user.departmentIds.length > 0) {
-          conditions.push(inArray(sourceRequests.department_id, user.departmentIds));
-        } else {
-          conditions.push(eq(sourceRequests.id, 'none')); // If no departments, return empty
-        }
+        if (activeDepartmentId) conditions.push(eq(sourceRequests.department_id, activeDepartmentId));
+        else conditions.push(eq(sourceRequests.id, 'none'));
         break;
       case 'admin':
         break; // Sees all
@@ -69,17 +73,13 @@ export async function POST(request: Request) {
     if (user.role !== 'user' && user.role !== 'admin') {
       return Response.json({ error: 'Only users can create source requests' }, { status: 403 });
     }
-    if (!user.departmentIds || user.departmentIds.length === 0) {
-      return Response.json({ error: 'You must be assigned to at least one department' }, { status: 400 });
-    }
 
     const body: CreateRequestPayload = await request.json();
     
-    // Use provided department_id or default to the first one the user has
-    const targetDeptId = body.department_id || user.departmentIds[0];
-    
-    if (!user.departmentIds.includes(targetDeptId)) {
-      return Response.json({ error: 'Invalid department selection' }, { status: 403 });
+    // User selects the department from the dropdown
+    const targetDeptId = body.department_id;
+    if (!targetDeptId) {
+      return Response.json({ error: 'Department selection is required' }, { status: 400 });
     }
 
     if (!body.description?.trim()) {
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     const [newRequest] = await db.insert(sourceRequests).values({
       id: srcId,
       requester_id: user.id,
-      staff_requester_id: body.staff_requester_id ?? null,
+      requester_name: body.requester_name?.trim() ?? user.name ?? null,
       department_id: targetDeptId,
       description: body.description.trim(),
       attachment_path: body.attachment_path ?? null,

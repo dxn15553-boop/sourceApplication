@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import Sidebar from './Sidebar';
+import DepartmentSwitcher from './DepartmentSwitcher';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { departments } from '@/lib/db/schema';
@@ -23,13 +25,30 @@ export default async function AppShell({
   if (!session?.user) redirect('/login');
 
   const user = session.user as any;
-  let departmentName = '';
+  let departmentsData: { id: string; name: string }[] = [];
 
   if (user.departmentIds && user.departmentIds.length > 0) {
-    const depts = await db.query.departments.findMany({
+    departmentsData = await db.query.departments.findMany({
       where: inArray(departments.id, user.departmentIds),
+      orderBy: (d: any, { asc }: any) => [asc(d.name)],
     });
-    if (depts.length) departmentName = depts.map(d => d.name).join(', ');
+  } else if (user.role === 'user' || user.role === 'hod') {
+    // Universal logins can access all departments
+    departmentsData = await db.query.departments.findMany({
+      orderBy: (d: any, { asc }: any) => [asc(d.name)],
+    });
+    // Set user's departmentIds so it's consistent
+    user.departmentIds = departmentsData.map(d => d.id);
+  }
+
+  const cookieStore = await cookies();
+  const activeDeptCookie = cookieStore.get('active_department_id');
+  const activeDepartmentId = activeDeptCookie?.value || (user.departmentIds?.[0] ?? '');
+
+  let activeDeptName = '';
+  if (departmentsData.length > 0) {
+    const active = departmentsData.find(d => d.id === activeDepartmentId) || departmentsData[0];
+    activeDeptName = active?.name || '';
   }
 
   const profile: Profile = {
@@ -42,7 +61,7 @@ export default async function AppShell({
 
   return (
     <div className="app-layout">
-      <Sidebar profile={profile} departmentName={departmentName} />
+      <Sidebar profile={profile} departmentName={activeDeptName} />
       <div className="main-content">
         <header className="topbar">
           <div style={{ flex: 1 }}>
@@ -57,7 +76,13 @@ export default async function AppShell({
               </div>
             )}
           </div>
-          {headerAction && <div>{headerAction}</div>}
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {departmentsData.length > 0 && (
+              <DepartmentSwitcher departments={departmentsData} activeId={activeDepartmentId} />
+            )}
+            {headerAction && <div>{headerAction}</div>}
+          </div>
         </header>
 
         <main className="page-content animate-fade-in">

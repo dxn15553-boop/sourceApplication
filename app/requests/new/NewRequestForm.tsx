@@ -6,7 +6,7 @@ import Textarea from '@/components/ui/Textarea';
 import FileUpload from '@/components/ui/FileUpload';
 import { FilePlus, Send, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function NewRequestForm({ userDepartments, availableStaff }: { userDepartments: { id: string, name: string }[], availableStaff: any[] }) {
+export default function NewRequestForm({ userDepartments }: { userDepartments: { id: string, name: string }[] }) {
   const router = useRouter();
   const [description, setDescription] = useState('');
   const [descError, setDescError] = useState('');
@@ -15,15 +15,15 @@ export default function NewRequestForm({ userDepartments, availableStaff }: { us
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [departmentId, setDepartmentId] = useState(userDepartments.length > 0 ? userDepartments[0].id : '');
-  const [staffRequesterId, setStaffRequesterId] = useState('');
+  const [requesterName, setRequesterName] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setDescError('');
 
-    if (!staffRequesterId) {
-      setError('Please select who is submitting this request.');
+    if (!requesterName.trim()) {
+      setError('Please enter your name.');
       return;
     }
 
@@ -52,7 +52,7 @@ export default function NewRequestForm({ userDepartments, availableStaff }: { us
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           department_id: departmentId,
-          staff_requester_id: staffRequesterId,
+          requester_name: requesterName.trim(),
           description: description.trim(), 
           attachment_path: attachmentPath, 
           attachment_name: attachmentName 
@@ -101,50 +101,35 @@ export default function NewRequestForm({ userDepartments, availableStaff }: { us
       <form onSubmit={handleSubmit}>
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ padding: '12px 16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
-            ℹ️ Please select who you are submitting this request on behalf of.
+            ℹ️ Please enter your department and your full name.
           </div>
-
           <div className="form-group">
-            <label className="form-label" htmlFor="staffRequesterId">Submitting On Behalf Of <span style={{ color: 'var(--danger)' }}>*</span></label>
+            <label className="form-label" htmlFor="departmentId">Department <span style={{ color: 'var(--danger)' }}>*</span></label>
             <select 
-              id="staffRequesterId"
+              id="departmentId"
               className="form-input form-select" 
-              value={staffRequesterId} 
-              onChange={(e) => {
-                const staffId = e.target.value;
-                setStaffRequesterId(staffId);
-                const staffMember = availableStaff.find(s => s.id === staffId);
-                if (staffMember) {
-                  setDepartmentId(staffMember.department_id);
-                }
-              }}
+              value={departmentId} 
+              onChange={(e) => setDepartmentId(e.target.value)}
               required
             >
-              <option value="">— Select Staff Member —</option>
-              {availableStaff.map((staff) => (
-                <option key={staff.id} value={staff.id}>{staff.full_name}</option>
+              {userDepartments.map((dept) => (
+                <option key={dept.id} value={dept.id}>{dept.name}</option>
               ))}
             </select>
           </div>
 
-          {userDepartments.length > 1 && (
-            <div className="form-group">
-              <label className="form-label" htmlFor="departmentId">Department <span style={{ color: 'var(--danger)' }}>*</span></label>
-              <select 
-                id="departmentId"
-                className="form-input form-select" 
-                value={departmentId} 
-                onChange={(e) => setDepartmentId(e.target.value)}
-                required
-                disabled
-              >
-                {userDepartments.map((dept) => (
-                  <option key={dept.id} value={dept.id}>{dept.name}</option>
-                ))}
-              </select>
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Auto-selected based on the staff member.</p>
-            </div>
-          )}
+          <div className="form-group">
+            <label className="form-label" htmlFor="requesterName">Requester Name <span style={{ color: 'var(--danger)' }}>*</span></label>
+            <input 
+              id="requesterName"
+              type="text"
+              className="form-input"
+              value={requesterName}
+              onChange={(e) => setRequesterName(e.target.value)}
+              placeholder="Enter your full name"
+              required
+            />
+          </div>
 
           <Textarea
             id="description"

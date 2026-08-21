@@ -10,7 +10,6 @@ import type { SourceRequest } from '@/lib/types';
 interface ApprovalPanelProps {
   request: SourceRequest;
   userRole: string;
-  availableStaff?: any[];
 }
 
 type ActionType = 'approve' | 'reject' | 'return' | null;
@@ -36,13 +35,12 @@ const RETURN_OPTIONS: Record<string, { label: string, value: string }[]> = {
   ]
 };
 
-export default function ApprovalPanel({ request, userRole, availableStaff = [] }: ApprovalPanelProps) {
+export default function ApprovalPanel({ request, userRole }: ApprovalPanelProps) {
   const router = useRouter();
   const [activeAction, setActiveAction] = useState<ActionType>(null);
   const [comment, setComment] = useState('');
   const [commentError, setCommentError] = useState('');
-  const [staffActorId, setStaffActorId] = useState('');
-  const [staffActorError, setStaffActorError] = useState('');
+
   const [returnTo, setReturnTo] = useState('');
   const [returnToError, setReturnToError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,10 +55,7 @@ export default function ApprovalPanel({ request, userRole, availableStaff = [] }
       return;
     }
 
-    if (availableStaff.length > 0 && !staffActorId) {
-      setStaffActorError('Please select who is taking this action.');
-      return;
-    }
+
 
     if (activeAction === 'return') {
       const options = RETURN_OPTIONS[userRole] || [];
@@ -76,7 +71,7 @@ export default function ApprovalPanel({ request, userRole, availableStaff = [] }
       const res = await fetch(`/api/requests/${request.id}/action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, comment: comment.trim() || undefined, staff_actor_id: staffActorId || undefined, return_to: returnTo || undefined }),
+        body: JSON.stringify({ action, comment: comment.trim() || undefined, return_to: returnTo || undefined }),
       });
       const json = await res.json();
       if (!res.ok) { setError(json.error ?? 'Action failed.'); return; }
@@ -132,27 +127,7 @@ export default function ApprovalPanel({ request, userRole, availableStaff = [] }
             Request: <strong style={{ color: 'var(--text-primary)' }}>{request.id}</strong>
           </div>
 
-          {availableStaff.length > 0 && (
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" htmlFor="staffActorId">Reviewing As <span style={{ color: 'var(--danger)' }}>*</span></label>
-              <select 
-                id="staffActorId"
-                className="form-input form-select" 
-                value={staffActorId} 
-                onChange={(e) => {
-                  setStaffActorId(e.target.value);
-                  if (e.target.value) setStaffActorError('');
-                }}
-                required
-              >
-                <option value="">— Select Staff Member —</option>
-                {availableStaff.map((staff) => (
-                  <option key={staff.id} value={staff.id}>{staff.full_name}</option>
-                ))}
-              </select>
-              {staffActorError && <p style={{ fontSize: 13, color: 'var(--danger)', marginTop: 4 }}>{staffActorError}</p>}
-            </div>
-          )}
+
 
           {activeAction === 'return' && RETURN_OPTIONS[userRole] && RETURN_OPTIONS[userRole].length > 0 && (
             <div className="form-group" style={{ marginBottom: 0 }}>
