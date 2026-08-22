@@ -6,7 +6,15 @@ import Textarea from '@/components/ui/Textarea';
 import FileUpload from '@/components/ui/FileUpload';
 import { FilePlus, Send, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function NewRequestForm({ departmentId, departmentName }: { departmentId: string, departmentName: string }) {
+export default function NewRequestForm({ 
+  departmentId, 
+  departmentName, 
+  allDepartments 
+}: { 
+  departmentId: string; 
+  departmentName: string; 
+  allDepartments: { id: string; name: string }[] 
+}) {
   const router = useRouter();
   const [description, setDescription] = useState('');
   const [descError, setDescError] = useState('');
@@ -15,7 +23,7 @@ export default function NewRequestForm({ departmentId, departmentName }: { depar
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [requesterName, setRequesterName] = useState('');
-
+  const [targetDepartmentId, setTargetDepartmentId] = useState('');
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -50,7 +58,7 @@ export default function NewRequestForm({ departmentId, departmentName }: { depar
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          department_id: departmentId,
+          department_id: targetDepartmentId,
           requester_name: requesterName.trim(),
           description: description.trim(), 
           attachment_path: attachmentPath, 
@@ -103,8 +111,33 @@ export default function NewRequestForm({ departmentId, departmentName }: { depar
             ℹ️ Please enter your full name. Your request will be routed to the <strong>{departmentName}</strong> department's HOD.
           </div>
           <div className="form-group" style={{ display: 'none' }}>
-            {/* Department is now selected at login, we just pass it silently */}
             <input type="hidden" id="departmentId" value={departmentId} />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="targetDepartmentId">
+              Permission Required From <span style={{ color: 'var(--danger)' }}>*</span>
+            </label>
+            <select
+              id="targetDepartmentId"
+              className="form-input form-select"
+              value={targetDepartmentId}
+              onChange={(e) => setTargetDepartmentId(e.target.value)}
+              disabled={loading}
+              required
+            >
+              <option value="" disabled>— Select Department —</option>
+              {allDepartments
+                .filter(d => ['EHS', 'Admin', 'IWH', 'QC', 'QA', 'Engineering', 'Legal', 'Others'].includes(d.name) && d.id !== departmentId)
+                .map(dept => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+            </select>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, marginBottom: 0 }}>
+              Your HOD will forward the request to this department for approval before it goes to the Regional Head.
+            </p>
           </div>
 
           <div className="form-group">

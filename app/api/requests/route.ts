@@ -24,13 +24,21 @@ export async function GET(request: Request) {
     // Role-based filtering
     switch (user.role) {
       case 'user':
-        if (activeDepartmentId) conditions.push(eq(sourceRequests.department_id, activeDepartmentId));
-        else conditions.push(eq(sourceRequests.id, 'none'));
+        if (activeDepartmentId) {
+          conditions.push(or(
+            eq(sourceRequests.requester_department_id, activeDepartmentId),
+            eq(sourceRequests.department_id, activeDepartmentId)
+          ));
+        } else conditions.push(eq(sourceRequests.id, 'none'));
         break;
 
       case 'hod':
-        if (activeDepartmentId) conditions.push(eq(sourceRequests.department_id, activeDepartmentId));
-        else conditions.push(eq(sourceRequests.id, 'none'));
+        if (activeDepartmentId) {
+          conditions.push(or(
+            eq(sourceRequests.requester_department_id, activeDepartmentId),
+            eq(sourceRequests.department_id, activeDepartmentId)
+          ));
+        } else conditions.push(eq(sourceRequests.id, 'none'));
         break;
       case 'admin':
         break; // Sees all

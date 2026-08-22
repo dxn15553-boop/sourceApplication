@@ -23,7 +23,11 @@ export default async function NewRequestPage() {
 
   return (
     <AppShell pageTitle="New Source Request" pageSubtitle="Submit a new source request for HOD review">
-      <NewRequestForm departmentId={activeDeptId} departmentName={activeDept?.name || ''} />
+      <NewRequestForm 
+        departmentId={activeDeptId} 
+        departmentName={activeDept?.name || ''} 
+        allDepartments={allDepartments}
+      />
     </AppShell>
   );
 }

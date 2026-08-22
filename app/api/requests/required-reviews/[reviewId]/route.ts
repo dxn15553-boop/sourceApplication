@@ -89,8 +89,8 @@ export async function POST(
       if (allApproved) {
         await db.update(sourceRequests)
           .set({ 
-            status: 'Target Dept Approved',
-            current_assignee_role: 'hod', // Goes back to Home HOD
+            status: 'Final Head Review',
+            current_assignee_role: 'final_head',
             updated_at: new Date()
           })
           .where(eq(sourceRequests.id, review.request_id));
