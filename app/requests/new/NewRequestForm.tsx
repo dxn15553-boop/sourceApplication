@@ -6,7 +6,7 @@ import Textarea from '@/components/ui/Textarea';
 import FileUpload from '@/components/ui/FileUpload';
 import { FilePlus, Send, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function NewRequestForm({ userDepartments }: { userDepartments: { id: string, name: string }[] }) {
+export default function NewRequestForm({ departmentId, departmentName }: { departmentId: string, departmentName: string }) {
   const router = useRouter();
   const [description, setDescription] = useState('');
   const [descError, setDescError] = useState('');
@@ -14,7 +14,6 @@ export default function NewRequestForm({ userDepartments }: { userDepartments: {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [departmentId, setDepartmentId] = useState(userDepartments.length > 0 ? userDepartments[0].id : '');
   const [requesterName, setRequesterName] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
@@ -101,21 +100,11 @@ export default function NewRequestForm({ userDepartments }: { userDepartments: {
       <form onSubmit={handleSubmit}>
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ padding: '12px 16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
-            ℹ️ Please enter your department and your full name.
+            ℹ️ Please enter your full name. Your request will be routed to the <strong>{departmentName}</strong> department's HOD.
           </div>
-          <div className="form-group">
-            <label className="form-label" htmlFor="departmentId">Department <span style={{ color: 'var(--danger)' }}>*</span></label>
-            <select 
-              id="departmentId"
-              className="form-input form-select" 
-              value={departmentId} 
-              onChange={(e) => setDepartmentId(e.target.value)}
-              required
-            >
-              {userDepartments.map((dept) => (
-                <option key={dept.id} value={dept.id}>{dept.name}</option>
-              ))}
-            </select>
+          <div className="form-group" style={{ display: 'none' }}>
+            {/* Department is now selected at login, we just pass it silently */}
+            <input type="hidden" id="departmentId" value={departmentId} />
           </div>
 
           <div className="form-group">

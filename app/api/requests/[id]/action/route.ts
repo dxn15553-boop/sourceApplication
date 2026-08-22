@@ -11,9 +11,8 @@ const TRANSITIONS: Record<string, {
   nextRole: Role | null;
   requiresComment: boolean;
 }> = {
-  'approve:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD'], nextStatus: 'HOD Approved', nextRole: 'final_head', requiresComment: false },
-  'reject:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD'], nextStatus: 'HOD Rejected', nextRole: null, requiresComment: true },
-  'return:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD'], nextStatus: 'Returned to Requester', nextRole: 'user', requiresComment: true },
+  'reject:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD', 'Pending Home HOD Confirmation'], nextStatus: 'HOD Rejected', nextRole: null, requiresComment: true },
+  'return:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD', 'Pending Home HOD Confirmation'], nextStatus: 'Returned to Requester', nextRole: 'user', requiresComment: true },
   'approve:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['HOD Approved', 'Final Head Review', 'Under Required Review', 'Returned to Regional Head'], nextStatus: 'Final Head Approved', nextRole: 'procurement_manager', requiresComment: false },
   'reject:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['HOD Approved', 'Final Head Review', 'Under Required Review', 'Returned to Regional Head'], nextStatus: 'Final Head Rejected', nextRole: null, requiresComment: true },
   'return:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['HOD Approved', 'Final Head Review', 'Under Required Review', 'Returned to Regional Head'], nextStatus: 'Returned to HOD', nextRole: 'hod', requiresComment: true },
@@ -62,18 +61,50 @@ export async function POST(
     const { action, comment, assigned_employee_id, return_to } = body;
 
     const transitionKey = `${action}:${user.role}`;
-    const transition = TRANSITIONS[transitionKey];
+    let transition = TRANSITIONS[transitionKey];
+    let nextStatus = transition?.nextStatus;
+    let nextRole = transition?.nextRole;
+    
+    // Dynamic HOD Approval Logic
+    if (user.role === 'hod' && action === 'approve') {
+      if (!user.departmentIds?.includes(srcRequest.requester_department_id)) {
+        return Response.json({ error: 'You can only review requests from your department' }, { status: 403 });
+      }
+      
+      if (srcRequest.status === 'Submitted' || srcRequest.status === 'Returned to HOD') {
+        if (srcRequest.department_id === srcRequest.requester_department_id) {
+          // No cross-department selected (Target is same as Home) -> Skip directly to Regional Head
+          nextStatus = 'Final Head Review';
+          nextRole = 'final_head';
+        } else {
+          // Cross-department selected -> Send to Target Dept
+          nextStatus = 'Under Required Review';
+          nextRole = 'hod';
+        }
+      } else if (srcRequest.status === 'Pending Home HOD Confirmation' || srcRequest.status === 'Target Dept Approved') {
+        nextStatus = 'Final Head Review';
+        nextRole = 'final_head';
+      } else {
+        return Response.json({ error: `Action 'approve' not valid in status '${srcRequest.status}'` }, { status: 400 });
+      }
+      
+      transition = { allowedRoles: ['hod'], allowedStatuses: [], nextStatus, nextRole, requiresComment: false };
+    }
 
     if (!transition) return Response.json({ error: 'Action not permitted for your role' }, { status: 403 });
-    if (!transition.allowedStatuses.includes(srcRequest.status)) {
-      return Response.json({ error: `Action '${action}' not valid in status '${srcRequest.status}'` }, { status: 400 });
+    if (action !== 'approve' || user.role !== 'hod') {
+      if (!transition.allowedStatuses.includes(srcRequest.status)) {
+        return Response.json({ error: `Action '${action}' not valid in status '${srcRequest.status}'` }, { status: 400 });
+      }
     }
     if (transition.requiresComment && !comment?.trim()) {
       return Response.json({ error: 'A comment/reason is required for this action' }, { status: 400 });
     }
 
-    if (user.role === 'hod' && !user.departmentIds?.includes(srcRequest.department_id)) {
-      return Response.json({ error: 'You can only review requests from your department' }, { status: 403 });
+    if (user.role === 'hod' && action !== 'approve') {
+      if (!user.departmentIds?.includes(srcRequest.requester_department_id)) {
+        return Response.json({ error: 'You can only review requests from your department' }, { status: 403 });
+      }
     }
     if (user.role === 'employee' && action === 'complete' && srcRequest.assigned_employee_id !== user.id) {
       return Response.json({ error: 'You can only complete requests assigned to you' }, { status: 403 });
@@ -82,8 +113,18 @@ export async function POST(
       return Response.json({ error: 'An employee must be selected for assignment' }, { status: 400 });
     }
 
-    let nextStatus = transition.nextStatus;
-    let nextRole = transition.nextRole;
+    // Add required review automatically on step 1 approval IF target dept is different
+    if (user.role === 'hod' && action === 'approve' && (srcRequest.status === 'Submitted' || srcRequest.status === 'Returned to HOD')) {
+      if (srcRequest.department_id !== srcRequest.requester_department_id) {
+        // Import requiredReviews at the top or dynamically
+        const { requiredReviews } = await import('@/lib/db/schema');
+        await db.insert(requiredReviews).values({
+          request_id: id,
+          department_id: srcRequest.department_id, // Target department
+          status: 'Pending',
+        });
+      }
+    }
 
     if (action === 'return' && return_to) {
       if (return_to === 'user') {

@@ -36,7 +36,7 @@ export async function POST(
     }
 
     // Must be HOD of that department
-    if (user.role !== 'hod' || user.department_id !== review.department_id) {
+    if (user.role !== 'hod' || !user.departmentIds?.includes(review.department_id)) {
       return NextResponse.json({ error: 'Unauthorized to submit this review' }, { status: 403 });
     }
 
@@ -64,8 +64,8 @@ export async function POST(
     if (action === 'Rejected') {
       await db.update(sourceRequests)
         .set({ 
-          status: 'HOD Returned', // Return to creator
-          current_assignee_role: null,
+          status: 'Returned to HOD', // Return to Home HOD
+          current_assignee_role: 'hod',
           updated_at: new Date()
         })
         .where(eq(sourceRequests.id, review.request_id));
@@ -89,7 +89,8 @@ export async function POST(
       if (allApproved) {
         await db.update(sourceRequests)
           .set({ 
-            current_assignee_role: 'final_head',
+            status: 'Target Dept Approved',
+            current_assignee_role: 'hod', // Goes back to Home HOD
             updated_at: new Date()
           })
           .where(eq(sourceRequests.id, review.request_id));

@@ -9,6 +9,8 @@ export const roleEnum = pgEnum('role', [
 export const workflowStatusEnum = pgEnum('workflow_status', [
   'Submitted', 'HOD Approved', 'HOD Rejected', 'HOD Returned',
   'Under Required Review',
+  'Target Dept Approved',
+  'Pending Home HOD Confirmation',
   'Final Head Review',
   'Final Head Approved', 'Final Head Rejected', 'Final Head Returned',
   'Procurement Review',
@@ -59,6 +61,7 @@ export const profileDepartments = pgTable('profile_departments', {
 export const sourceRequests = pgTable('source_requests', {
   id: text('id').primaryKey(), // SRC-YYYY-XXXX
   requester_id: uuid('requester_id').references(() => profiles.id).notNull(),
+  requester_department_id: uuid('requester_department_id').references(() => departments.id),
   department_id: uuid('department_id').references(() => departments.id).notNull(),
   requester_name: text('requester_name'),
   description: text('description').notNull(),

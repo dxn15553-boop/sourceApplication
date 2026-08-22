@@ -18,7 +18,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const userProfiles = await db.select().from(profiles).where(eq(profiles.email, credentials.email as string)).limit(1);
+        let loginEmail = credentials.email as string;
+        let isRequester = false;
+
+        // If the login ID starts with "SR", treat it as a Source Requester ID
+        if (loginEmail.toUpperCase().startsWith('SR')) {
+          loginEmail = 'requester@dxn.com';
+          isRequester = true;
+        }
+
+        const userProfiles = await db.select().from(profiles).where(eq(profiles.email, loginEmail)).limit(1);
         const user = userProfiles[0];
         if (!user) return null;
 
@@ -30,8 +39,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         return {
           id: user.id,
-          email: user.email,
-          name: user.full_name,
+          email: isRequester ? (credentials.email as string) : user.email,
+          name: isRequester ? (credentials.email as string) : user.full_name,
           role: user.role,
           departmentIds: departmentIds,
         } as any;

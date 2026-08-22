@@ -8,7 +8,6 @@ import ResubmitPanel from '@/components/requests/ResubmitPanel';
 import PaymentPanel from '@/components/requests/PaymentPanel';
 import DeliveryPanel from '@/components/requests/DeliveryPanel';
 import CompletePanel from '@/components/requests/CompletePanel';
-import SelectReviewersPanel from '@/components/requests/SelectReviewersPanel';
 import ReviewPanel from '@/components/requests/ReviewPanel';
 import VendorEvaluationPanel from '@/components/requests/VendorEvaluationPanel';
 import PRCreationPanel from '@/components/requests/PRCreationPanel';
@@ -35,13 +34,12 @@ export default async function RequestDetailPage({
   const session = await auth();
   if (!session?.user) redirect('/login');
   const user = session.user as any;
-  const profile = { id: user.id, role: user.role, department_id: user.department_id, full_name: user.name };
+  const profile = { id: user.id, role: user.role, departmentIds: user.departmentIds || [], full_name: user.name };
 
   const reqData = await db.query.sourceRequests.findFirst({
     where: eq(sourceRequests.id, id),
     with: {
       requester: { columns: { id: true, full_name: true, role: true } },
-
       department: { columns: { id: true, name: true } },
       assigned_employee: { columns: { id: true, full_name: true, role: true } },
       workflow_actions: {
@@ -65,28 +63,26 @@ export default async function RequestDetailPage({
 
   const req = reqData as unknown as SourceRequest & {
     requester: { id: string; full_name: string; role: string };
-
+    requester_department_id: string;
     department: { id: string; name: string };
     assigned_employee?: { id: string; full_name: string; role: string };
     required_reviews?: any[];
   };
 
   const isRequester = req.requester_id === user.id;
-  const isHodOfDept = profile.role === 'hod' && profile.department_id === req.department_id;
+  const isHomeHod = profile.role === 'hod' && profile.departmentIds.includes(req.requester_department_id);
   const isAssignedEmployee = req.assigned_employee_id === user.id;
 
   const allReviewsApproved = req.status === 'Under Required Review' && (req.required_reviews || []).every((r: any) => r.status === 'Approved');
 
   const canApprove =
-    (profile.role === 'hod' && isHodOfDept && req.status === 'Submitted') ||
-    (profile.role === 'final_head' && (req.status === 'Final Head Review' || (req.status === 'Under Required Review' && allReviewsApproved))) ||
+    (profile.role === 'hod' && isHomeHod && (req.status === 'Submitted' || req.status === 'Target Dept Approved' || req.status === 'Pending Home HOD Confirmation')) ||
+    (profile.role === 'final_head' && (req.status === 'Final Head Review')) ||
     (profile.role === 'procurement_manager' && req.status === 'Final Head Approved');
-
-  const canAssignRequiredReviews = isRequester && req.status === 'HOD Approved';
 
   // Check if current user is an HOD of a department that needs to review
   const pendingReviewForUser = profile.role === 'hod'
-    ? (req.required_reviews || []).find((r: any) => r.department_id === profile.department_id && r.status === 'Pending')
+    ? (req.required_reviews || []).find((r: any) => profile.departmentIds.includes(r.department_id) && r.status === 'Pending')
     : null;
 
   const canAssign = profile.role === 'section_manager' && req.status === 'Procurement Approved';
@@ -95,7 +91,7 @@ export default async function RequestDetailPage({
     isRequester &&
     ['HOD Returned', 'Final Head Returned', 'Procurement Returned', 'Returned to Requester'].includes(req.status);
     
-  const canHodResubmit = profile.role === 'hod' && isHodOfDept && req.status === 'Returned to HOD';
+  const canHodResubmit = profile.role === 'hod' && isHomeHod && req.status === 'Returned to HOD';
   const canFinalHeadResubmit = profile.role === 'final_head' && req.status === 'Returned to Regional Head';
 
   const canEvaluateVendor = profile.role === 'employee' && isAssignedEmployee && req.status === 'Assigned';
@@ -118,15 +114,6 @@ export default async function RequestDetailPage({
       orderBy: (p: any, { asc }: any) => [asc(p.full_name)],
     });
   }
-
-  let allDepartments: any[] = [];
-  if (canAssignRequiredReviews) {
-    allDepartments = await db.query.departments.findMany({
-      orderBy: (d: any, { asc }: any) => [asc(d.name)],
-    });
-  }
-
-
 
   return (
     <AppShell pageTitle={req.id} pageSubtitle={`Source Request · ${req.department?.name}`}>
@@ -157,7 +144,7 @@ export default async function RequestDetailPage({
           {/* Metadata Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 24 }}>
             <MetaItem icon={<User size={16} />} label="Requester" value={((req as any).requester_name || req.requester?.full_name) ?? '—'} />
-            <MetaItem icon={<Building2 size={16} />} label="Department" value={req.department?.name ?? '—'} />
+            <MetaItem icon={<Building2 size={16} />} label="Target Department" value={req.department?.name ?? '—'} />
             <MetaItem icon={<Clock size={16} />} label="Time" value={createdDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} />
             {req.assigned_employee && (
               <MetaItem icon={<User size={16} />} label="Assigned To" value={req.assigned_employee.full_name} />
@@ -232,7 +219,7 @@ export default async function RequestDetailPage({
               </div>
             )}
 
-            {canAssignRequiredReviews && <SelectReviewersPanel requestId={req.id} departments={allDepartments} />}
+
             {pendingReviewForUser && <ReviewPanel reviewId={pendingReviewForUser.id} departmentName={pendingReviewForUser.department.name} />}
 
             {canApprove && <ApprovalPanel request={req} userRole={profile.role} />}

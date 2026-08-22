@@ -18,6 +18,8 @@ export type WorkflowStatus =
   | 'HOD Rejected'
   | 'HOD Returned'
   | 'Under Required Review'
+  | 'Target Dept Approved'
+  | 'Pending Home HOD Confirmation'
   | 'Final Head Review'
   | 'Final Head Approved'
   | 'Final Head Rejected'

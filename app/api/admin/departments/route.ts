@@ -58,7 +58,8 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const session = await auth();
-    if (session?.user?.role !== 'admin') {
+    const user = session?.user as any;
+    if (user?.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized. Admin only.' }, { status: 403 });
     }
 
@@ -80,7 +81,8 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const session = await auth();
-    if (session?.user?.role !== 'admin') {
+    const user = session?.user as any;
+    if (user?.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized. Admin only.' }, { status: 403 });
     }
 

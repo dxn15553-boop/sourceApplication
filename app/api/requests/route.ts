@@ -70,8 +70,9 @@ export async function POST(request: Request) {
     if (!session?.user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const user = session.user as any;
 
-    if (user.role !== 'user' && user.role !== 'admin') {
-      return Response.json({ error: 'Only users can create source requests' }, { status: 403 });
+    // Allow any authenticated user (including HODs) to create a source request
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body: CreateRequestPayload = await request.json();
@@ -106,6 +107,7 @@ export async function POST(request: Request) {
       id: srcId,
       requester_id: user.id,
       requester_name: body.requester_name?.trim() ?? user.name ?? null,
+      requester_department_id: user.departmentIds?.[0] ?? null,
       department_id: targetDeptId,
       description: body.description.trim(),
       attachment_path: body.attachment_path ?? null,
