@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import Sidebar from './Sidebar';
-import DepartmentSwitcher from './DepartmentSwitcher';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { departments } from '@/lib/db/schema';
@@ -78,9 +77,6 @@ export default async function AppShell({
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            {departmentsData.length > 0 && (
-              <DepartmentSwitcher departments={departmentsData} activeId={activeDepartmentId} />
-            )}
             {headerAction && <div>{headerAction}</div>}
           </div>
         </header>

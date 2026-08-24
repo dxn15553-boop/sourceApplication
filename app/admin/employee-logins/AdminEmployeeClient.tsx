@@ -1,0 +1,308 @@
+'use client';
+
+import { useState } from 'react';
+import Modal from '@/components/ui/Modal';
+import Input from '@/components/ui/Input';
+import { Building2, Plus, Trash2, AlertCircle, CheckCircle, KeyRound, User, Eye, EyeOff } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+interface EmployeeEntry {
+  departmentName: string;
+  empEmail: string | null;
+  empId: string | null;
+  plaintextPassword?: string | null;
+}
+
+interface AdminEmployeeClientProps {
+  employeeList: EmployeeEntry[];
+}
+
+export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClientProps) {
+  const router = useRouter();
+  
+  const [showCreate, setShowCreate] = useState(false);
+  const [departmentName, setDepartmentName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
+  const [showReset, setShowReset] = useState(false);
+  const [resetTargetId, setResetTargetId] = useState<string>('');
+  const [resetDeptName, setResetDeptName] = useState<string>('');
+  const [newPassword, setNewPassword] = useState('');
+  
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+
+  const availableDepartments = employeeList.filter(e => !e.empEmail).map(e => e.departmentName);
+
+  function togglePasswordVisibility(deptName: string) {
+    setVisiblePasswords(prev => ({
+      ...prev,
+      [deptName]: !prev[deptName]
+    }));
+  }
+
+  function resetForm() {
+    setDepartmentName(availableDepartments[0] || '');
+    setEmail('');
+    setPassword('');
+    setNewPassword('');
+    setError(null);
+    setSuccess(null);
+  }
+
+  async function handleCreateSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!departmentName.trim() || !email || !password) { setError('All fields are required.'); return; }
+
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/logins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          departmentName, 
+          email, password, 
+          role: 'user' 
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.error ?? 'Failed to create login.'); return; }
+      
+      setSuccess(`Employee login for "${departmentName}" created successfully.`);
+      resetForm();
+      setTimeout(() => { 
+        setSuccess(null); 
+        setShowCreate(false); 
+        router.refresh(); 
+      }, 1500);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleResetSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!newPassword || newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
+
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/logins/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          profileId: resetTargetId, 
+          newPassword 
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setError(json.error ?? 'Failed to reset password.'); return; }
+      
+      setSuccess(`Password for ${resetDeptName} Employee updated successfully.`);
+      setNewPassword('');
+      setTimeout(() => { 
+        setSuccess(null); 
+        setShowReset(false); 
+        router.refresh();
+      }, 1500);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string, deptName: string) {
+    if (!confirm(`Are you sure you want to delete the Employee login for "${deptName}"?`)) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/logins', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: id }),
+      });
+      const json = await res.json();
+      if (!res.ok) { alert(json.error ?? 'Failed to delete login.'); return; }
+      router.refresh();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+        <button 
+          className="btn btn-primary btn-sm" 
+          onClick={() => { setShowCreate(true); resetForm(); }}
+          disabled={availableDepartments.length === 0}
+        >
+          <Plus size={15} /> Add Employee Login
+        </button>
+      </div>
+
+      <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '24px' }}>
+        {employeeList.map((emp) => (
+          <div key={emp.departmentName} className="card" style={{
+            display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div className="animate-fade-in" style={{
+                  width: '40px', height: '40px', borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '16px', fontWeight: 700, color: '#fff', flexShrink: 0,
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'
+                }}>
+                  <User size={20} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                    {emp.departmentName}
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                    Employee / Requester
+                  </span>
+                </div>
+              </div>
+              {emp.empId && (
+                <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.5)', border: '1px solid var(--border)', padding: '6px', borderRadius: '8px', backdropFilter: 'blur(4px)' }}>
+                  <button className="btn-ghost" style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', color: 'var(--accent)' }} title="Reset Password" onClick={() => { setResetTargetId(emp.empId!); setResetDeptName(emp.departmentName); setShowReset(true); setError(null); setSuccess(null); }}>
+                    <KeyRound size={14} />
+                  </button>
+                  <div style={{ width: '1px', height: '14px', background: 'var(--border)', alignSelf: 'center' }}></div>
+                  <button className="btn-ghost" style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', color: 'var(--danger)' }} title="Delete Employee" onClick={() => handleDelete(emp.empId!, emp.departmentName)}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(248, 250, 252, 0.6)', border: '1px solid var(--border)', padding: '16px', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '28px', height: '28px', background: '#fff', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-secondary)' }}><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                </div>
+                <span style={{ fontSize: '13px', color: emp.empEmail ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: emp.empEmail ? 600 : 400 }}>
+                  {emp.empEmail || 'Not assigned'}
+                </span>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '28px', height: '28px', background: '#fff', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                  <KeyRound size={13} style={{ color: 'var(--text-secondary)' }} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', color: emp.plaintextPassword ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: emp.plaintextPassword ? 600 : 400, fontFamily: emp.plaintextPassword ? 'monospace' : 'inherit' }}>
+                    {emp.plaintextPassword ? (visiblePasswords[emp.departmentName] ? emp.plaintextPassword : '••••••••') : (emp.empEmail ? '******** (Reset to view)' : 'Not assigned')}
+                  </span>
+                  {emp.plaintextPassword && (
+                    <button 
+                      className="btn-ghost"
+                      onClick={() => togglePasswordVisibility(emp.departmentName)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', color: 'var(--text-muted)' }}
+                      title={visiblePasswords[emp.departmentName] ? "Hide Password" : "Show Password"}
+                    >
+                      {visiblePasswords[emp.departmentName] ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Add Employee Login">
+        <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {error && (
+            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8 }}>
+              <AlertCircle size={15} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+              <p style={{ fontSize: 13, color: '#ef4444', margin: 0 }}>{error}</p>
+            </div>
+          )}
+          {success ? (
+            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 8 }}>
+              <CheckCircle size={15} style={{ color: 'var(--success)', flexShrink: 0 }} />
+              <p style={{ fontSize: 13, color: '#10b981', margin: 0 }}>{success}</p>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Department *</label>
+                <select 
+                  value={departmentName} 
+                  onChange={e => setDepartmentName(e.target.value)}
+                  style={{
+                    padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)',
+                    fontSize: 14, background: '#fff', color: 'var(--text-primary)',
+                    outline: 'none', transition: 'border-color 0.2s'
+                  }}
+                >
+                  {availableDepartments.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+
+              <Input 
+                id="email" label="Employee Email *" type="email" placeholder={`e.g. employee.${departmentName.toLowerCase().replace(/\s/g, '')}@dxn.com`} 
+                value={email} onChange={e => setEmail(e.target.value)} required 
+              />
+              <Input 
+                id="password" label="Employee Password *" type="password" placeholder="Min. 8 characters" 
+                value={password} onChange={e => setPassword(e.target.value)} required 
+              />
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 12 }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowCreate(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+                  {saving ? 'Creating…' : 'Create Employee'}
+                </button>
+              </div>
+            </>
+          )}
+        </form>
+      </Modal>
+
+      <Modal open={showReset} onClose={() => setShowReset(false)} title="Reset Employee Password">
+        <form onSubmit={handleResetSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {error && (
+             <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8 }}>
+               <AlertCircle size={15} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+               <p style={{ fontSize: 13, color: '#ef4444', margin: 0 }}>{error}</p>
+             </div>
+           )}
+           {success ? (
+             <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 8 }}>
+               <CheckCircle size={15} style={{ color: 'var(--success)', flexShrink: 0 }} />
+               <p style={{ fontSize: 13, color: '#10b981', margin: 0 }}>{success}</p>
+             </div>
+           ) : (
+             <>
+               <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 8px 0' }}>
+                 Resetting password for the <strong>{resetDeptName} Employee</strong> account.
+               </p>
+ 
+               <Input 
+                 id="newPassword" label="New Password *" type="password" placeholder="Min. 8 characters" 
+                 value={newPassword} onChange={e => setNewPassword(e.target.value)} required 
+               />
+ 
+               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 12 }}>
+                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowReset(false)}>Cancel</button>
+                 <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+                   {saving ? 'Saving…' : 'Reset Password'}
+                 </button>
+               </div>
+             </>
+           )}
+        </form>
+      </Modal>
+    </>
+  );
+}

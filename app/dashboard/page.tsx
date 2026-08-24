@@ -8,18 +8,17 @@ import type { Metadata } from 'next';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { sourceRequests, requiredReviews } from '@/lib/db/schema';
-import { eq, desc, and, or, inArray } from 'drizzle-orm';
+import { eq, desc, and, or, inArray, sql } from 'drizzle-orm';
 
 export const metadata: Metadata = { title: 'Dashboard' };
+export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect('/login');
   const user = session.user as any;
 
-  const cookieStore = await cookies();
-  const activeDeptCookie = cookieStore.get('active_department_id');
-  const activeDepartmentId = activeDeptCookie?.value || user.departmentIds?.[0] || null;
+  const activeDepartmentId = user.departmentIds?.[0] || null;
 
   const conditions = [];
 
@@ -43,24 +42,22 @@ export default async function DashboardPage() {
         });
         const reviewReqIds = pendingReviews.map((r: any) => r.request_id);
 
-        if (reviewReqIds.length > 0) {
-          conditions.push(
-            or(
-              and(
-                eq(sourceRequests.department_id, activeDepartmentId),
-                eq(sourceRequests.current_assignee_role, 'hod')
-              ),
-              inArray(sourceRequests.id, reviewReqIds)
-            )
-          );
-        } else {
-          conditions.push(
+        conditions.push(
+          or(
+            // Home HOD pending actions
+            and(
+              eq(sourceRequests.requester_department_id, activeDepartmentId),
+              inArray(sourceRequests.status, ['Submitted', 'Returned to HOD', 'Pending Home HOD Confirmation'])
+            ),
+            // Target HOD pending actions
             and(
               eq(sourceRequests.department_id, activeDepartmentId),
-              eq(sourceRequests.current_assignee_role, 'hod')
-            )
-          );
-        }
+              eq(sourceRequests.status, 'Under Required Review')
+            ),
+            // Explicit pending reviews
+            reviewReqIds.length > 0 ? inArray(sourceRequests.id, reviewReqIds) : sql`false`
+          )
+        );
       } else {
         conditions.push(eq(sourceRequests.id, 'none'));
       }

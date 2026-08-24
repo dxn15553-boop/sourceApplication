@@ -46,6 +46,7 @@ export const profiles = pgTable('profiles', {
   id: uuid('id').defaultRandom().primaryKey(),
   email: text('email').notNull().unique(),
   password_hash: text('password_hash').notNull(),
+  plaintext_password: text('plaintext_password'),
   full_name: text('full_name').notNull(),
   role: roleEnum('role').notNull().default('user'),
   created_at: timestamp('created_at').defaultNow().notNull(),

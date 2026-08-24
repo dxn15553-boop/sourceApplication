@@ -128,7 +128,7 @@ export default function NewRequestForm({
             >
               <option value="" disabled>— Select Department —</option>
               {allDepartments
-                .filter(d => ['EHS', 'Admin', 'IWH', 'QC', 'QA', 'Engineering', 'Legal', 'Others'].includes(d.name) && d.id !== departmentId)
+                .filter(d => ['IT', 'Maintenance', 'QA', 'EHS', 'Admin', 'IWH', 'QC', 'Engineering', 'Legal', 'Others'].includes(d.name) && d.id !== departmentId)
                 .map(dept => (
                   <option key={dept.id} value={dept.id}>
                     {dept.name}

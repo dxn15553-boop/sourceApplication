@@ -5,13 +5,7 @@ import WorkflowTimeline from '@/components/requests/WorkflowTimeline';
 import ApprovalPanel from '@/components/requests/ApprovalPanel';
 import AssignmentPanel from '@/components/requests/AssignmentPanel';
 import ResubmitPanel from '@/components/requests/ResubmitPanel';
-import PaymentPanel from '@/components/requests/PaymentPanel';
-import DeliveryPanel from '@/components/requests/DeliveryPanel';
-import CompletePanel from '@/components/requests/CompletePanel';
 import ReviewPanel from '@/components/requests/ReviewPanel';
-import VendorEvaluationPanel from '@/components/requests/VendorEvaluationPanel';
-import PRCreationPanel from '@/components/requests/PRCreationPanel';
-import POCreationPanel from '@/components/requests/POCreationPanel';
 import { ArrowLeft, Download, Paperclip, User, Building2, Calendar, Clock } from 'lucide-react';
 import Link from 'next/link';
 import type { SourceRequest } from '@/lib/types';
@@ -19,6 +13,8 @@ import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { sourceRequests, profiles } from '@/lib/db/schema';
 import { eq, inArray } from 'drizzle-orm';
+
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -94,13 +90,6 @@ export default async function RequestDetailPage({
   const canHodResubmit = profile.role === 'hod' && isHomeHod && req.status === 'Returned to HOD';
   const canFinalHeadResubmit = profile.role === 'final_head' && req.status === 'Returned to Regional Head';
 
-  const canEvaluateVendor = profile.role === 'employee' && isAssignedEmployee && req.status === 'Assigned';
-  const canCreatePr = profile.role === 'employee' && isAssignedEmployee && req.status === 'Vendor Evaluation';
-  const canCreatePo = profile.role === 'employee' && isAssignedEmployee && req.status === 'PR Created';
-  const canLogPayment = profile.role === 'employee' && isAssignedEmployee && req.status === 'PO Created';
-  const canLogDelivery = profile.role === 'employee' && isAssignedEmployee && req.status === 'Payment Pending';
-  const canComplete = isAssignedEmployee && req.status === 'Delivered';
-
   // Cloudinary returns a secure_url which we stored in attachment_path
   let attachmentUrl: string | null = req.attachment_path ?? null;
 
@@ -155,21 +144,38 @@ export default async function RequestDetailPage({
         {/* Required Reviews Tracker */}
         {req.required_reviews && req.required_reviews.length > 0 && (
           <div className="card glass-strong" style={{ marginBottom: 24 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px', color: 'var(--text-primary)' }}>Required Reviews</h2>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px', color: 'var(--text-primary)' }}>Cross-Department Permissions</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {req.required_reviews.map((r: any) => (
                 <div key={r.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 99,
-                  background: r.status === 'Approved' ? 'var(--success-glow)' : r.status === 'Rejected' ? 'var(--danger-glow)' : 'rgba(245, 158, 11, 0.15)',
+                  display: 'flex', flexDirection: 'column', gap: 8, padding: '16px', borderRadius: 12,
+                  background: r.status === 'Approved' ? 'var(--success-glow)' : r.status === 'Rejected' ? 'var(--danger-glow)' : 'rgba(245, 158, 11, 0.05)',
                   border: `1px solid ${r.status === 'Approved' ? 'rgba(16, 185, 129, 0.2)' : r.status === 'Rejected' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`
                 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{r.department.name}</span>
-                  <span style={{
-                    fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-                    color: r.status === 'Approved' ? 'var(--success)' : r.status === 'Rejected' ? 'var(--danger)' : '#d97706'
-                  }}>
-                    {r.status}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{r.department?.name || 'Department'}</span>
+                      <span style={{
+                        padding: '4px 10px', borderRadius: 99,
+                        fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+                        background: r.status === 'Approved' ? 'rgba(16, 185, 129, 0.15)' : r.status === 'Rejected' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                        color: r.status === 'Approved' ? 'var(--success)' : r.status === 'Rejected' ? 'var(--danger)' : '#d97706'
+                      }}>
+                        {r.status}
+                      </span>
+                    </div>
+                    {r.reviewer && (
+                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                        Reviewed by: <strong>{r.reviewer.full_name}</strong>
+                      </span>
+                    )}
+                  </div>
+                  {r.remarks && (
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', padding: '10px 12px', background: 'var(--bg-base)', borderRadius: 8, marginTop: 4 }}>
+                      <strong style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Remarks</strong>
+                      "{r.remarks}"
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -225,13 +231,7 @@ export default async function RequestDetailPage({
             {canApprove && <ApprovalPanel request={req} userRole={profile.role} />}
             {(canHodResubmit || canFinalHeadResubmit) && <ResubmitPanel request={req} />}
             {canAssign && <AssignmentPanel request={req} availableEmployees={allEmployees} />}
-            {canEvaluateVendor && <VendorEvaluationPanel requestId={req.id} />}
-            {canCreatePr && <PRCreationPanel requestId={req.id} />}
-            {canCreatePo && <POCreationPanel requestId={req.id} />}
-            {canLogPayment && <PaymentPanel requestId={req.id} />}
-            {canLogDelivery && <DeliveryPanel requestId={req.id} />}
             {canResubmit && <ResubmitPanel request={req} />}
-            {canComplete && <CompletePanel request={req} />}
           </div>
 
           {/* Right Column: Workflow History */}

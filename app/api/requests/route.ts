@@ -11,9 +11,7 @@ export async function GET(request: Request) {
     if (!session?.user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const user = session.user as any;
 
-    const cookieStore = await cookies();
-    const activeDeptCookie = cookieStore.get('active_department_id');
-    const activeDepartmentId = activeDeptCookie?.value || user.departmentIds?.[0] || null;
+    const activeDepartmentId = user.departmentIds?.[0] || null;
 
     const url = new URL(request.url);
     const status = url.searchParams.get('status');
@@ -85,7 +83,7 @@ export async function POST(request: Request) {
 
     const body: CreateRequestPayload = await request.json();
     
-    // User selects the department from the dropdown
+    // User MUST select a target department from the dropdown
     const targetDeptId = body.department_id;
     if (!targetDeptId) {
       return Response.json({ error: 'Department selection is required' }, { status: 400 });

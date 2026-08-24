@@ -12,8 +12,6 @@ export default function LoginClient({ departments }: { departments: { id: string
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loginMode, setLoginMode] = useState<'requester' | 'staff'>('requester');
-  const [departmentId, setDepartmentId] = useState(departments.length > 0 ? departments[0].id : '');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -22,16 +20,11 @@ export default function LoginClient({ departments }: { departments: { id: string
     try {
       const res = await signIn('credentials', { redirect: false, email, password });
       if (res?.error) { 
-        setError('Incorrect Login ID or Password. Please try again.'); 
+        setError('Incorrect Email or Password. Please try again.'); 
         return; 
       }
       
-      if (loginMode === 'requester') {
-        document.cookie = `active_department_id=${departmentId}; path=/`;
-        router.push('/requests/new');
-      } else {
-        router.push('/dashboard');
-      }
+      router.push('/dashboard');
       router.refresh();
     } finally {
       setLoading(false);
@@ -198,51 +191,22 @@ export default function LoginClient({ departments }: { departments: { id: string
 
           {/* Form */}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {/* Mode Toggle */}
-            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 4, marginBottom: 4 }}>
-              <button
-                type="button"
-                onClick={() => setLoginMode('requester')}
-                style={{
-                  flex: 1, padding: '10px', border: 'none', borderRadius: 8, cursor: 'pointer',
-                  fontSize: 13, fontWeight: 600, transition: 'all 0.2s',
-                  background: loginMode === 'requester' ? 'rgba(99,102,241,0.2)' : 'transparent',
-                  color: loginMode === 'requester' ? '#fff' : 'rgba(255,255,255,0.5)',
-                  boxShadow: loginMode === 'requester' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none'
-                }}
-              >
-                Source Requester
-              </button>
-              <button
-                type="button"
-                onClick={() => setLoginMode('staff')}
-                style={{
-                  flex: 1, padding: '10px', border: 'none', borderRadius: 8, cursor: 'pointer',
-                  fontSize: 13, fontWeight: 600, transition: 'all 0.2s',
-                  background: loginMode === 'staff' ? 'rgba(99,102,241,0.2)' : 'transparent',
-                  color: loginMode === 'staff' ? '#fff' : 'rgba(255,255,255,0.5)',
-                  boxShadow: loginMode === 'staff' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none'
-                }}
-              >
-                Staff Login
-              </button>
-            </div>
-            {/* Email / Login ID */}
+            {/* Email */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <label htmlFor="email" style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                {loginMode === 'requester' ? 'Requester ID' : 'Email Address'}
+                Email Address
               </label>
               <div style={{ position: 'relative' }}>
                 <Mail size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.25)', pointerEvents: 'none' }} />
                 <input
                   id="email"
-                  type="text"
+                  type="email"
                   style={{
                     width: '100%', boxSizing: 'border-box', padding: '13px 14px 13px 42px',
                     borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
                     color: '#fff', fontSize: 14, outline: 'none', transition: 'border-color 0.2s', fontFamily: 'inherit',
                   }}
-                  placeholder={loginMode === 'requester' ? "e.g. SR001" : "e.g. admin@dxn.com"}
+                  placeholder="e.g. admin@dxn.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
@@ -252,36 +216,6 @@ export default function LoginClient({ departments }: { departments: { id: string
                 />
               </div>
             </div>
-
-            {/* Department (Requester Only) */}
-            {loginMode === 'requester' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <label htmlFor="departmentId" style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                  Department
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <Globe size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.25)', pointerEvents: 'none' }} />
-                  <select
-                    id="departmentId"
-                    value={departmentId}
-                    onChange={(e) => setDepartmentId(e.target.value)}
-                    required
-                    style={{
-                      width: '100%', boxSizing: 'border-box', padding: '13px 14px 13px 42px',
-                      borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                      color: '#fff', fontSize: 14, outline: 'none', transition: 'border-color 0.2s', fontFamily: 'inherit',
-                      appearance: 'none'
-                    }}
-                  >
-                    {departments.map((dept) => (
-                      <option key={dept.id} value={dept.id} style={{ color: '#000' }}>
-                        {dept.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            )}
 
             {/* Password */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

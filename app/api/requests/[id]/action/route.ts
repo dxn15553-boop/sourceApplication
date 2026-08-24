@@ -21,7 +21,6 @@ const TRANSITIONS: Record<string, {
   'return:procurement_manager': { allowedRoles: ['procurement_manager'], allowedStatuses: ['Final Head Approved'], nextStatus: 'Returned to Regional Head', nextRole: 'final_head', requiresComment: true },
   'assign:section_manager': { allowedRoles: ['section_manager'], allowedStatuses: ['Procurement Approved'], nextStatus: 'Assigned', nextRole: 'employee', requiresComment: false },
   'complete:employee': { allowedRoles: ['employee'], allowedStatuses: ['Assigned'], nextStatus: 'Completed', nextRole: null, requiresComment: false },
-  'resubmit:user': { allowedRoles: ['user'], allowedStatuses: ['HOD Returned', 'Final Head Returned', 'Procurement Returned', 'Returned to Requester'], nextStatus: 'Submitted', nextRole: 'hod', requiresComment: false },
   'resubmit:hod': { allowedRoles: ['hod'], allowedStatuses: ['Returned to HOD'], nextStatus: 'HOD Approved', nextRole: 'final_head', requiresComment: false },
   'resubmit:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['Returned to Regional Head'], nextStatus: 'Final Head Approved', nextRole: 'procurement_manager', requiresComment: false },
 };
@@ -67,21 +66,37 @@ export async function POST(
     
     // Dynamic HOD Approval Logic
     if (user.role === 'hod' && action === 'approve') {
-      if (!user.departmentIds?.includes(srcRequest.requester_department_id)) {
-        return Response.json({ error: 'You can only review requests from your department' }, { status: 403 });
+      const isHomeHod = user.departmentIds?.includes(srcRequest.requester_department_id);
+      const isTargetHod = user.departmentIds?.includes(srcRequest.department_id);
+      
+      if (!isHomeHod && !isTargetHod) {
+        return Response.json({ error: 'You can only review requests for your department' }, { status: 403 });
       }
       
       if (srcRequest.status === 'Submitted' || srcRequest.status === 'Returned to HOD') {
+        if (!isHomeHod) return Response.json({ error: 'Only the Home HOD can approve at this stage' }, { status: 403 });
+        
         if (srcRequest.department_id === srcRequest.requester_department_id) {
-          // No cross-department selected (Target is same as Home) -> Skip directly to Regional Head
           nextStatus = 'Final Head Review';
           nextRole = 'final_head';
         } else {
-          // Cross-department selected -> Send to Target Dept
           nextStatus = 'Under Required Review';
           nextRole = 'hod';
         }
+      } else if (srcRequest.status === 'Under Required Review') {
+        if (!isTargetHod) return Response.json({ error: 'Only the Target HOD can approve at this stage' }, { status: 403 });
+        
+        nextStatus = 'Pending Home HOD Confirmation';
+        nextRole = 'hod';
+        
+        // Mark required review as approved
+        const { requiredReviews } = await import('@/lib/db/schema');
+        await db.update(requiredReviews)
+          .set({ status: 'Approved', reviewer_id: user.id, reviewed_at: new Date() })
+          .where(and(eq(requiredReviews.request_id, id), eq(requiredReviews.department_id, srcRequest.department_id)));
+          
       } else if (srcRequest.status === 'Pending Home HOD Confirmation' || srcRequest.status === 'Target Dept Approved') {
+        if (!isHomeHod) return Response.json({ error: 'Only the Home HOD can approve at this stage' }, { status: 403 });
         nextStatus = 'Final Head Review';
         nextRole = 'final_head';
       } else {
@@ -89,6 +104,15 @@ export async function POST(
       }
       
       transition = { allowedRoles: ['hod'], allowedStatuses: [], nextStatus, nextRole, requiresComment: false };
+    }
+
+    // Requester Resubmission Logic Override
+    if (action === 'resubmit' && srcRequest.requester_id === user.id) {
+      if (['HOD Returned', 'Final Head Returned', 'Procurement Returned', 'Returned to Requester'].includes(srcRequest.status)) {
+        nextStatus = 'Submitted';
+        nextRole = 'hod';
+        transition = { allowedRoles: [user.role], allowedStatuses: [], nextStatus, nextRole, requiresComment: false };
+      }
     }
 
     if (!transition) return Response.json({ error: 'Action not permitted for your role' }, { status: 403 });
@@ -102,8 +126,10 @@ export async function POST(
     }
 
     if (user.role === 'hod' && action !== 'approve') {
-      if (!user.departmentIds?.includes(srcRequest.requester_department_id)) {
-        return Response.json({ error: 'You can only review requests from your department' }, { status: 403 });
+      const isHomeHod = user.departmentIds?.includes(srcRequest.requester_department_id);
+      const isTargetHod = user.departmentIds?.includes(srcRequest.department_id);
+      if (!isHomeHod && !isTargetHod) {
+        return Response.json({ error: 'You can only review requests for your department' }, { status: 403 });
       }
     }
     if (user.role === 'employee' && action === 'complete' && srcRequest.assigned_employee_id !== user.id) {

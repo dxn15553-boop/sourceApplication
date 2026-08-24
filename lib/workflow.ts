@@ -63,6 +63,14 @@ export function getAvailableActions(
 ): WorkflowTrigger[] {
   const actions: WorkflowTrigger[] = [];
 
+  // Any requester can resubmit their own returned requests
+  if (
+    isRequester &&
+    (status === 'HOD Returned' || status === 'Final Head Returned' || status === 'Procurement Returned' || status === 'Returned to Requester')
+  ) {
+    actions.push('resubmit');
+  }
+
   switch (userRole) {
     case 'hod':
       if (status === 'Submitted' && isHodOfDept) {
@@ -116,12 +124,7 @@ export function getAvailableActions(
       break;
 
     case 'user':
-      if (
-        isRequester &&
-        (status === 'HOD Returned' || status === 'Final Head Returned' || status === 'Procurement Returned' || status === 'Returned to Requester')
-      ) {
-        actions.push('resubmit');
-      }
+      // Handled globally for requesters above
       break;
 
     case 'admin':
