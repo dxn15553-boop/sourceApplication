@@ -181,7 +181,7 @@ export default async function DashboardPage() {
                     {req.description}
                   </p>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                    {req.department?.name} · {new Date(req.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {req.department?.name} · {new Date(req.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}
                   </p>
                 </div>
                 <StatusBadge status={req.status as any} animate />

@@ -78,8 +78,8 @@ export default function SearchClient() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
               <InfoField label="Requester" value={result.requester?.full_name} />
               <InfoField label="Department" value={result.department?.name} />
-              <InfoField label="Created" value={new Date(result.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} />
-              <InfoField label="Time" value={new Date(result.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} />
+              <InfoField label="Created" value={new Date(result.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' })} />
+              <InfoField label="Time" value={new Date(result.created_at).toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} />
               {result.assigned_employee && <InfoField label="Assigned To" value={result.assigned_employee.full_name} />}
               <InfoField label="Attachment" value={result.attachment_name ?? 'None'} />
             </div>

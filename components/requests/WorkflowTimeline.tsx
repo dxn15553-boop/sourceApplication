@@ -80,10 +80,10 @@ export default function WorkflowTimeline({ entries }: WorkflowTimelineProps) {
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                    {date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {date.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}
                   </p>
                   <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                    {date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                    {date.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               </div>

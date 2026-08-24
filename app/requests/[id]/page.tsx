@@ -123,7 +123,7 @@ export default async function RequestDetailPage({
                 Source Request Details
               </h1>
               <p style={{ fontSize: 15, color: 'var(--text-secondary)', margin: 0 }}>
-                Submitted on {createdDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                Submitted on {createdDate.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
             </div>
           </div>
@@ -134,7 +134,7 @@ export default async function RequestDetailPage({
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 24 }}>
             <MetaItem icon={<User size={16} />} label="Requester" value={((req as any).requester_name || req.requester?.full_name) ?? '—'} />
             <MetaItem icon={<Building2 size={16} />} label="Target Department" value={req.department?.name ?? '—'} />
-            <MetaItem icon={<Clock size={16} />} label="Time" value={createdDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} />
+            <MetaItem icon={<Clock size={16} />} label="Time" value={createdDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} />
             {req.assigned_employee && (
               <MetaItem icon={<User size={16} />} label="Assigned To" value={req.assigned_employee.full_name} />
             )}
