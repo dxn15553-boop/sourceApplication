@@ -47,22 +47,21 @@ export default function Sidebar({ profile, departmentName }: SidebarProps) {
   return (
     <aside className="sidebar">
       {/* Logo */}
-      <div className="p-5 border-b border-[var(--border)] relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--accent)] rounded-full blur-[40px] opacity-20 -z-10"></div>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--accent)] to-[var(--accent-secondary)] flex items-center justify-center shrink-0 shadow-[0_0_15px_var(--accent-glow)]">
-            <FileStack size={20} className="text-white" />
+      <div style={{ position: 'relative', zIndex: 1, padding: '22px 20px 18px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #6366f1, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(99,102,241,0.4)' }}>
+            <FileStack size={18} className="text-white" />
           </div>
           <div>
-            <p className="text-[14px] font-extrabold text-[var(--text-primary)] leading-tight tracking-tight">Source Request</p>
-            <p className="text-[11px] font-medium text-[var(--text-secondary)] mt-0.5">DXN Procurement</p>
+            <p style={{ fontSize: 13.5, fontWeight: 700, color: '#fff', lineHeight: 1.2, margin: 0, letterSpacing: '-0.01em' }}>Source Request</p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)', marginTop: 2, fontWeight: 500 }}>DXN Procurement</p>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 overflow-y-auto">
-        <div className="flex flex-col gap-1">
+      <nav style={{ flex: 1, padding: '12px 0', overflowY: 'auto', position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {visibleItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
             return (
@@ -72,8 +71,8 @@ export default function Sidebar({ profile, departmentName }: SidebarProps) {
                 className={`nav-link ${isActive ? 'active' : ''}`}
               >
                 {item.icon}
-                <span className="flex-1">{item.label}</span>
-                {isActive && <ChevronRight size={14} className="opacity-60" />}
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {isActive && <ChevronRight size={13} style={{ opacity: 0.5 }} />}
               </Link>
             );
           })}
@@ -81,29 +80,38 @@ export default function Sidebar({ profile, departmentName }: SidebarProps) {
       </nav>
 
       {/* User info + sign out */}
-      <div className="p-4 border-t border-[var(--border)] bg-[rgba(255,255,255,0.3)]">
-        <div className="mb-4 flex flex-col items-center text-center">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent-secondary)] to-[var(--accent)] flex items-center justify-center text-[15px] font-bold text-white mb-2 shadow-[0_4px_15px_var(--accent-glow)] border border-[var(--border)]">
+      <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,255,255,0.07)', position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #0ea5e9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
             {profile.full_name.charAt(0).toUpperCase()}
           </div>
-          <p className="text-[13px] font-bold text-[var(--text-primary)] leading-tight">
-            {profile.full_name}
-          </p>
-          {departmentName && (
-            <p className="text-[11px] font-medium text-[var(--text-muted)] mt-1">
-              {departmentName}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.88)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {profile.full_name}
             </p>
-          )}
-          <span className="role-badge mt-2">
-            {ROLE_LABELS[profile.role]}
-          </span>
+            {departmentName && (
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {departmentName}
+              </p>
+            )}
+          </div>
         </div>
-
+        <span className="role-badge" style={{ marginBottom: 10, display: 'inline-flex' }}>{ROLE_LABELS[profile.role]}</span>
         <button
           onClick={handleSignOut}
-          className="btn btn-ghost btn-sm w-full justify-center gap-2"
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            padding: '8px 14px', borderRadius: 8,
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            color: 'rgba(255,255,255,0.45)',
+            fontSize: 12.5, fontWeight: 500, cursor: 'pointer',
+            transition: 'all 0.16s ease', fontFamily: 'inherit',
+          }}
+          onMouseOver={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.15)'; (e.currentTarget as HTMLButtonElement).style.color = '#fca5a5'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.20)'; }}
+          onMouseOut={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.45)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.08)'; }}
         >
-          <LogOut size={15} />
+          <LogOut size={14} />
           Sign Out
         </button>
       </div>
