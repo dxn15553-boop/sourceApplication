@@ -22,7 +22,8 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/requests',       label: 'Source Requests', icon: <FolderOpen size={18} /> },
   { href: '/requests/new',   label: 'New Request',     icon: <FilePlus size={18} />,   roles: ['user'] },
   { href: '/search',         label: 'Search',          icon: <Search size={18} /> },
-  { href: '/admin/hod-logins',     label: 'HOD Logins',      icon: <Building2 size={18} />,  roles: ['admin'] },
+  { href: '/admin/departments',    label: 'Departments',     icon: <Building2 size={18} />,  roles: ['admin'] },
+  { href: '/admin/hod-logins',     label: 'HOD Logins',      icon: <Users size={18} />,      roles: ['admin'] },
   { href: '/admin/employee-logins', label: 'Employee Logins', icon: <Users size={18} />,      roles: ['admin'] },
 ];
 
@@ -39,7 +40,7 @@ export default function Sidebar({ profile, departmentName }: SidebarProps) {
   );
 
   async function handleSignOut() {
-    await signOut({ callbackUrl: '/login' });
+    await signOut({ callbackUrl: window.location.origin + '/login' });
   }
 
   return (
