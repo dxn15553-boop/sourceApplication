@@ -129,6 +129,7 @@ export interface WorkflowTransition {
 
 export type CreateRequestPayload = {
   department_id?: string;
+  department_ids?: string[];
   requester_name?: string;
   staff_requester_id?: string;
   description: string;

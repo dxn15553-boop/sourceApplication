@@ -83,9 +83,17 @@ export async function POST(request: Request) {
 
     const body: CreateRequestPayload = await request.json();
     
-    // User MUST select a target department from the dropdown
-    const targetDeptId = body.department_id;
-    if (!targetDeptId) {
+    let targetDeptIds = body.department_ids && body.department_ids.length > 0
+      ? body.department_ids
+      : (body.department_id ? [body.department_id] : [user.departmentIds?.[0] || '']);
+
+    if (user.role !== 'hod') {
+      // Employees cannot request cross-department approvals, default to their own department
+      targetDeptIds = [user.departmentIds?.[0] || ''];
+    }
+
+    const primaryDeptId = targetDeptIds[0];
+    if (!primaryDeptId) {
       return Response.json({ error: 'Department selection is required' }, { status: 400 });
     }
 
@@ -114,13 +122,28 @@ export async function POST(request: Request) {
       requester_id: user.id,
       requester_name: body.requester_name?.trim() ?? user.name ?? null,
       requester_department_id: user.departmentIds?.[0] ?? null,
-      department_id: targetDeptId,
+      department_id: primaryDeptId,
       description: body.description.trim(),
       attachment_path: body.attachment_path ?? null,
       attachment_name: body.attachment_name ?? null,
       status: 'Submitted',
       current_assignee_role: 'hod',
     }).returning();
+
+    // Insert cross-department reviews if target departments are different
+    const requesterDeptId = user.departmentIds?.[0] || null;
+    const crossDeptIds = targetDeptIds.filter(id => id !== requesterDeptId);
+    
+    if (crossDeptIds.length > 0) {
+      const { requiredReviews } = await import('@/lib/db/schema');
+      await db.insert(requiredReviews).values(
+        crossDeptIds.map(deptId => ({
+          request_id: srcId,
+          department_id: deptId,
+          status: 'Pending' as const,
+        }))
+      );
+    }
 
     await db.insert(workflowActions).values({
       request_id: srcId,

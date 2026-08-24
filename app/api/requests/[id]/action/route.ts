@@ -140,16 +140,20 @@ export async function POST(
       return Response.json({ error: 'An employee must be selected for assignment' }, { status: 400 });
     }
 
-    // Add required review automatically on step 1 approval IF target dept is different
+    // Add required review automatically on step 1 approval IF target dept is different and not already inserted
     if (user.role === 'hod' && action === 'approve' && (srcRequest.status === 'Submitted' || srcRequest.status === 'Returned to HOD')) {
       if (srcRequest.department_id !== srcRequest.requester_department_id) {
-        // Import requiredReviews at the top or dynamically
         const { requiredReviews } = await import('@/lib/db/schema');
-        await db.insert(requiredReviews).values({
-          request_id: id,
-          department_id: srcRequest.department_id, // Target department
-          status: 'Pending',
+        const existing = await db.query.requiredReviews.findFirst({
+          where: and(eq(requiredReviews.request_id, id), eq(requiredReviews.department_id, srcRequest.department_id))
         });
+        if (!existing) {
+          await db.insert(requiredReviews).values({
+            request_id: id,
+            department_id: srcRequest.department_id, // Target department
+            status: 'Pending',
+          });
+        }
       }
     }
 

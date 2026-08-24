@@ -27,6 +27,7 @@ export default async function NewRequestPage() {
         departmentId={activeDeptId} 
         departmentName={activeDept?.name || ''} 
         allDepartments={allDepartments}
+        userRole={user.role}
       />
     </AppShell>
   );

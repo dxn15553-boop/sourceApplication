@@ -9,11 +9,13 @@ import { FilePlus, Send, AlertCircle, CheckCircle } from 'lucide-react';
 export default function NewRequestForm({ 
   departmentId, 
   departmentName, 
-  allDepartments 
+  allDepartments,
+  userRole
 }: { 
   departmentId: string; 
   departmentName: string; 
-  allDepartments: { id: string; name: string }[] 
+  allDepartments: { id: string; name: string }[];
+  userRole: string;
 }) {
   const router = useRouter();
   const [description, setDescription] = useState('');
@@ -23,7 +25,7 @@ export default function NewRequestForm({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [requesterName, setRequesterName] = useState('');
-  const [targetDepartmentId, setTargetDepartmentId] = useState('');
+  const [targetDepartmentIds, setTargetDepartmentIds] = useState<string[]>([]);
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -58,7 +60,7 @@ export default function NewRequestForm({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          department_id: targetDepartmentId,
+          department_ids: targetDepartmentIds,
           requester_name: requesterName.trim(),
           description: description.trim(), 
           attachment_path: attachmentPath, 
@@ -114,31 +116,65 @@ export default function NewRequestForm({
             <input type="hidden" id="departmentId" value={departmentId} />
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="targetDepartmentId">
-              Permission Required From <span style={{ color: 'var(--danger)' }}>*</span>
-            </label>
-            <select
-              id="targetDepartmentId"
-              className="form-input form-select"
-              value={targetDepartmentId}
-              onChange={(e) => setTargetDepartmentId(e.target.value)}
-              disabled={loading}
-              required
-            >
-              <option value="" disabled>— Select Department —</option>
-              {allDepartments
-                .filter(d => ['IT', 'Maintenance', 'QA', 'EHS', 'Admin', 'IWH', 'QC', 'Engineering', 'Legal', 'Others'].includes(d.name) && d.id !== departmentId)
-                .map(dept => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </option>
-                ))}
-            </select>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, marginBottom: 0 }}>
-              Your HOD will forward the request to this department for approval before it goes to the Regional Head.
-            </p>
-          </div>
+          {userRole === 'hod' && (
+            <div className="form-group">
+              <label className="form-label" style={{ marginBottom: 4 }}>
+                Permission Required From (Select all that apply)
+              </label>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                gap: '10px',
+                background: 'rgba(255, 255, 255, 0.4)',
+                border: '1px solid var(--border)',
+                padding: '16px',
+                borderRadius: '12px'
+              }}>
+                {allDepartments
+                  .filter(d => ['IT', 'Maintenance', 'QA', 'EHS', 'Admin', 'IWH', 'QC', 'Engineering', 'Legal', 'Others'].includes(d.name) && d.id !== departmentId)
+                  .map(dept => {
+                    const isChecked = targetDepartmentIds.includes(dept.id);
+                    return (
+                      <label 
+                        key={dept.id} 
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '8px', 
+                          fontSize: '13px', 
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          userSelect: 'none'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setTargetDepartmentIds([...targetDepartmentIds, dept.id]);
+                            } else {
+                              setTargetDepartmentIds(targetDepartmentIds.filter(id => id !== dept.id));
+                            }
+                          }}
+                          disabled={loading}
+                          style={{
+                            width: '15px',
+                            height: '15px',
+                            cursor: 'pointer',
+                            accentColor: 'var(--accent)'
+                          }}
+                        />
+                        <span>{dept.name}</span>
+                      </label>
+                    );
+                  })}
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, marginBottom: 0 }}>
+                HOD of each selected department must approve this request before it can proceed to the Regional Head.
+              </p>
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label" htmlFor="requesterName">Requester Name <span style={{ color: 'var(--danger)' }}>*</span></label>
