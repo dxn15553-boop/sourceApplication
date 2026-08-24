@@ -40,7 +40,8 @@ export default function Sidebar({ profile, departmentName }: SidebarProps) {
   );
 
   async function handleSignOut() {
-    await signOut({ callbackUrl: window.location.origin + '/login' });
+    await signOut({ redirect: false });
+    window.location.href = '/login';
   }
 
   return (
