@@ -108,10 +108,11 @@ export async function POST(
 
     // Requester Resubmission Logic Override
     if (action === 'resubmit' && srcRequest.requester_id === user.id) {
-      if (['HOD Returned', 'Final Head Returned', 'Procurement Returned', 'Returned to Requester'].includes(srcRequest.status)) {
+      const allowedStatuses: WorkflowStatus[] = ['HOD Returned', 'Final Head Returned', 'Procurement Returned', 'Returned to Requester'];
+      if (allowedStatuses.includes(srcRequest.status)) {
         nextStatus = 'Submitted';
         nextRole = 'hod';
-        transition = { allowedRoles: [user.role], allowedStatuses: [], nextStatus, nextRole, requiresComment: false };
+        transition = { allowedRoles: [user.role], allowedStatuses, nextStatus, nextRole, requiresComment: false };
       }
     }
 
