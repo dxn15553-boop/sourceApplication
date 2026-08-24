@@ -161,7 +161,7 @@ export default function AdminDepartmentsClient({ departments }: AdminDepartments
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--accent-glow)', border: '1px solid rgba(99,102,241,0.1)', padding: '8px 12px', borderRadius: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent)' }}><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></svg>
-                <span style={{ fontSize: '24px', letterSpacing: '4px', color: 'var(--accent-hover)', lineHeight: 0.6, marginTop: '8px' }}>••••••••</span>
+                <span style={{ fontSize: '14px', letterSpacing: '2px', color: 'var(--accent-hover)', lineHeight: 1 }}>••••••••</span>
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent)', cursor: 'pointer', opacity: 0.8, transition: 'opacity 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.opacity='1'} onMouseLeave={(e) => e.currentTarget.style.opacity='0.8'}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
