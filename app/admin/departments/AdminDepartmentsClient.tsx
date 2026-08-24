@@ -96,32 +96,32 @@ export default function AdminDepartmentsClient({ departments }: AdminDepartments
       </div>
 
       {/* Departments Grid */}
-      <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+      <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
         {departments.map((d) => (
           <div key={d.id} className="card" style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '20px',
-            padding: '24px' // overriding base card padding if needed, but base is 24px anyway
+            gap: '14px',
+            padding: '16px'
           }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
                 <div className="animate-fade-in" style={{
-                  width: '40px', height: '40px', borderRadius: '10px',
+                  width: '32px', height: '32px', borderRadius: '8px',
                   background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '16px', fontWeight: 700, color: '#fff', flexShrink: 0,
-                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'
+                  fontSize: '13px', fontWeight: 700, color: '#fff', flexShrink: 0,
+                  boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)'
                 }}>
-                  {d.hodName ? d.hodName.charAt(0).toUpperCase() : <Building2 size={20} />}
+                  {d.hodName ? d.hodName.charAt(0).toUpperCase() : <Building2 size={15} />}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
                     {d.hodName || 'No HOD Assigned'}
                   </span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>HOD</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>HOD</span>
                     <div className="animate-pulse-dot" style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--success)' }}></div>
                   </div>
                 </div>
@@ -138,27 +138,27 @@ export default function AdminDepartmentsClient({ departments }: AdminDepartments
             </div>
 
             {/* Body */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(248, 250, 252, 0.6)', border: '1px solid var(--border)', padding: '16px', borderRadius: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: '28px', height: '28px', background: '#fff', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-secondary)' }}><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'rgba(248, 250, 252, 0.8)', border: '1px solid var(--border)', padding: '10px 12px', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '22px', height: '22px', background: '#fff', borderRadius: '6px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-secondary)' }}><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                 </div>
-                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500 }}>
                   {d.hodEmail || '—'}
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: '28px', height: '28px', background: '#fff', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                  <Building2 size={13} style={{ color: 'var(--accent)' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '22px', height: '22px', background: '#fff', borderRadius: '6px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Building2 size={11} style={{ color: 'var(--accent)' }} />
                 </div>
-                <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600 }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>
                   {d.name}
                 </span>
               </div>
             </div>
 
             {/* Footer */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--accent-glow)', border: '1px solid rgba(99,102,241,0.1)', padding: '12px 16px', borderRadius: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--accent-glow)', border: '1px solid rgba(99,102,241,0.1)', padding: '8px 12px', borderRadius: '8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent)' }}><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></svg>
                 <span style={{ fontSize: '24px', letterSpacing: '4px', color: 'var(--accent-hover)', lineHeight: 0.6, marginTop: '8px' }}>••••••••</span>
