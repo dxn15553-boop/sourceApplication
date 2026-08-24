@@ -36,7 +36,12 @@ export default function Sidebar({ profile, departmentName }: SidebarProps) {
   const pathname = usePathname();
 
   const visibleItems = NAV_ITEMS.filter(
-    item => !item.roles || item.roles.includes(profile.role)
+    item => {
+      if (item.roles) {
+        return item.roles.includes(profile.role);
+      }
+      return profile.role !== 'admin';
+    }
   );
 
   async function handleSignOut() {
