@@ -183,7 +183,7 @@ export default async function RequestDetailPage({
         )}
 
         {/* Two Column Layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 24, alignItems: 'start' }}>
+        <div className="request-detail-grid">
 
           {/* Left Column: Details & Actions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
