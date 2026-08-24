@@ -106,13 +106,13 @@ export default async function RequestDetailPage({
 
   return (
     <AppShell pageTitle={req.id} pageSubtitle={`Source Request · ${req.department?.name}`}>
-      <div style={{ paddingBottom: 40 }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', paddingBottom: 40 }}>
         <Link href="/requests" className="btn btn-ghost btn-sm" style={{ marginBottom: 20, display: 'inline-flex' }}>
           <ArrowLeft size={16} style={{ marginRight: 4 }} /> Back to Requests
         </Link>
 
         {/* Top-level two-column grid: Content | Workflow History */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
 
           {/* LEFT COLUMN — All main content */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
