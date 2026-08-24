@@ -112,7 +112,7 @@ export default async function RequestDetailPage({
         </Link>
 
         {/* Top-level two-column grid: Content | Workflow History */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20, alignItems: 'start' }}>
 
           {/* LEFT COLUMN — All main content */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
