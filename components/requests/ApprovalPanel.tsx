@@ -172,7 +172,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               pointerEvents: noneSelected ? 'none' : 'auto'
             }}>
               {allDepartments
-                .filter(d => ['IT', 'Maintenance', 'QA', 'EHS', 'Admin', 'IWH', 'QC', 'Engineering', 'Legal', 'Others'].includes(d.name) && d.id !== request.department_id)
+                .filter(d => ['IT', 'Maintenance', 'QA', 'EHS', 'Admin', 'IWH', 'QC', 'Engineering', 'Legal', 'Agro Food', 'Others'].includes(d.name) && d.id !== request.department_id)
                 .map(dept => {
                   const isChecked = selectedDepts.includes(dept.id);
                   return (
