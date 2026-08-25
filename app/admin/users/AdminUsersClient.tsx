@@ -185,9 +185,15 @@ export default function AdminUsersClient({ users, departments }: AdminUsersClien
 
           <Input id="full_name" label="Full Name" required placeholder="e.g. Ahmad Faris" value={form.full_name} onChange={e => set('full_name', e.target.value)} />
           <Input id="email" label="Email Address" type="email" required placeholder="user@dxn.com" value={form.email} onChange={e => set('email', e.target.value)} />
-          {!showEdit && (
-            <Input id="password" label="Temporary Password" type="password" required placeholder="Min. 8 characters" value={form.password} onChange={e => set('password', e.target.value)} />
-          )}
+          <Input 
+            id="password" 
+            label={showEdit ? "Change Password (Leave blank to keep current)" : "Temporary Password"} 
+            type="password" 
+            required={!showEdit} 
+            placeholder={showEdit ? "Enter new password" : "Min. 8 characters"} 
+            value={form.password} 
+            onChange={e => set('password', e.target.value)} 
+          />
 
           <div className="form-group">
             <label className="form-label">Role <span style={{ color: 'var(--danger)' }}>*</span></label>

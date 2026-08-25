@@ -58,7 +58,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { id, email, full_name, role, departmentIds } = body;
+    const { id, email, password, full_name, role, departmentIds } = body;
 
     if (!id || !email || !full_name || !role) {
       return Response.json({ error: 'Missing required fields' }, { status: 400 });
@@ -66,8 +66,14 @@ export async function PUT(request: Request) {
 
     const { eq } = await import('drizzle-orm');
 
+    const updateData: any = { email, full_name, role };
+    if (password && password.trim()) {
+      updateData.password_hash = await bcrypt.hash(password, 10);
+      updateData.plaintext_password = password;
+    }
+
     await db.update(profiles)
-      .set({ email, full_name, role })
+      .set(updateData)
       .where(eq(profiles.id, id));
 
     // Update departments: delete old and insert new
