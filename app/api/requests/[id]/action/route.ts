@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { sourceRequests, workflowActions } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import type { WorkflowActionPayload, WorkflowStatus, Role, WorkflowTrigger } from '@/lib/types';
 
 const TRANSITIONS: Record<string, {
@@ -77,7 +77,36 @@ export async function POST(
         if (!isHomeHod) return Response.json({ error: 'Only the Home HOD can approve at this stage' }, { status: 403 });
         
         if (department_ids && department_ids.length > 0) {
-          const { requiredReviews } = await import('@/lib/db/schema');
+          const { profileDepartments, profiles, departments, requiredReviews } = await import('@/lib/db/schema');
+
+          // Query departments and their HOD profiles to check logins
+          const deptsWithHod = await db.select({
+            deptId: departments.id,
+            deptName: departments.name,
+            hodId: profiles.id,
+          })
+          .from(departments)
+          .leftJoin(profileDepartments, eq(profileDepartments.department_id, departments.id))
+          .leftJoin(profiles, and(eq(profiles.id, profileDepartments.profile_id), eq(profiles.role, 'hod')))
+          .where(inArray(departments.id, department_ids));
+
+          // Find departments that do not have an HOD profile configured
+          const missingHods: string[] = [];
+          for (const deptId of department_ids) {
+            const hasHod = deptsWithHod.some(d => d.deptId === deptId && d.hodId !== null);
+            if (!hasHod) {
+              const deptName = deptsWithHod.find(d => d.deptId === deptId)?.deptName || deptId;
+              missingHods.push(deptName);
+            }
+          }
+
+          if (missingHods.length > 0) {
+            const names = missingHods.join(', ');
+            return Response.json({ 
+              error: `Request cannot be sent because ${names} does not have login credentials configured. Please create the department login first.` 
+            }, { status: 400 });
+          }
+
           await db.insert(requiredReviews).values(
             department_ids.map((deptId: string) => ({
               request_id: id,
