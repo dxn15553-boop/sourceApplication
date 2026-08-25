@@ -11,7 +11,7 @@ import Link from 'next/link';
 import type { SourceRequest } from '@/lib/types';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-import { sourceRequests, profiles } from '@/lib/db/schema';
+import { sourceRequests, profiles, departments } from '@/lib/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
@@ -31,6 +31,8 @@ export default async function RequestDetailPage({
   if (!session?.user) redirect('/login');
   const user = session.user as any;
   const profile = { id: user.id, role: user.role, departmentIds: user.departmentIds || [], full_name: user.name };
+
+  const allDepartments = await db.select().from(departments).orderBy(departments.name);
 
   const reqData = await db.query.sourceRequests.findFirst({
     where: eq(sourceRequests.id, id),
@@ -134,7 +136,7 @@ export default async function RequestDetailPage({
 
               {/* Metadata Row */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16 }}>
-                <MetaItem icon={<User size={15} />} label="Requester" value={((req as any).requester_name || req.requester?.full_name) ?? '—'} />
+                <MetaItem icon={<User size={15} />} label="Requester" value={`${((req as any).requester_name || req.requester?.full_name) ?? '—'}${req.requester_designation ? ` (${req.requester_designation})` : ''}`} />
                 <MetaItem icon={<Building2 size={15} />} label="Target Department" value={req.department?.name ?? '—'} />
                 <MetaItem icon={<Clock size={15} />} label="Time" value={createdDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} />
                 {req.assigned_employee && (
@@ -205,7 +207,7 @@ export default async function RequestDetailPage({
 
             {/* Action Panels */}
             {pendingReviewForUser && <ReviewPanel reviewId={pendingReviewForUser.id} departmentName={pendingReviewForUser.department.name} />}
-            {canApprove && <ApprovalPanel request={req} userRole={profile.role} />}
+            {canApprove && <ApprovalPanel request={req} userRole={profile.role} allDepartments={allDepartments} />}
             {(canHodResubmit || canFinalHeadResubmit) && <ResubmitPanel request={req} />}
             {canAssign && <AssignmentPanel request={req} availableEmployees={allEmployees} />}
             {canResubmit && <ResubmitPanel request={req} />}

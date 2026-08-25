@@ -14,6 +14,7 @@ export const metadata: Metadata = { title: 'New Source Request' };
 export default async function NewRequestPage() {
   const session = await auth();
   if (!session?.user) redirect('/login');
+  const user = session.user as any;
   
   const allDepartments = await db.select().from(departments).orderBy(departments.name);
   const cookieStore = await cookies();
@@ -26,8 +27,6 @@ export default async function NewRequestPage() {
       <NewRequestForm 
         departmentId={activeDeptId} 
         departmentName={activeDept?.name || ''} 
-        allDepartments={allDepartments}
-        userRole={user.role}
       />
     </AppShell>
   );

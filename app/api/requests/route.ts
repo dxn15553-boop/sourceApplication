@@ -121,6 +121,7 @@ export async function POST(request: Request) {
       id: srcId,
       requester_id: user.id,
       requester_name: body.requester_name?.trim() ?? user.name ?? null,
+      requester_designation: body.requester_designation?.trim() ?? null,
       requester_department_id: user.departmentIds?.[0] ?? null,
       department_id: primaryDeptId,
       description: body.description.trim(),

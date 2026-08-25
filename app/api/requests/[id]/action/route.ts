@@ -57,7 +57,7 @@ export async function POST(
     if (!srcRequest) return Response.json({ error: 'Request not found' }, { status: 404 });
 
     const body = await request.json();
-    const { action, comment, assigned_employee_id, return_to } = body;
+    const { action, comment, assigned_employee_id, return_to, department_ids } = body;
 
     const transitionKey = `${action}:${user.role}`;
     let transition = TRANSITIONS[transitionKey];
@@ -76,12 +76,25 @@ export async function POST(
       if (srcRequest.status === 'Submitted' || srcRequest.status === 'Returned to HOD') {
         if (!isHomeHod) return Response.json({ error: 'Only the Home HOD can approve at this stage' }, { status: 403 });
         
-        if (srcRequest.department_id === srcRequest.requester_department_id) {
-          nextStatus = 'Final Head Review';
-          nextRole = 'final_head';
-        } else {
+        if (department_ids && department_ids.length > 0) {
+          const { requiredReviews } = await import('@/lib/db/schema');
+          await db.insert(requiredReviews).values(
+            department_ids.map((deptId: string) => ({
+              request_id: id,
+              department_id: deptId,
+              status: 'Pending' as const,
+            }))
+          );
           nextStatus = 'Under Required Review';
           nextRole = 'hod';
+        } else {
+          if (srcRequest.department_id === srcRequest.requester_department_id) {
+            nextStatus = 'Final Head Review';
+            nextRole = 'final_head';
+          } else {
+            nextStatus = 'Under Required Review';
+            nextRole = 'hod';
+          }
         }
       } else if (srcRequest.status === 'Under Required Review') {
         if (!isTargetHod) return Response.json({ error: 'Only the Target HOD can approve at this stage' }, { status: 403 });
@@ -147,7 +160,8 @@ export async function POST(
         const existing = await db.query.requiredReviews.findFirst({
           where: and(eq(requiredReviews.request_id, id), eq(requiredReviews.department_id, srcRequest.department_id))
         });
-        if (!existing) {
+        const inPayload = department_ids && department_ids.includes(srcRequest.department_id);
+        if (!existing && !inPayload) {
           await db.insert(requiredReviews).values({
             request_id: id,
             department_id: srcRequest.department_id, // Target department

@@ -65,6 +65,7 @@ export const sourceRequests = pgTable('source_requests', {
   requester_department_id: uuid('requester_department_id').references(() => departments.id),
   department_id: uuid('department_id').references(() => departments.id).notNull(),
   requester_name: text('requester_name'),
+  requester_designation: text('requester_designation'),
   description: text('description').notNull(),
   attachment_path: text('attachment_path'),
   attachment_name: text('attachment_name'),

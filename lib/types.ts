@@ -103,6 +103,8 @@ export interface SourceRequest {
   id: string; // SRC-YYYY-XXXX
   requester_id: string;
   requester?: Profile;
+  requester_name: string | null;
+  requester_designation: string | null;
   department_id: string;
   department?: Department;
   description: string;
@@ -131,6 +133,7 @@ export type CreateRequestPayload = {
   department_id?: string;
   department_ids?: string[];
   requester_name?: string;
+  requester_designation?: string;
   staff_requester_id?: string;
   description: string;
   attachment_path?: string;

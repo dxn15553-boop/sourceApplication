@@ -23,10 +23,9 @@ export default async function AdminEmployeePage() {
 
   const standardDepartments = [
     'Admin', 'Agro Food', 'Agronomy', 'Cosmetics & Toiletries', 'EHS', 
-    'Engineering', 'Environment Health and Safety', 'Finance', 'Ganoderma', 
-    'Hospitality', 'Human Resources', 'IT Department', 'IWH', 
-    'Information Technology', 'Inventory Warehouse', 'Kombucha', 
-    'Legal', 'Nutraceutical', 'QC', 'QA', 'Others'
+    'Engineering', 'Finance', 'Ganoderma', 
+    'Hospitality', 'Human Resources', 'IT', 'IWH', 
+    'Kombucha', 'Legal', 'Maintenance', 'Nutraceutical', 'QC', 'QA', 'Others'
   ];
 
   const employeeList = standardDepartments.map(deptName => {
