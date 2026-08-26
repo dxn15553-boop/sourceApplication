@@ -80,6 +80,11 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     }
 
     if (activeAction === 'approve' && userRole === 'hod') {
+      if (selectedDepts.length === 0 && !noneSelected) {
+        setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
+        return;
+      }
+
       // Find the latest review status for each department
       const latestReviews: Record<string, any> = {};
       ((request as any).required_reviews || []).forEach((r: any) => {
@@ -301,6 +306,10 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button className="btn btn-success btn-sm" onClick={() => {
+            if (userRole === 'hod' && selectedDepts.length === 0 && !noneSelected) {
+              setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
+              return;
+            }
             setActiveAction('approve');
             setComment('');
             setCommentError('');
