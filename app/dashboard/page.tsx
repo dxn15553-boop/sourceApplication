@@ -66,6 +66,9 @@ export default async function DashboardPage() {
         conditions.push(eq(sourceRequests.id, 'none'));
       }
       break;
+    case 'regional_coordinator':
+      conditions.push(eq(sourceRequests.current_assignee_role, 'regional_coordinator'));
+      break;
     case 'final_head':
       // Final head sees things where role is final_head, OR where status is Under Required Review and all reviews are approved
       // To simplify, we rely on the fact that if a request is Under Required Review and all are approved, it should be in their view.
