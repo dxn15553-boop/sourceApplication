@@ -227,13 +227,34 @@ export async function POST(
       updated_at: new Date(),
     };
     if (action === 'assign' && assigned_employee_id) {
-      updatePayload.assigned_employee_id = assigned_employee_id;
-
       const procurementDbUrl = process.env.PROCUREMENT_DATABASE_URL;
       if (procurementDbUrl) {
         try {
           const { neon } = await import('@neondatabase/serverless');
           const pSql = neon(procurementDbUrl);
+
+          // Find the email of the assigned employee in the procurement database
+          const empRows = await pSql`
+            SELECT email FROM "User" WHERE id = ${assigned_employee_id} LIMIT 1
+          `;
+
+          if (empRows.length > 0) {
+            const empEmail = empRows[0].email;
+            
+            // Map to local profile UUID using email
+            const { profiles } = await import('@/lib/db/schema');
+            const localProfile = await db.query.profiles.findFirst({
+              where: eq(profiles.email, empEmail),
+            });
+
+            if (localProfile) {
+              updatePayload.assigned_employee_id = localProfile.id;
+            } else {
+              console.warn(`Could not find local profile for email ${empEmail}`);
+            }
+          } else {
+            console.warn(`Could not find procurement user for ID ${assigned_employee_id}`);
+          }
 
           // 1. Get the department name of this request
           const deptName = (srcRequest as any).department?.name;
@@ -305,6 +326,8 @@ export async function POST(
         } catch (err) {
           console.error('Error sync assigning to procurement database:', err);
         }
+      } else {
+        updatePayload.assigned_employee_id = assigned_employee_id;
       }
     }
 
