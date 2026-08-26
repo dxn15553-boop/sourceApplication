@@ -77,15 +77,24 @@ export async function POST(
         comment: `Request returned due to ${review.department.name} rejection`,
       });
     } else {
-      // Check if all reviews are now approved
+      // Check if all reviews are now approved (only considering the latest review per department)
       const allReviews = await db.query.requiredReviews.findMany({
         where: eq(requiredReviews.request_id, review.request_id)
       });
       
-      const allApproved = allReviews.every((r: any) => 
+      const latestMap: Record<string, any> = {};
+      allReviews.forEach((r: any) => {
+        const existing = latestMap[r.department_id];
+        if (!existing || new Date(r.created_at) > new Date(existing.created_at)) {
+          latestMap[r.department_id] = r;
+        }
+      });
+      
+      const latestReviews = Object.values(latestMap);
+      const allApproved = latestReviews.every((r: any) => 
         (r.id === reviewId ? 'Approved' : r.status) === 'Approved'
       );
-
+ 
       if (allApproved) {
         await db.update(sourceRequests)
           .set({ 

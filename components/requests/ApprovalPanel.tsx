@@ -54,7 +54,6 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
   const [error, setError] = useState<string | null>(null);
 
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
-  const [noneSelected, setNoneSelected] = useState(false);
   const [deptValidationError, setDeptValidationError] = useState<string | null>(null);
 
   async function executeAction(action: ActionType) {
@@ -77,8 +76,27 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     }
 
     if (activeAction === 'approve' && userRole === 'hod') {
-      if (selectedDepts.length === 0 && !noneSelected) {
-        setDeptValidationError('Please select at least one permission requirement.');
+      // Find the latest review status for each department
+      const latestReviews: Record<string, any> = {};
+      ((request as any).required_reviews || []).forEach((r: any) => {
+        const existing = latestReviews[r.department_id];
+        if (!existing || new Date(r.created_at || 0) > new Date(existing.created_at || 0)) {
+          latestReviews[r.department_id] = r;
+        }
+      });
+
+      const rejectedDepts = Object.values(latestReviews).filter((r: any) => r.status === 'Rejected');
+      const rejectedDeptIds = rejectedDepts.map((r: any) => r.department_id);
+
+      // Verify if HOD has selected "Yes" for all previously rejected departments
+      const missingApprovals = rejectedDeptIds.filter(id => !selectedDepts.includes(id));
+      if (missingApprovals.length > 0) {
+        const missingNames = missingApprovals.map(id => {
+          const dept = allDepartments?.find(d => d.id === id);
+          return dept ? dept.name : 'Unknown';
+        }).join(', ');
+        
+        setDeptValidationError(`Cannot forward. You must select 'Yes' for the department(s) that previously returned/rejected the request: ${missingNames}.`);
         return;
       }
     }
@@ -88,7 +106,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     try {
       const payload: any = { action, comment: comment.trim() || undefined, return_to: returnTo || undefined };
       if (userRole === 'hod') {
-        payload.department_ids = noneSelected ? [] : selectedDepts;
+        payload.department_ids = selectedDepts;
       }
 
       const res = await fetch(`/api/requests/${request.id}/action`, {
@@ -126,96 +144,84 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           </div>
         )}
 
-        {/* Permission Required From checklist (visible directly on the page for HODs) */}
+        {/* Permission Required From checklist (Yes/No buttons) */}
         {userRole === 'hod' && allDepartments && (
-          <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>
               Permission Required From <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
 
-            {/* None / N/A option */}
-            <label style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px', 
-              fontSize: '13px', 
-              color: 'var(--text-primary)',
-              fontWeight: 600,
-              cursor: 'pointer',
-              userSelect: 'none',
-              padding: '8px 12px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border)',
-              borderRadius: '6px',
-              maxWidth: '340px'
-            }}>
-              <input
-                type="checkbox"
-                checked={noneSelected}
-                onChange={(e) => {
-                  setNoneSelected(e.target.checked);
-                  if (e.target.checked) {
-                    setSelectedDepts([]);
-                  }
-                  setDeptValidationError(null);
-                }}
-                disabled={loading}
-                style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--accent)' }}
-              />
-              <span>None / N/A (No additional permissions needed)</span>
-            </label>
-
-            {/* Department checkboxes */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-              gap: '10px',
-              background: 'rgba(255, 255, 255, 0.1)',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+              gap: '12px',
+              background: 'rgba(255, 255, 255, 0.03)',
               border: '1px solid var(--border)',
               padding: '16px',
               borderRadius: '12px',
-              opacity: noneSelected ? 0.6 : 1,
-              pointerEvents: noneSelected ? 'none' : 'auto'
             }}>
               {allDepartments
                 .filter(d => ['IT', 'Maintenance', 'QA', 'EHS', 'Admin', 'IWH', 'QC', 'Engineering', 'Legal', 'Others'].includes(d.name) && d.id !== request.department_id)
                 .map(dept => {
-                  const isChecked = selectedDepts.includes(dept.id);
+                  const isYes = selectedDepts.includes(dept.id);
                   return (
-                    <label 
+                    <div 
                       key={dept.id} 
                       style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
-                        gap: '8px', 
-                        fontSize: '13px', 
-                        color: noneSelected ? 'var(--text-muted)' : 'var(--text-secondary)',
-                        cursor: noneSelected ? 'not-allowed' : 'pointer',
-                        userSelect: 'none'
+                        justifyContent: 'space-between',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1px solid var(--border)',
+                        background: isYes ? 'var(--accent-glow)' : 'var(--bg-card)',
+                        transition: 'all 0.2s ease'
                       }}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        disabled={loading || noneSelected}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedDepts([...selectedDepts, dept.id]);
-                            setNoneSelected(false);
-                          } else {
-                            setSelectedDepts(selectedDepts.filter(id => id !== dept.id));
-                          }
-                          setDeptValidationError(null);
-                        }}
-                        style={{
-                          width: '15px',
-                          height: '15px',
-                          cursor: noneSelected ? 'not-allowed' : 'pointer',
-                          accentColor: 'var(--accent)'
-                        }}
-                      />
-                      <span>{dept.name}</span>
-                    </label>
+                      <span style={{ fontSize: 13.5, fontWeight: 600, color: isYes ? 'var(--accent-hover)' : 'var(--text-primary)' }}>
+                        {dept.name}
+                      </span>
+                      <div style={{ display: 'flex', gap: 2, background: 'rgba(255, 255, 255, 0.05)', padding: 2, borderRadius: 6, border: '1px solid var(--border)' }}>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => {
+                            if (!isYes) {
+                              setSelectedDepts([...selectedDepts, dept.id]);
+                            }
+                            setDeptValidationError(null);
+                          }}
+                          style={{
+                            padding: '3px 10px', fontSize: 11, fontWeight: 700, borderRadius: 4, cursor: 'pointer', border: 'none',
+                            background: isYes ? 'var(--success)' : 'transparent',
+                            color: isYes ? '#fff' : 'var(--text-muted)',
+                            transition: 'all 0.15s ease',
+                            boxShadow: isYes ? '0 1px 4px rgba(16,185,129,0.3)' : 'none'
+                          }}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          disabled={loading}
+                          onClick={() => {
+                            if (isYes) {
+                              setSelectedDepts(selectedDepts.filter(id => id !== dept.id));
+                            }
+                            setDeptValidationError(null);
+                          }}
+                          style={{
+                            padding: '3px 10px', fontSize: 11, fontWeight: 700, borderRadius: 4, cursor: 'pointer', border: 'none',
+                            background: !isYes ? 'var(--danger)' : 'transparent',
+                            color: !isYes ? '#fff' : 'var(--text-muted)',
+                            transition: 'all 0.15s ease',
+                            boxShadow: !isYes ? '0 1px 4px rgba(239,68,68,0.3)' : 'none'
+                          }}
+                        >
+                          No
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
             </div>
@@ -225,17 +231,13 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               </p>
             )}
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, marginBottom: 0 }}>
-              HOD of each selected department must approve this request before it can proceed to the Regional Head.
+              HOD of each selected department (Yes) must approve this request before it can proceed to the Regional Coordinator.
             </p>
           </div>
         )}
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button className="btn btn-success btn-sm" onClick={() => {
-            if (userRole === 'hod' && selectedDepts.length === 0 && !noneSelected) {
-              setDeptValidationError('Please select at least one permission requirement.');
-              return;
-            }
             setActiveAction('approve');
             setComment('');
             setCommentError('');
@@ -258,7 +260,6 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           setActiveAction(null); 
           setError(null); 
           setSelectedDepts([]);
-          setNoneSelected(false);
           setDeptValidationError(null);
         }}
         title={activeAction ? ACTION_CONFIG[activeAction].title : ''}

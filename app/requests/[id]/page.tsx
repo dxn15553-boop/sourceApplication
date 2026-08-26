@@ -48,7 +48,7 @@ export default async function RequestDetailPage({
         orderBy: (actions: any, { asc }: any) => [asc(actions.created_at)],
       },
       required_reviews: {
-        columns: { id: true, department_id: true, status: true, remarks: true },
+        columns: { id: true, department_id: true, status: true, remarks: true, created_at: true },
         with: {
           department: { columns: { name: true } },
           reviewer: { columns: { full_name: true } }
@@ -74,7 +74,7 @@ export default async function RequestDetailPage({
   const allReviewsApproved = req.status === 'Under Required Review' && (req.required_reviews || []).every((r: any) => r.status === 'Approved');
 
   const canApprove =
-    (profile.role === 'hod' && isHomeHod && (req.status === 'Submitted' || req.status === 'Target Dept Approved' || req.status === 'Pending Home HOD Confirmation')) ||
+    (profile.role === 'hod' && isHomeHod && (req.status === 'Submitted' || req.status === 'Target Dept Approved' || req.status === 'Pending Home HOD Confirmation' || req.status === 'Returned to HOD')) ||
     (profile.role === 'regional_coordinator' && (req.status === 'Regional Coordinator Review' || req.status === 'HOD Approved')) ||
     (profile.role === 'final_head' && (req.status === 'Final Head Review')) ||
     (profile.role === 'procurement_manager' && req.status === 'Final Head Approved');
@@ -90,7 +90,7 @@ export default async function RequestDetailPage({
     isRequester &&
     ['HOD Returned', 'Final Head Returned', 'Procurement Returned', 'Returned to Requester'].includes(req.status);
     
-  const canHodResubmit = profile.role === 'hod' && isHomeHod && req.status === 'Returned to HOD';
+  const canHodResubmit = false; // HOD uses ApprovalPanel
   const canFinalHeadResubmit = profile.role === 'final_head' && req.status === 'Returned to Regional Head';
   const canCoordinatorResubmit = profile.role === 'regional_coordinator' && req.status === 'Returned to Regional Coordinator';
 
@@ -154,24 +154,35 @@ export default async function RequestDetailPage({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {req.required_reviews.map((r: any) => (
                     <div key={r.id} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 10,
+                      display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 14px', borderRadius: 10,
                       background: r.status === 'Approved' ? 'var(--success-glow)' : r.status === 'Rejected' ? 'var(--danger-glow)' : 'rgba(245, 158, 11, 0.05)',
                       border: `1px solid ${r.status === 'Approved' ? 'rgba(16,185,129,0.2)' : r.status === 'Rejected' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{r.department?.name || 'Department'}</span>
-                        <span style={{
-                          padding: '3px 8px', borderRadius: 99, fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                          background: r.status === 'Approved' ? 'rgba(16,185,129,0.15)' : r.status === 'Rejected' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
-                          color: r.status === 'Approved' ? 'var(--success)' : r.status === 'Rejected' ? 'var(--danger)' : '#d97706'
-                        }}>
-                          {r.status}
-                        </span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{r.department?.name || 'Department'}</span>
+                          <span style={{
+                            padding: '3px 8px', borderRadius: 99, fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+                            background: r.status === 'Approved' ? 'rgba(16,185,129,0.15)' : r.status === 'Rejected' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+                            color: r.status === 'Approved' ? 'var(--success)' : r.status === 'Rejected' ? 'var(--danger)' : '#d97706'
+                          }}>
+                            {r.status}
+                          </span>
+                        </div>
+                        {r.reviewer && (
+                          <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                            Reviewed by: <strong>{r.reviewer.full_name}</strong>
+                          </span>
+                        )}
                       </div>
-                      {r.reviewer && (
-                        <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                          Reviewed by: <strong>{r.reviewer.full_name}</strong>
-                        </span>
+                      {r.status === 'Rejected' && r.remarks && (
+                        <div style={{ 
+                          fontSize: 12, color: 'var(--text-secondary)', padding: '8px 12px', 
+                          background: 'rgba(239,68,68,0.04)', borderRadius: 6, 
+                          borderLeft: '3px solid var(--danger)', marginTop: 4 
+                        }}>
+                          <strong>Return Reason:</strong> &ldquo;{r.remarks}&rdquo;
+                        </div>
                       )}
                     </div>
                   ))}
