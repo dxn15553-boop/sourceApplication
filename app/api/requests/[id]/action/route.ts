@@ -235,22 +235,40 @@ export async function POST(
 
           // Find the email of the assigned employee in the procurement database
           const empRows = await pSql`
-            SELECT email FROM "User" WHERE id = ${assigned_employee_id} LIMIT 1
+            SELECT name, email FROM "User" WHERE id = ${assigned_employee_id} LIMIT 1
           `;
 
           if (empRows.length > 0) {
             const empEmail = empRows[0].email;
+            const empName = empRows[0].name;
             
             // Map to local profile UUID using email
             const { profiles } = await import('@/lib/db/schema');
-            const localProfile = await db.query.profiles.findFirst({
+            let localProfile = await db.query.profiles.findFirst({
               where: eq(profiles.email, empEmail),
             });
 
+            if (!localProfile) {
+              // Self-healing: create the local profile on-the-fly!
+              const bcrypt = await import('bcryptjs');
+              const randomPassword = Math.random().toString(36).substring(2, 10);
+              const hash = await bcrypt.hash(randomPassword, 10);
+              
+              const [newProfile] = await db.insert(profiles).values({
+                id: crypto.randomUUID(),
+                email: empEmail,
+                password_hash: hash,
+                plaintext_password: randomPassword,
+                full_name: empName,
+                role: 'employee',
+              }).returning();
+              
+              localProfile = newProfile;
+              console.log(`Self-healed: created local profile for procurement handler ${empName} (${empEmail})`);
+            }
+
             if (localProfile) {
               updatePayload.assigned_employee_id = localProfile.id;
-            } else {
-              console.warn(`Could not find local profile for email ${empEmail}`);
             }
           } else {
             console.warn(`Could not find procurement user for ID ${assigned_employee_id}`);
