@@ -80,33 +80,36 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     }
 
     if (activeAction === 'approve' && userRole === 'hod') {
-      if (selectedDepts.length === 0 && !noneSelected) {
-        setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
-        return;
-      }
-
-      // Find the latest review status for each department
-      const latestReviews: Record<string, any> = {};
-      ((request as any).required_reviews || []).forEach((r: any) => {
-        const existing = latestReviews[r.department_id];
-        if (!existing || new Date(r.created_at || 0) > new Date(existing.created_at || 0)) {
-          latestReviews[r.department_id] = r;
+      const isInitialHodApproval = request.status === 'Submitted' || request.status === 'Returned to HOD';
+      if (isInitialHodApproval) {
+        if (selectedDepts.length === 0 && !noneSelected) {
+          setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
+          return;
         }
-      });
 
-      const rejectedDepts = Object.values(latestReviews).filter((r: any) => r.status === 'Rejected');
-      const rejectedDeptIds = rejectedDepts.map((r: any) => r.department_id);
+        // Find the latest review status for each department
+        const latestReviews: Record<string, any> = {};
+        ((request as any).required_reviews || []).forEach((r: any) => {
+          const existing = latestReviews[r.department_id];
+          if (!existing || new Date(r.created_at || 0) > new Date(existing.created_at || 0)) {
+            latestReviews[r.department_id] = r;
+          }
+        });
 
-      // Verify if HOD has selected "Yes" for all previously rejected departments
-      const missingApprovals = rejectedDeptIds.filter(id => !selectedDepts.includes(id));
-      if (missingApprovals.length > 0) {
-        const missingNames = missingApprovals.map(id => {
-          const dept = allDepartments?.find(d => d.id === id);
-          return dept ? dept.name : 'Unknown';
-        }).join(', ');
-        
-        setDeptValidationError(`Cannot forward. You must select 'Yes' for the department(s) that previously returned/rejected the request: ${missingNames}.`);
-        return;
+        const rejectedDepts = Object.values(latestReviews).filter((r: any) => r.status === 'Rejected');
+        const rejectedDeptIds = rejectedDepts.map((r: any) => r.department_id);
+
+        // Verify if HOD has selected "Yes" for all previously rejected departments
+        const missingApprovals = rejectedDeptIds.filter(id => !selectedDepts.includes(id));
+        if (missingApprovals.length > 0) {
+          const missingNames = missingApprovals.map(id => {
+            const dept = allDepartments?.find(d => d.id === id);
+            return dept ? dept.name : 'Unknown';
+          }).join(', ');
+          
+          setDeptValidationError(`Cannot forward. You must select 'Yes' for the department(s) that previously returned/rejected the request: ${missingNames}.`);
+          return;
+        }
       }
     }
 
@@ -154,7 +157,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
         )}
 
         {/* Permission Required From checklist (Yes/No buttons) */}
-        {userRole === 'hod' && allDepartments && (
+        {userRole === 'hod' && (request.status === 'Submitted' || request.status === 'Returned to HOD') && allDepartments && (
           <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>
               Permission Required From <span style={{ color: 'var(--danger)' }}>*</span>
@@ -306,7 +309,8 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button className="btn btn-success btn-sm" onClick={() => {
-            if (userRole === 'hod' && selectedDepts.length === 0 && !noneSelected) {
+            const isInitialHodApproval = request.status === 'Submitted' || request.status === 'Returned to HOD';
+            if (isInitialHodApproval && userRole === 'hod' && selectedDepts.length === 0 && !noneSelected) {
               setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
               return;
             }
