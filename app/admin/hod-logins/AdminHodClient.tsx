@@ -32,6 +32,7 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
   const [showCreate, setShowCreate] = useState(false);
   const [role, setRole] = useState<string>('hod');
   const [departmentName, setDepartmentName] = useState('');
+  const [customDepartmentName, setCustomDepartmentName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
@@ -47,6 +48,9 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
   const availableDepartments = hodList.filter(h => !h.hodEmail).map(h => h.departmentName);
+  if (!availableDepartments.includes('Others')) {
+    availableDepartments.push('Others');
+  }
 
   function togglePasswordVisibility(key: string) {
     setVisiblePasswords(prev => ({
@@ -58,6 +62,7 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
   function resetForm() {
     setRole('hod');
     setDepartmentName(availableDepartments[0] || '');
+    setCustomDepartmentName('');
     setEmail('');
     setPassword('');
     setNewPassword('');
@@ -68,7 +73,12 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
   async function handleCreateSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!departmentName.trim() || !email || !password) { setError('All fields are required.'); return; }
+    const finalDeptName = role === 'hod' 
+      ? (departmentName === 'Others' ? customDepartmentName : departmentName) 
+      : undefined;
+
+    if (role === 'hod' && !finalDeptName?.trim()) { setError('Department name is required.'); return; }
+    if (!email || !password) { setError('All fields are required.'); return; }
 
     setSaving(true);
     try {
@@ -76,7 +86,7 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          departmentName: role === 'hod' ? departmentName : undefined, 
+          departmentName: finalDeptName, 
           email, password, 
           role 
         }),
@@ -363,6 +373,17 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
                     ))}
                   </select>
                 </div>
+              )}
+
+              {role === 'hod' && departmentName === 'Others' && (
+                <Input 
+                  id="customDepartment"
+                  label="Custom Department / Head Name *"
+                  required
+                  placeholder="e.g. Regional Head or Safety Officer"
+                  value={customDepartmentName}
+                  onChange={e => setCustomDepartmentName(e.target.value)}
+                />
               )}
 
               <Input 

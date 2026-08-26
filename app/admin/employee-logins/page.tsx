@@ -28,7 +28,14 @@ export default async function AdminEmployeePage() {
     'Kombucha', 'Legal', 'Maintenance', 'Nutraceutical', 'QC', 'QA', 'Others'
   ];
 
-  const employeeList = standardDepartments.map(deptName => {
+  // Find any custom departments from the database that are not in standard list
+  const customDepts = allDepts
+    .filter(d => !standardDepartments.some(s => s.toLowerCase() === d.name.toLowerCase()))
+    .map(d => d.name);
+
+  const combinedDepts = [...standardDepartments, ...customDepts];
+
+  const employeeList = combinedDepts.map(deptName => {
     const dbDept = allDepts.find(d => d.name.toLowerCase() === deptName.toLowerCase());
     
     // Find the employee profile (user role) if it exists

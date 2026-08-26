@@ -38,7 +38,14 @@ export default async function AdminHodPage() {
     'Kombucha', 'Legal', 'Maintenance', 'Nutraceutical', 'QC', 'QA', 'Others'
   ];
 
-  const hodList = standardDepartments.map(deptName => {
+  // Find any custom departments from the database that are not in standard list
+  const customDepts = allDepts
+    .filter(d => !standardDepartments.some(s => s.toLowerCase() === d.name.toLowerCase()))
+    .map(d => d.name);
+
+  const combinedDepts = [...standardDepartments, ...customDepts];
+
+  const hodList = combinedDepts.map(deptName => {
     // Find if the department exists in the DB
     const dbDept = allDepts.find(d => d.name.toLowerCase() === deptName.toLowerCase());
     
