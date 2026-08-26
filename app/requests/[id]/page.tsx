@@ -101,11 +101,34 @@ export default async function RequestDetailPage({
 
   let allEmployees: any[] = [];
   if (canAssign) {
-    allEmployees = await db.query.profiles.findMany({
-      where: eq(profiles.role, 'employee'),
-      with: { profileDepartments: { with: { department: { columns: { name: true } } } } },
-      orderBy: (p: any, { asc }: any) => [asc(p.full_name)],
-    });
+    const procurementDbUrl = process.env.PROCUREMENT_DATABASE_URL;
+    if (procurementDbUrl) {
+      try {
+        const { neon } = await import('@neondatabase/serverless');
+        const pSql = neon(procurementDbUrl);
+        const rows = await pSql`
+          SELECT u.id, u.name as "full_name", u.email, d.name as "department_name"
+          FROM "User" u
+          LEFT JOIN "Department" d ON u."departmentId" = d.id
+          WHERE u.role = 'TEAM' AND u."isActive" = true
+          ORDER BY u.name
+        `;
+        allEmployees = rows.map((r: any) => ({
+          id: r.id,
+          full_name: r.full_name,
+          email: r.email,
+          profileDepartments: r.department_name ? [{ department: { name: r.department_name } }] : []
+        }));
+      } catch (err) {
+        console.error('Error fetching procurement employees:', err);
+      }
+    } else {
+      allEmployees = await db.query.profiles.findMany({
+        where: eq(profiles.role, 'employee'),
+        with: { profileDepartments: { with: { department: { columns: { name: true } } } } },
+        orderBy: (p: any, { asc }: any) => [asc(p.full_name)],
+      });
+    }
   }
 
   return (

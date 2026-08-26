@@ -67,7 +67,7 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
         body: JSON.stringify({ 
           departmentName, 
           email, password, 
-          role: 'user' 
+          role: 'employee' 
         }),
       });
       const json = await res.json();

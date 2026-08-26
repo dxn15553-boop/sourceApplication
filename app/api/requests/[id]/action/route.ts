@@ -56,6 +56,7 @@ export async function POST(
 
     const srcRequest = await db.query.sourceRequests.findFirst({
       where: eq(sourceRequests.id, id),
+      with: { department: { columns: { name: true } } }
     });
 
     if (!srcRequest) return Response.json({ error: 'Request not found' }, { status: 404 });
@@ -227,6 +228,84 @@ export async function POST(
     };
     if (action === 'assign' && assigned_employee_id) {
       updatePayload.assigned_employee_id = assigned_employee_id;
+
+      const procurementDbUrl = process.env.PROCUREMENT_DATABASE_URL;
+      if (procurementDbUrl) {
+        try {
+          const { neon } = await import('@neondatabase/serverless');
+          const pSql = neon(procurementDbUrl);
+
+          // 1. Get the department name of this request
+          const deptName = (srcRequest as any).department?.name;
+          let procurementDeptId = null;
+
+          if (deptName) {
+            // Find matching department in procurement database
+            const deptRows = await pSql`
+              SELECT id FROM "Department" 
+              WHERE name ILIKE ${deptName.trim()} LIMIT 1
+            `;
+            if (deptRows.length > 0) {
+              procurementDeptId = deptRows[0].id;
+            } else {
+              // Create it if it doesn't exist
+              const newDeptId = crypto.randomUUID();
+              await pSql`
+                INSERT INTO "Department" (id, name, code, "isActive", "createdAt", "updatedAt")
+                VALUES (${newDeptId}, ${deptName.trim()}, ${deptName.trim().toUpperCase().substring(0, 6)}, true, NOW(), NOW())
+              `;
+              procurementDeptId = newDeptId;
+            }
+          }
+
+          // 2. Find a manager in the procurement database for createdById
+          const managerRows = await pSql`
+            SELECT id FROM "User" 
+            WHERE role = 'MANAGER' LIMIT 1
+          `;
+          const createdById = managerRows.length > 0 ? managerRows[0].id : null;
+
+          if (procurementDeptId && createdById) {
+            // 3. Check if ProcurementRequest already exists
+            const existingRows = await pSql`
+              SELECT id FROM "ProcurementRequest" 
+              WHERE "sourceNo" = ${srcRequest.id} LIMIT 1
+            `;
+
+            if (existingRows.length > 0) {
+              // Update existing request
+              await pSql`
+                UPDATE "ProcurementRequest"
+                SET "handlerId" = ${assigned_employee_id}, "updatedAt" = NOW()
+                WHERE "sourceNo" = ${srcRequest.id}
+              `;
+            } else {
+              // Insert new request
+              await pSql`
+                INSERT INTO "ProcurementRequest" (
+                  id, "sourceNo", "sourceDate", "sourceDescription", 
+                  "departmentId", "handlerId", "createdById", "createdAt", "updatedAt",
+                  "csStatus", "prStatus", "poStatus", "paymentStatus", "currentStage", "slaStatus"
+                ) VALUES (
+                  ${crypto.randomUUID()}, 
+                  ${srcRequest.id}, 
+                  ${srcRequest.created_at}, 
+                  ${srcRequest.description}, 
+                  ${procurementDeptId}, 
+                  ${assigned_employee_id}, 
+                  ${createdById}, 
+                  NOW(), NOW(),
+                  'PENDING', 'PENDING', 'PENDING', 'PENDING', 'CS', 'ON_TRACK'
+                )
+              `;
+            }
+          } else {
+            console.error('Could not find department or manager in procurement database', { procurementDeptId, createdById });
+          }
+        } catch (err) {
+          console.error('Error sync assigning to procurement database:', err);
+        }
+      }
     }
 
     await db.update(sourceRequests).set(updatePayload).where(eq(sourceRequests.id, id));
