@@ -19,7 +19,7 @@ export default async function DashboardPage() {
   const user = session.user as any;
 
   if (user.role === 'admin') {
-    redirect('/admin/departments');
+    redirect('/admin/hod-logins');
   }
 
   const activeDepartmentId = user.departmentIds?.[0] || null;

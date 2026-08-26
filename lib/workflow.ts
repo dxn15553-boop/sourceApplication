@@ -6,17 +6,30 @@ import type { Role, WorkflowStatus, WorkflowTransition, WorkflowTrigger } from '
 
 export const WORKFLOW_TRANSITIONS: WorkflowTransition[] = [
   // User submits a new or returned request
-  { from: 'Submitted',            action: 'approve',  to: 'HOD Approved',           next_assignee_role: 'final_head',           requires_comment: false },
+  { from: 'Submitted',            action: 'approve',  to: 'HOD Approved',           next_assignee_role: 'regional_coordinator',           requires_comment: false },
   { from: 'Submitted',            action: 'reject',   to: 'HOD Rejected',            next_assignee_role: null,                   requires_comment: true  },
   { from: 'Submitted',            action: 'return',   to: 'HOD Returned',            next_assignee_role: 'user',                 requires_comment: true  },
 
   // HOD Returned → User resubmits
   { from: 'HOD Returned',         action: 'resubmit', to: 'Submitted',               next_assignee_role: 'hod',                  requires_comment: false },
 
+  // Regional Coordinator review
+  { from: 'Regional Coordinator Review', action: 'approve', to: 'Final Head Review',   next_assignee_role: 'final_head',           requires_comment: false },
+  { from: 'Regional Coordinator Review', action: 'reject',  to: 'HOD Rejected',         next_assignee_role: null,                   requires_comment: true  },
+  { from: 'Regional Coordinator Review', action: 'return',  to: 'Returned to HOD',      next_assignee_role: 'hod',                  requires_comment: true  },
+
+  { from: 'HOD Approved',               action: 'approve',  to: 'Final Head Review',   next_assignee_role: 'final_head',           requires_comment: false },
+  { from: 'HOD Approved',               action: 'reject',   to: 'HOD Rejected',         next_assignee_role: null,                   requires_comment: true  },
+  { from: 'HOD Approved',               action: 'return',   to: 'Returned to HOD',      next_assignee_role: 'hod',                  requires_comment: true  },
+
+  // Returned to Regional Coordinator -> Coordinator resubmits
+  { from: 'Returned to Regional Coordinator', action: 'resubmit', to: 'Regional Coordinator Review', next_assignee_role: 'regional_coordinator', requires_comment: false },
+  { from: 'Returned to Regional Coordinator', action: 'return',   to: 'Returned to HOD',              next_assignee_role: 'hod',                  requires_comment: true },
+
   // Final Head review
-  { from: 'HOD Approved',         action: 'approve',  to: 'Final Head Approved',     next_assignee_role: 'procurement_manager',  requires_comment: false },
-  { from: 'HOD Approved',         action: 'reject',   to: 'Final Head Rejected',     next_assignee_role: null,                   requires_comment: true  },
-  { from: 'HOD Approved',         action: 'return',   to: 'Final Head Returned',     next_assignee_role: 'user',                 requires_comment: true  },
+  { from: 'Final Head Review',    action: 'approve',  to: 'Final Head Approved',     next_assignee_role: 'procurement_manager',  requires_comment: false },
+  { from: 'Final Head Review',    action: 'reject',   to: 'Final Head Rejected',     next_assignee_role: null,                   requires_comment: true  },
+  { from: 'Final Head Review',    action: 'return',   to: 'Returned to Regional Coordinator', next_assignee_role: 'regional_coordinator', requires_comment: true  },
 
   // Final Head Returned -> User resubmits (Deprecated in favor of Returned to Requester)
   { from: 'Final Head Returned',  action: 'resubmit', to: 'Submitted',               next_assignee_role: 'hod',                  requires_comment: false },
@@ -81,8 +94,17 @@ export function getAvailableActions(
       }
       break;
 
+    case 'regional_coordinator':
+      if (status === 'Regional Coordinator Review' || status === 'HOD Approved') {
+        actions.push('approve', 'reject', 'return');
+      }
+      if (status === 'Returned to Regional Coordinator') {
+        actions.push('resubmit', 'return');
+      }
+      break;
+
     case 'final_head':
-      if (status === 'HOD Approved') {
+      if (status === 'Final Head Review') {
         actions.push('approve', 'reject', 'return');
       }
       if (status === 'Returned to Regional Head') {
@@ -176,6 +198,8 @@ export const STATUS_CONFIG: Record<WorkflowStatus, {
   'Returned to Regional Head': { label: 'Returned to Regional Head', color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
   'Returned to HOD':           { label: 'Returned to HOD',           color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
   'Returned to Requester':     { label: 'Returned to Requester',     color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
+  'Regional Coordinator Review': { label: 'Regional Coordinator Review', color: 'text-blue-300', bg: 'bg-blue-500/10', border: 'border-blue-500/30', dot: 'bg-blue-400' },
+  'Returned to Regional Coordinator': { label: 'Returned to Regional Coordinator', color: 'text-orange-300', bg: 'bg-orange-500/10', border: 'border-orange-500/30', dot: 'bg-orange-400' },
 };
 
 // ============================================================
@@ -190,6 +214,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   section_manager:     'Section Manager',
   employee:            'Employee',
   admin:               'System Admin',
+  regional_coordinator: 'Regional Coordinator',
 };
 
 // ============================================================

@@ -75,6 +75,7 @@ export default async function RequestDetailPage({
 
   const canApprove =
     (profile.role === 'hod' && isHomeHod && (req.status === 'Submitted' || req.status === 'Target Dept Approved' || req.status === 'Pending Home HOD Confirmation')) ||
+    (profile.role === 'regional_coordinator' && (req.status === 'Regional Coordinator Review' || req.status === 'HOD Approved')) ||
     (profile.role === 'final_head' && (req.status === 'Final Head Review')) ||
     (profile.role === 'procurement_manager' && req.status === 'Final Head Approved');
 
@@ -91,6 +92,7 @@ export default async function RequestDetailPage({
     
   const canHodResubmit = profile.role === 'hod' && isHomeHod && req.status === 'Returned to HOD';
   const canFinalHeadResubmit = profile.role === 'final_head' && req.status === 'Returned to Regional Head';
+  const canCoordinatorResubmit = profile.role === 'regional_coordinator' && req.status === 'Returned to Regional Coordinator';
 
   // Cloudinary returns a secure_url which we stored in attachment_path
   let attachmentUrl: string | null = req.attachment_path ?? null;
@@ -208,7 +210,7 @@ export default async function RequestDetailPage({
             {/* Action Panels */}
             {pendingReviewForUser && <ReviewPanel reviewId={pendingReviewForUser.id} departmentName={pendingReviewForUser.department.name} />}
             {canApprove && <ApprovalPanel request={req} userRole={profile.role} allDepartments={allDepartments} />}
-            {(canHodResubmit || canFinalHeadResubmit) && <ResubmitPanel request={req} />}
+            {(canHodResubmit || canFinalHeadResubmit || canCoordinatorResubmit) && <ResubmitPanel request={req} />}
             {canAssign && <AssignmentPanel request={req} availableEmployees={allEmployees} />}
             {canResubmit && <ResubmitPanel request={req} />}
           </div>

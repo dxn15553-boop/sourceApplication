@@ -13,15 +13,19 @@ const TRANSITIONS: Record<string, {
 }> = {
   'reject:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD', 'Pending Home HOD Confirmation'], nextStatus: 'HOD Rejected', nextRole: null, requiresComment: true },
   'return:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD', 'Pending Home HOD Confirmation'], nextStatus: 'Returned to Requester', nextRole: 'user', requiresComment: true },
-  'approve:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['HOD Approved', 'Final Head Review', 'Under Required Review', 'Returned to Regional Head'], nextStatus: 'Final Head Approved', nextRole: 'procurement_manager', requiresComment: false },
-  'reject:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['HOD Approved', 'Final Head Review', 'Under Required Review', 'Returned to Regional Head'], nextStatus: 'Final Head Rejected', nextRole: null, requiresComment: true },
-  'return:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['HOD Approved', 'Final Head Review', 'Under Required Review', 'Returned to Regional Head'], nextStatus: 'Returned to HOD', nextRole: 'hod', requiresComment: true },
+  'approve:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved'], nextStatus: 'Final Head Review', nextRole: 'final_head', requiresComment: false },
+  'reject:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved'], nextStatus: 'HOD Rejected', nextRole: null, requiresComment: true },
+  'return:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved'], nextStatus: 'Returned to HOD', nextRole: 'hod', requiresComment: true },
+  'resubmit:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Returned to Regional Coordinator'], nextStatus: 'Regional Coordinator Review', nextRole: 'regional_coordinator', requiresComment: false },
+  'approve:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['Final Head Review', 'Returned to Regional Head'], nextStatus: 'Final Head Approved', nextRole: 'procurement_manager', requiresComment: false },
+  'reject:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['Final Head Review', 'Returned to Regional Head'], nextStatus: 'Final Head Rejected', nextRole: null, requiresComment: true },
+  'return:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['Final Head Review', 'Returned to Regional Head'], nextStatus: 'Returned to Regional Coordinator', nextRole: 'regional_coordinator', requiresComment: true },
   'approve:procurement_manager': { allowedRoles: ['procurement_manager'], allowedStatuses: ['Final Head Approved'], nextStatus: 'Procurement Approved', nextRole: 'section_manager', requiresComment: false },
   'reject:procurement_manager': { allowedRoles: ['procurement_manager'], allowedStatuses: ['Final Head Approved'], nextStatus: 'Procurement Rejected', nextRole: null, requiresComment: true },
   'return:procurement_manager': { allowedRoles: ['procurement_manager'], allowedStatuses: ['Final Head Approved'], nextStatus: 'Returned to Regional Head', nextRole: 'final_head', requiresComment: true },
   'assign:section_manager': { allowedRoles: ['section_manager'], allowedStatuses: ['Procurement Approved'], nextStatus: 'Assigned', nextRole: 'employee', requiresComment: false },
   'complete:employee': { allowedRoles: ['employee'], allowedStatuses: ['Assigned'], nextStatus: 'Completed', nextRole: null, requiresComment: false },
-  'resubmit:hod': { allowedRoles: ['hod'], allowedStatuses: ['Returned to HOD'], nextStatus: 'HOD Approved', nextRole: 'final_head', requiresComment: false },
+  'resubmit:hod': { allowedRoles: ['hod'], allowedStatuses: ['Returned to HOD'], nextStatus: 'HOD Approved', nextRole: 'regional_coordinator', requiresComment: false },
   'resubmit:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['Returned to Regional Head'], nextStatus: 'Final Head Approved', nextRole: 'procurement_manager', requiresComment: false },
 };
 
@@ -118,8 +122,8 @@ export async function POST(
           nextRole = 'hod';
         } else {
           if (srcRequest.department_id === srcRequest.requester_department_id) {
-            nextStatus = 'Final Head Review';
-            nextRole = 'final_head';
+            nextStatus = 'Regional Coordinator Review';
+            nextRole = 'regional_coordinator';
           } else {
             nextStatus = 'Under Required Review';
             nextRole = 'hod';
@@ -139,8 +143,8 @@ export async function POST(
           
       } else if (srcRequest.status === 'Pending Home HOD Confirmation' || srcRequest.status === 'Target Dept Approved') {
         if (!isHomeHod) return Response.json({ error: 'Only the Home HOD can approve at this stage' }, { status: 403 });
-        nextStatus = 'Final Head Review';
-        nextRole = 'final_head';
+        nextStatus = 'Regional Coordinator Review';
+        nextRole = 'regional_coordinator';
       } else {
         return Response.json({ error: `Action 'approve' not valid in status '${srcRequest.status}'` }, { status: 400 });
       }
@@ -210,6 +214,9 @@ export async function POST(
       } else if (return_to === 'final_head') {
         nextStatus = 'Returned to Regional Head';
         nextRole = 'final_head';
+      } else if (return_to === 'regional_coordinator') {
+        nextStatus = 'Returned to Regional Coordinator';
+        nextRole = 'regional_coordinator';
       }
     }
 

@@ -24,10 +24,16 @@ const ACTION_CONFIG = {
 const RETURN_OPTIONS: Record<string, { label: string, value: string }[]> = {
   procurement_manager: [
     { label: 'Regional Head (1 step back)', value: 'final_head' },
-    { label: 'Head of Department (2 steps back)', value: 'hod' },
+    { label: 'Regional Coordinator (2 steps back)', value: 'regional_coordinator' },
+    { label: 'Head of Department (3 steps back)', value: 'hod' },
     { label: 'Requester (Start over)', value: 'user' },
   ],
   final_head: [
+    { label: 'Regional Coordinator (1 step back)', value: 'regional_coordinator' },
+    { label: 'Head of Department (2 steps back)', value: 'hod' },
+    { label: 'Requester (Start over)', value: 'user' },
+  ],
+  regional_coordinator: [
     { label: 'Head of Department (1 step back)', value: 'hod' },
     { label: 'Requester (Start over)', value: 'user' },
   ],

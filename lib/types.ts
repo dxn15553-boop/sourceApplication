@@ -9,7 +9,8 @@ export type Role =
   | 'procurement_manager'
   | 'section_manager'
   | 'employee'
-  | 'admin';
+  | 'admin'
+  | 'regional_coordinator';
 
 export type WorkflowStatus =
   | 'Submitted'
@@ -41,7 +42,9 @@ export type WorkflowStatus =
   | 'Cancelled'
   | 'Returned to Regional Head'
   | 'Returned to HOD'
-  | 'Returned to Requester';
+  | 'Returned to Requester'
+  | 'Regional Coordinator Review'
+  | 'Returned to Regional Coordinator';
 
 // What is stored in the audit trail (past tense)
 export type WorkflowAction =

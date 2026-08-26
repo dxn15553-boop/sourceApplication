@@ -14,14 +14,24 @@ export async function POST(request: Request) {
     }
 
     const { departmentName, email, password, role } = await request.json();
-    if (!departmentName || !email || !password || !role) {
-      return NextResponse.json({ error: 'All fields are required.' }, { status: 400 });
+    const deptRequiredRoles = ['hod', 'user', 'employee'];
+    const validRoles = ['hod', 'user', 'employee', 'final_head', 'regional_coordinator', 'procurement_manager', 'section_manager'];
+
+    if (!email || !password || !role) {
+      return NextResponse.json({ error: 'Email, password, and role are required.' }, { status: 400 });
     }
 
-    if (role !== 'hod' && role !== 'user' && role !== 'employee') {
+    if (deptRequiredRoles.includes(role) && !departmentName) {
+      return NextResponse.json({ error: 'Department is required for HOD / Employee roles.' }, { status: 400 });
+    }
+
+    if (!validRoles.includes(role)) {
       return NextResponse.json({ error: 'Invalid role.' }, { status: 400 });
     }
 
+    const password_hash = await bcrypt.hash(password, 10);
+
+    if (deptRequiredRoles.includes(role)) {
       // 1. Find or create the department
       let deptResult = await db.select().from(departments).where(ilike(departments.name, departmentName.trim())).limit(1);
       let deptId = deptResult[0]?.id;
@@ -33,8 +43,7 @@ export async function POST(request: Request) {
         deptId = newDept.id;
       }
 
-      // 2. Hash password and create profile
-      const password_hash = await bcrypt.hash(password, 10);
+      // 2. Create profile
       const fullName = role === 'hod' ? `HOD (${departmentName.trim()})` : `Employee (${departmentName.trim()})`;
 
       const [newProfile] = await db.insert(profiles).values({
@@ -50,6 +59,24 @@ export async function POST(request: Request) {
         profile_id: newProfile.id,
         department_id: deptId,
       });
+    } else {
+      // Global role (no department required)
+      const roleLabels: Record<string, string> = {
+        final_head: 'Regional Head',
+        regional_coordinator: 'Regional Coordinator',
+        procurement_manager: 'Procurement Manager',
+        section_manager: 'Section Manager',
+      };
+      const fullName = roleLabels[role] || 'Manager';
+
+      await db.insert(profiles).values({
+        email: email.trim(),
+        password_hash,
+        plaintext_password: password,
+        full_name: fullName,
+        role: role,
+      });
+    }
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error: any) {

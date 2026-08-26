@@ -3,7 +3,7 @@ import { relations } from 'drizzle-orm';
 
 // Enums
 export const roleEnum = pgEnum('role', [
-  'user', 'hod', 'final_head', 'procurement_manager', 'section_manager', 'employee', 'admin'
+  'user', 'hod', 'final_head', 'procurement_manager', 'section_manager', 'employee', 'admin', 'regional_coordinator'
 ]);
 
 export const workflowStatusEnum = pgEnum('workflow_status', [
@@ -23,7 +23,9 @@ export const workflowStatusEnum = pgEnum('workflow_status', [
   'Payment Pending',
   'Delivered',
   'Completed', 'Closed', 'Cancelled',
-  'Returned to Regional Head', 'Returned to HOD', 'Returned to Requester'
+  'Returned to Regional Head', 'Returned to HOD', 'Returned to Requester',
+  'Regional Coordinator Review',
+  'Returned to Regional Coordinator'
 ]);
 
 export const workflowActionEnum = pgEnum('workflow_action', [

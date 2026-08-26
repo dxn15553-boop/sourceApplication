@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, FilePlus, FolderOpen, Search,
-  Users, LogOut, ChevronRight, FileStack, Building2,
+  Users, LogOut, ChevronRight, FileStack,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import type { Profile } from '@/lib/types';
@@ -22,8 +22,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/requests',       label: 'Source Requests', icon: <FolderOpen size={18} /> },
   { href: '/requests/new',   label: 'New Request',     icon: <FilePlus size={18} />,   roles: ['user'] },
   { href: '/search',         label: 'Search',          icon: <Search size={18} /> },
-  { href: '/admin/departments',    label: 'Departments',     icon: <Building2 size={18} />,  roles: ['admin'] },
-  { href: '/admin/hod-logins',     label: 'HOD Logins',      icon: <Users size={18} />,      roles: ['admin'] },
+  { href: '/admin/hod-logins',     label: 'HOD & Manager Logins', icon: <Users size={18} />,      roles: ['admin'] },
   { href: '/admin/employee-logins', label: 'Employee Logins', icon: <Users size={18} />,      roles: ['admin'] },
 ];
 
