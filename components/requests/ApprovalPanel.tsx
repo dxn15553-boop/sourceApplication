@@ -54,6 +54,10 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
   const [error, setError] = useState<string | null>(null);
 
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
+  const [noneSelected, setNoneSelected] = useState(() => {
+    const hasReviews = (request as any).required_reviews && (request as any).required_reviews.length > 0;
+    return !hasReviews;
+  });
   const [deptValidationError, setDeptValidationError] = useState<string | null>(null);
 
   async function executeAction(action: ActionType) {
@@ -106,7 +110,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     try {
       const payload: any = { action, comment: comment.trim() || undefined, return_to: returnTo || undefined };
       if (userRole === 'hod') {
-        payload.department_ids = selectedDepts;
+        payload.department_ids = noneSelected ? [] : selectedDepts;
       }
 
       const res = await fetch(`/api/requests/${request.id}/action`, {
@@ -151,6 +155,61 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               Permission Required From <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
 
+            {/* None / N/A Toggle Option */}
+            <div style={{
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              padding: '12px 16px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              maxWidth: '420px',
+              marginBottom: 4
+            }}>
+              <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)' }}>
+                None / N/A (No additional permissions needed)
+              </span>
+              <div style={{ display: 'flex', gap: 2, background: 'rgba(255, 255, 255, 0.05)', padding: 2, borderRadius: 6, border: '1px solid var(--border)' }}>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => {
+                    setNoneSelected(true);
+                    setSelectedDepts([]);
+                    setDeptValidationError(null);
+                  }}
+                  style={{
+                    padding: '4px 12px', fontSize: 11, fontWeight: 700, borderRadius: 4, cursor: 'pointer', border: 'none',
+                    background: noneSelected ? 'var(--success)' : 'transparent',
+                    color: noneSelected ? '#fff' : 'var(--text-muted)',
+                    transition: 'all 0.15s ease',
+                    boxShadow: noneSelected ? '0 1px 4px rgba(16,185,129,0.3)' : 'none'
+                  }}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => {
+                    setNoneSelected(false);
+                    setDeptValidationError(null);
+                  }}
+                  style={{
+                    padding: '4px 12px', fontSize: 11, fontWeight: 700, borderRadius: 4, cursor: 'pointer', border: 'none',
+                    background: !noneSelected ? 'var(--danger)' : 'transparent',
+                    color: !noneSelected ? '#fff' : 'var(--text-muted)',
+                    transition: 'all 0.15s ease',
+                    boxShadow: !noneSelected ? '0 1px 4px rgba(239,68,68,0.3)' : 'none'
+                  }}
+                >
+                  No
+                </button>
+              </div>
+            </div>
+
+            {/* Department Checklist */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
@@ -159,11 +218,14 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               border: '1px solid var(--border)',
               padding: '16px',
               borderRadius: '12px',
+              opacity: noneSelected ? 0.5 : 1,
+              pointerEvents: noneSelected ? 'none' : 'auto',
+              transition: 'opacity 0.2s ease'
             }}>
               {allDepartments
                 .filter(d => ['IT', 'Maintenance', 'QA', 'EHS', 'Admin', 'IWH', 'QC', 'Engineering', 'Legal', 'Others'].includes(d.name) && d.id !== request.department_id)
                 .map(dept => {
-                  const isYes = selectedDepts.includes(dept.id);
+                  const isYes = !noneSelected && selectedDepts.includes(dept.id);
                   return (
                     <div 
                       key={dept.id} 
@@ -184,10 +246,11 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                       <div style={{ display: 'flex', gap: 2, background: 'rgba(255, 255, 255, 0.05)', padding: 2, borderRadius: 6, border: '1px solid var(--border)' }}>
                         <button
                           type="button"
-                          disabled={loading}
+                          disabled={loading || noneSelected}
                           onClick={() => {
                             if (!isYes) {
                               setSelectedDepts([...selectedDepts, dept.id]);
+                              setNoneSelected(false);
                             }
                             setDeptValidationError(null);
                           }}
@@ -203,7 +266,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                         </button>
                         <button
                           type="button"
-                          disabled={loading}
+                          disabled={loading || noneSelected}
                           onClick={() => {
                             if (isYes) {
                               setSelectedDepts(selectedDepts.filter(id => id !== dept.id));
@@ -260,6 +323,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           setActiveAction(null); 
           setError(null); 
           setSelectedDepts([]);
+          setNoneSelected(!((request as any).required_reviews && (request as any).required_reviews.length > 0));
           setDeptValidationError(null);
         }}
         title={activeAction ? ACTION_CONFIG[activeAction].title : ''}
