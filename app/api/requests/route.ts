@@ -44,7 +44,8 @@ export async function GET(request: Request) {
         if (user.role === 'employee') {
           conditions.push(or(
             eq(sourceRequests.assigned_employee_id, user.id),
-            eq(sourceRequests.current_assignee_role, 'employee')
+            eq(sourceRequests.current_assignee_role, 'employee'),
+            eq(sourceRequests.requester_id, user.id)
           ));
         }
         break;

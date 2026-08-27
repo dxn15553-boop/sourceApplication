@@ -20,7 +20,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard',      label: 'Dashboard',       icon: <LayoutDashboard size={18} /> },
   { href: '/requests',       label: 'Source Requests', icon: <FolderOpen size={18} /> },
-  { href: '/requests/new',   label: 'New Request',     icon: <FilePlus size={18} />,   roles: ['user'] },
+  { href: '/requests/new',   label: 'New Request',     icon: <FilePlus size={18} />,   roles: ['user', 'employee'] },
   { href: '/search',         label: 'Search',          icon: <Search size={18} /> },
   { href: '/admin/hod-logins',     label: 'HOD & Manager Logins', icon: <Users size={18} />,      roles: ['admin'] },
   { href: '/admin/employee-logins', label: 'Employee Logins', icon: <Users size={18} />,      roles: ['admin'] },

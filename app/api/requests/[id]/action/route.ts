@@ -312,21 +312,39 @@ export async function POST(
             `;
 
             if (existingRows.length > 0) {
+              const existingRequestId = existingRows[0].id;
               // Update existing request
               await pSql`
                 UPDATE "ProcurementRequest"
                 SET "handlerId" = ${assigned_employee_id}, "updatedAt" = NOW()
                 WHERE "sourceNo" = ${srcRequest.id}
               `;
+
+              // Send notification to the handler
+              await pSql`
+                INSERT INTO "Notification" (
+                  id, "userId", "requestId", type, title, message, "isRead", "createdAt"
+                ) VALUES (
+                  ${crypto.randomUUID()},
+                  ${assigned_employee_id},
+                  ${existingRequestId},
+                  'ASSIGNMENT',
+                  'New Sourcing Assignment',
+                  ${`Section Manager has assigned Source Request ${srcRequest.id} ("${srcRequest.description}") to you.`},
+                  false,
+                  NOW()
+                )
+              `;
             } else {
               // Insert new request
+              const newRequestId = crypto.randomUUID();
               await pSql`
                 INSERT INTO "ProcurementRequest" (
                   id, "sourceNo", "sourceDate", "sourceDescription", 
                   "departmentId", "handlerId", "createdById", "createdAt", "updatedAt",
                   "csStatus", "prStatus", "poStatus", "paymentStatus", "currentStage", "slaStatus"
                 ) VALUES (
-                  ${crypto.randomUUID()}, 
+                  ${newRequestId}, 
                   ${srcRequest.id}, 
                   ${srcRequest.created_at}, 
                   ${srcRequest.description}, 
@@ -335,6 +353,22 @@ export async function POST(
                   ${createdById}, 
                   NOW(), NOW(),
                   'PENDING', 'PENDING', 'PENDING', 'PENDING', 'CS', 'ON_TRACK'
+                )
+              `;
+
+              // Send notification to the handler
+              await pSql`
+                INSERT INTO "Notification" (
+                  id, "userId", "requestId", type, title, message, "isRead", "createdAt"
+                ) VALUES (
+                  ${crypto.randomUUID()},
+                  ${assigned_employee_id},
+                  ${newRequestId},
+                  'ASSIGNMENT',
+                  'New Sourcing Assignment',
+                  ${`Section Manager has assigned Source Request ${srcRequest.id} ("${srcRequest.description}") to you.`},
+                  false,
+                  NOW()
                 )
               `;
             }

@@ -39,7 +39,7 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
     'HOD Returned', 'Final Head Returned', 'Procurement Returned',
   ];
 
-  const canCreateRequest = userRole === 'user' || userRole === 'admin';
+  const canCreateRequest = userRole === 'user' || userRole === 'admin' || userRole === 'employee';
 
   return (
     <>
