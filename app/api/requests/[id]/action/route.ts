@@ -15,7 +15,7 @@ const TRANSITIONS: Record<string, {
   'return:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD', 'Pending Home HOD Confirmation'], nextStatus: 'Returned to Requester', nextRole: 'user', requiresComment: true },
   'approve:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved'], nextStatus: 'Final Head Review', nextRole: 'final_head', requiresComment: false },
   'reject:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved'], nextStatus: 'HOD Rejected', nextRole: null, requiresComment: true },
-  'return:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved'], nextStatus: 'Returned to HOD', nextRole: 'hod', requiresComment: true },
+  'return:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator'], nextStatus: 'Returned to HOD', nextRole: 'hod', requiresComment: true },
   'resubmit:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Returned to Regional Coordinator'], nextStatus: 'Regional Coordinator Review', nextRole: 'regional_coordinator', requiresComment: false },
   'approve:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['Final Head Review', 'Returned to Regional Head'], nextStatus: 'Final Head Approved', nextRole: 'procurement_manager', requiresComment: false },
   'reject:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['Final Head Review', 'Returned to Regional Head'], nextStatus: 'Final Head Rejected', nextRole: null, requiresComment: true },
@@ -192,7 +192,11 @@ export async function POST(
       if (srcRequest.department_id !== srcRequest.requester_department_id) {
         const { requiredReviews } = await import('@/lib/db/schema');
         const existing = await db.query.requiredReviews.findFirst({
-          where: and(eq(requiredReviews.request_id, id), eq(requiredReviews.department_id, srcRequest.department_id))
+          where: and(
+            eq(requiredReviews.request_id, id),
+            eq(requiredReviews.department_id, srcRequest.department_id),
+            eq(requiredReviews.status, 'Pending')
+          )
         });
         const inPayload = department_ids && department_ids.includes(srcRequest.department_id);
         if (!existing && !inPayload) {

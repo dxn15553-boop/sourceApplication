@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/ui/Modal';
 import Textarea from '@/components/ui/Textarea';
-import { CheckCircle2, XCircle, RotateCcw, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, RotateCcw, AlertCircle, Send } from 'lucide-react';
 import type { SourceRequest } from '@/lib/types';
 
 interface ApprovalPanelProps {
@@ -53,12 +53,31 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
+  const [selectedDepts, setSelectedDepts] = useState<string[]>(() => {
+    const reviews = (request as any).required_reviews || [];
+    const uniqueIds = Array.from(new Set(reviews.map((r: any) => r.department_id))) as string[];
+    return uniqueIds;
+  });
   const [noneSelected, setNoneSelected] = useState(() => {
-    const hasReviews = (request as any).required_reviews && (request as any).required_reviews.length > 0;
-    return !hasReviews;
+    const reviews = (request as any).required_reviews || [];
+    return reviews.length === 0;
   });
   const [deptValidationError, setDeptValidationError] = useState<string | null>(null);
+
+  const isInitialHodApproval = (request.status === 'Submitted' || request.status === 'Returned to HOD') && userRole === 'hod';
+  const showSendLabel = isInitialHodApproval && !noneSelected;
+
+  const getActionLabelText = (act: ActionType) => {
+    if (!act) return '';
+    if (act === 'approve' && showSendLabel) return 'Send for Approval';
+    return ACTION_CONFIG[act].label;
+  };
+
+  const getActionTitleText = (act: ActionType) => {
+    if (!act) return '';
+    if (act === 'approve' && showSendLabel) return 'Send for Approval';
+    return ACTION_CONFIG[act].title;
+  };
 
   async function executeAction(action: ActionType) {
     if (!action) return;
@@ -309,8 +328,8 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button className="btn btn-success btn-sm" onClick={() => {
-            const isInitialHodApproval = request.status === 'Submitted' || request.status === 'Returned to HOD';
-            if (isInitialHodApproval && userRole === 'hod' && selectedDepts.length === 0 && !noneSelected) {
+            const isInitial = request.status === 'Submitted' || request.status === 'Returned to HOD';
+            if (isInitial && userRole === 'hod' && selectedDepts.length === 0 && !noneSelected) {
               setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
               return;
             }
@@ -318,7 +337,11 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
             setComment('');
             setCommentError('');
           }}>
-            <CheckCircle2 size={15} /> Approve
+            {showSendLabel ? (
+              <><Send size={15} /> Send for Approval</>
+            ) : (
+              <><CheckCircle2 size={15} /> Approve</>
+            )}
           </button>
           <button className="btn btn-danger btn-sm" onClick={() => { setActiveAction('reject'); setComment(''); setCommentError(''); }}>
             <XCircle size={15} /> Reject
@@ -339,7 +362,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           setNoneSelected(!((request as any).required_reviews && (request as any).required_reviews.length > 0));
           setDeptValidationError(null);
         }}
-        title={activeAction ? ACTION_CONFIG[activeAction].title : ''}
+        title={activeAction ? getActionTitleText(activeAction) : ''}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ padding: '12px 16px', background: 'var(--bg-base)', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
@@ -387,7 +410,9 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
 
           {activeAction === 'approve' && (
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-              Approving this request will move it to the next stage automatically.
+              {showSendLabel
+                ? 'Sending this request for approval will notify the selected departments to review.'
+                : 'Approving this request will move it to the next stage automatically.'}
             </p>
           )}
 
@@ -400,7 +425,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               onClick={() => executeAction(activeAction)}
               disabled={loading}
             >
-              {loading ? 'Processing…' : activeAction ? ACTION_CONFIG[activeAction].label : ''}
+              {loading ? 'Processing…' : activeAction ? getActionLabelText(activeAction) : ''}
             </button>
           </div>
         </div>

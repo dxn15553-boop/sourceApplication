@@ -9,6 +9,7 @@ import ReviewPanel from '@/components/requests/ReviewPanel';
 import { ArrowLeft, Download, Paperclip, User, Building2, Calendar, Clock } from 'lucide-react';
 import Link from 'next/link';
 import type { SourceRequest } from '@/lib/types';
+import EditRequestButton from '@/components/requests/EditRequestButton';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { sourceRequests, profiles, departments } from '@/lib/db/schema';
@@ -76,7 +77,7 @@ export default async function RequestDetailPage({
   const canApprove =
     (profile.role === 'hod' && isHomeHod && (req.status === 'Submitted' || req.status === 'Target Dept Approved' || req.status === 'Pending Home HOD Confirmation' || req.status === 'Returned to HOD')) ||
     (profile.role === 'regional_coordinator' && (req.status === 'Regional Coordinator Review' || req.status === 'HOD Approved')) ||
-    (profile.role === 'final_head' && (req.status === 'Final Head Review')) ||
+    (profile.role === 'final_head' && (req.status === 'Final Head Review' || req.status === 'Returned to Regional Head')) ||
     (profile.role === 'procurement_manager' && req.status === 'Final Head Approved');
 
   // Check if current user is an HOD of a department that needs to review
@@ -91,13 +92,25 @@ export default async function RequestDetailPage({
     ['HOD Returned', 'Final Head Returned', 'Procurement Returned', 'Returned to Requester'].includes(req.status);
     
   const canHodResubmit = false; // HOD uses ApprovalPanel
-  const canFinalHeadResubmit = profile.role === 'final_head' && req.status === 'Returned to Regional Head';
+  const canFinalHeadResubmit = false; // Regional Head uses ApprovalPanel
   const canCoordinatorResubmit = profile.role === 'regional_coordinator' && req.status === 'Returned to Regional Coordinator';
 
   // Cloudinary returns a secure_url which we stored in attachment_path
   let attachmentUrl: string | null = req.attachment_path ?? null;
 
   const createdDate = new Date(req.created_at);
+
+  const canEdit = isHomeHod && req.status === 'Returned to HOD';
+
+  // Get only the latest review status per department for clean display
+  const latestReviewsMap: Record<string, any> = {};
+  (req.required_reviews || []).forEach((r: any) => {
+    const existing = latestReviewsMap[r.department_id];
+    if (!existing || new Date(r.created_at || 0) > new Date(existing.created_at || 0)) {
+      latestReviewsMap[r.department_id] = r;
+    }
+  });
+  const latestReviews = Object.values(latestReviewsMap);
 
   let allEmployees: any[] = [];
   if (canAssign) {
@@ -146,16 +159,23 @@ export default async function RequestDetailPage({
 
             {/* Header Card */}
             <div className="card" style={{ padding: '28px 32px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                <span className="src-id" style={{ fontSize: 13, padding: '5px 10px' }}>{req.id}</span>
-                <StatusBadge status={req.status as any} animate={req.current_assignee_role !== null || req.status === 'Under Required Review'} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                    <span className="src-id" style={{ fontSize: 13, padding: '5px 10px' }}>{req.id}</span>
+                    <StatusBadge status={req.status as any} animate={req.current_assignee_role !== null || req.status === 'Under Required Review'} />
+                  </div>
+                  <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>
+                    Source Request Details
+                  </h1>
+                  <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: 0 }}>
+                    Submitted on {createdDate.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+                {canEdit && (
+                  <EditRequestButton request={req} />
+                )}
               </div>
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>
-                Source Request Details
-              </h1>
-              <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: 0 }}>
-                Submitted on {createdDate.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
 
               <div style={{ width: '100%', height: 1, background: 'var(--border)', margin: '20px 0 16px' }} />
 
@@ -171,11 +191,11 @@ export default async function RequestDetailPage({
             </div>
 
             {/* Cross-Department Permissions */}
-            {req.required_reviews && req.required_reviews.length > 0 && (
+            {latestReviews && latestReviews.length > 0 && (
               <div className="card" style={{ padding: '20px 24px' }}>
                 <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 14px', color: 'var(--text-primary)' }}>Cross-Department Permissions</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {req.required_reviews.map((r: any) => (
+                  {latestReviews.map((r: any) => (
                     <div key={r.id} style={{
                       display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 14px', borderRadius: 10,
                       background: r.status === 'Approved' ? 'var(--success-glow)' : r.status === 'Rejected' ? 'var(--danger-glow)' : 'rgba(245, 158, 11, 0.05)',
