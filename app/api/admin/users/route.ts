@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const password_hash = await bcrypt.hash(password, 10);
 
     const [newProfile] = await db.insert(profiles).values({
-      email,
+      email: email.toLowerCase(),
       password_hash,
       plaintext_password: password,
       full_name,
@@ -67,7 +67,7 @@ export async function PUT(request: Request) {
 
     const { eq } = await import('drizzle-orm');
 
-    const updateData: any = { email, full_name, role };
+    const updateData: any = { email: email.toLowerCase(), full_name, role };
     if (password && password.trim()) {
       updateData.password_hash = await bcrypt.hash(password, 10);
       updateData.plaintext_password = password;

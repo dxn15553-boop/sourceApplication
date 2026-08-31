@@ -2,7 +2,7 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { db } from '@/lib/db';
 import { profiles, profileDepartments } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, ilike } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { authConfig } from './auth.config';
 
@@ -27,7 +27,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           isRequester = true;
         }
 
-        const userProfiles = await db.select().from(profiles).where(eq(profiles.email, loginEmail)).limit(1);
+        const userProfiles = await db.select().from(profiles).where(ilike(profiles.email, loginEmail.toLowerCase())).limit(1);
         const user = userProfiles[0];
         if (!user) return null;
 

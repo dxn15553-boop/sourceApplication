@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       const fullName = role === 'hod' ? `HOD (${departmentName.trim()})` : `Employee (${departmentName.trim()})`;
 
       const [newProfile] = await db.insert(profiles).values({
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password_hash,
         plaintext_password: password,
         full_name: fullName,
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       const fullName = roleLabels[role] || 'Manager';
 
       await db.insert(profiles).values({
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password_hash,
         plaintext_password: password,
         full_name: fullName,
