@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import { departments } from '@/lib/db/schema';
 import { inArray } from 'drizzle-orm';
 import type { Profile } from '@/lib/types';
+import NotificationBell from './NotificationBell';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -77,6 +78,7 @@ export default async function AppShell({
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <NotificationBell />
             {headerAction && <div>{headerAction}</div>}
           </div>
         </header>

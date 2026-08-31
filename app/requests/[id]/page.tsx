@@ -49,7 +49,7 @@ export default async function RequestDetailPage({
         orderBy: (actions: any, { asc }: any) => [asc(actions.created_at)],
       },
       required_reviews: {
-        columns: { id: true, department_id: true, status: true, remarks: true, created_at: true },
+        columns: { id: true, department_id: true, status: true, remarks: true, created_at: true, attachment_path: true, attachment_name: true },
         with: {
           department: { columns: { name: true } },
           reviewer: { columns: { full_name: true } }
@@ -77,7 +77,7 @@ export default async function RequestDetailPage({
   const canApprove =
     (profile.role === 'hod' && isHomeHod && (req.status === 'Submitted' || req.status === 'Target Dept Approved' || req.status === 'Pending Home HOD Confirmation' || req.status === 'Returned to HOD')) ||
     (profile.role === 'regional_coordinator' && (req.status === 'Regional Coordinator Review' || req.status === 'HOD Approved')) ||
-    (profile.role === 'final_head' && (req.status === 'Final Head Review' || req.status === 'Returned to Regional Head')) ||
+    ((profile.role === 'final_head' || profile.role === 'regional_coordinator') && (req.status === 'Final Head Review' || req.status === 'Returned to Regional Head')) ||
     (profile.role === 'procurement_manager' && req.status === 'Final Head Approved');
 
   // Check if current user is an HOD of a department that needs to review
@@ -225,6 +225,27 @@ export default async function RequestDetailPage({
                           borderLeft: '3px solid var(--danger)', marginTop: 4 
                         }}>
                           <strong>Return Reason:</strong> &ldquo;{r.remarks}&rdquo;
+                        </div>
+                      )}
+                      {r.remarks && r.status !== 'Rejected' && (
+                        <div style={{ 
+                          fontSize: 12, color: 'var(--text-secondary)', padding: '8px 12px', 
+                          background: 'rgba(16,185,129,0.04)', borderRadius: 6, 
+                          borderLeft: '3px solid var(--success)', marginTop: 4 
+                        }}>
+                          <strong>Remarks:</strong> &ldquo;{r.remarks}&rdquo;
+                        </div>
+                      )}
+                      {r.attachment_name && (
+                        <div style={{ 
+                          display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, 
+                          padding: '6px 12px', background: 'var(--bg-hover)', borderRadius: 6,
+                          border: '1px dashed var(--border)', maxWidth: 'max-content'
+                        }}>
+                          <Paperclip size={13} style={{ color: 'var(--accent)' }} />
+                          <a href={r.attachment_path} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', textDecoration: 'underline' }}>
+                            {r.attachment_name}
+                          </a>
                         </div>
                       )}
                     </div>

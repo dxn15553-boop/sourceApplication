@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, X, ShieldAlert, Loader2 } from 'lucide-react';
+import FileUpload from '@/components/ui/FileUpload';
 
 export default function ReviewPanel({ reviewId, departmentName }: { reviewId: string, departmentName: string }) {
   const router = useRouter();
   const [remarks, setRemarks] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -18,10 +20,32 @@ export default function ReviewPanel({ reviewId, departmentName }: { reviewId: st
     setError('');
     setIsSubmitting(true);
     try {
+      let attachmentPath: string | undefined;
+      let attachmentName: string | undefined;
+
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+        const uploadJson = await uploadRes.json();
+        if (!uploadRes.ok) {
+          setError(uploadJson.error ?? 'File upload failed.');
+          setIsSubmitting(false);
+          return;
+        }
+        attachmentPath = uploadJson.path;
+        attachmentName = uploadJson.name;
+      }
+
       const res = await fetch(`/api/requests/required-reviews/${reviewId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, remarks }),
+        body: JSON.stringify({
+          action,
+          remarks,
+          attachment_path: attachmentPath,
+          attachment_name: attachmentName,
+        }),
       });
 
       const data = await res.json();
@@ -55,6 +79,10 @@ export default function ReviewPanel({ reviewId, departmentName }: { reviewId: st
           style={{ width: '100%', resize: 'vertical' }}
           className="input"
         />
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <FileUpload onFileSelect={setFile} maxSizeMb={10} />
       </div>
 
       {error && (

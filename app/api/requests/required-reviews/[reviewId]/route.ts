@@ -15,7 +15,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { action, remarks } = await req.json();
+    const { action, remarks, attachment_path, attachment_name } = await req.json();
     if (!['Approved', 'Rejected'].includes(action)) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
@@ -46,7 +46,9 @@ export async function POST(
         status: action,
         remarks: remarks || null,
         reviewer_id: user.id,
-        reviewed_at: new Date()
+        reviewed_at: new Date(),
+        attachment_path: attachment_path || null,
+        attachment_name: attachment_name || null,
       })
       .where(eq(requiredReviews.id, reviewId));
 
@@ -55,7 +57,7 @@ export async function POST(
       request_id: review.request_id,
       actor_id: user.id,
       action: action === 'Approved' ? 'approved' : 'rejected',
-      comment: `${review.department.name} Review ${action}${remarks ? ': ' + remarks : ''}`,
+      comment: `${review.department.name} Review ${action}${remarks ? ': ' + remarks : ''}${attachment_name ? ' (Attachment: ' + attachment_name + ')' : ''}`,
     });
 
     // Check if ALL reviews for this request are now completed. If one is rejected, maybe we should change the main status?

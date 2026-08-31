@@ -104,6 +104,8 @@ export const requiredReviews = pgTable('required_reviews', {
   reviewer_id: uuid('reviewer_id').references(() => profiles.id),
   reviewed_at: timestamp('reviewed_at'),
   remarks: text('remarks'),
+  attachment_path: text('attachment_path'),
+  attachment_name: text('attachment_name'),
   created_at: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -152,6 +154,7 @@ export const profilesRelations = relations(profiles, ({ many }) => ({
   actions: many(workflowActions),
   reviewsDone: many(requiredReviews, { relationName: 'reviewer' }),
   evaluationsDone: many(vendorEvaluations, { relationName: 'evaluator' }),
+  notifications: many(notifications),
 }));
 
 export const sourceRequestsRelations = relations(sourceRequests, ({ one, many }) => ({
@@ -175,6 +178,7 @@ export const sourceRequestsRelations = relations(sourceRequests, ({ one, many })
     fields: [sourceRequests.id],
     references: [vendorEvaluations.request_id]
   }),
+  notifications: many(notifications),
 }));
 
 export const requiredReviewsRelations = relations(requiredReviews, ({ one }) => ({
@@ -224,6 +228,27 @@ export const profileDepartmentsRelations = relations(profileDepartments, ({ one 
   department: one(departments, {
     fields: [profileDepartments.department_id],
     references: [departments.id],
+  }),
+}));
+
+export const notifications = pgTable('notifications', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  user_id: uuid('user_id').references(() => profiles.id, { onDelete: 'cascade' }).notNull(),
+  request_id: text('request_id').references(() => sourceRequests.id, { onDelete: 'cascade' }).notNull(),
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  is_read: boolean('is_read').notNull().default(false),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(profiles, {
+    fields: [notifications.user_id],
+    references: [profiles.id],
+  }),
+  request: one(sourceRequests, {
+    fields: [notifications.request_id],
+    references: [sourceRequests.id],
   }),
 }));
 

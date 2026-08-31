@@ -63,6 +63,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     return reviews.length === 0;
   });
   const [deptValidationError, setDeptValidationError] = useState<string | null>(null);
+  const [rhAvailability, setRhAvailability] = useState<'available' | 'unavailable'>('available');
 
   const isInitialHodApproval = (request.status === 'Submitted' || request.status === 'Returned to HOD') && userRole === 'hod';
   const showSendLabel = isInitialHodApproval && !noneSelected;
@@ -79,6 +80,10 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     return ACTION_CONFIG[act].title;
   };
 
+  const isCoordinatorActingAsFinalHead = userRole === 'regional_coordinator' && 
+    (request.status === 'Final Head Review' || request.status === 'Returned to Regional Head');
+  const returnRole = isCoordinatorActingAsFinalHead ? 'final_head' : userRole;
+
   async function executeAction(action: ActionType) {
     if (!action) return;
     const cfg = ACTION_CONFIG[action];
@@ -91,7 +96,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
 
 
     if (activeAction === 'return') {
-      const options = RETURN_OPTIONS[userRole] || [];
+      const options = RETURN_OPTIONS[returnRole] || [];
       if (options.length > 0 && !returnTo) {
         setReturnToError('Please select who to return the request to.');
         return;
@@ -138,6 +143,9 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
       const payload: any = { action, comment: comment.trim() || undefined, return_to: returnTo || undefined };
       if (userRole === 'hod') {
         payload.department_ids = noneSelected ? [] : selectedDepts;
+      }
+      if (isCoordinatorActingAsFinalHead) {
+        payload.rh_availability = rhAvailability;
       }
 
       const res = await fetch(`/api/requests/${request.id}/action`, {
@@ -326,26 +334,69 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="btn btn-success btn-sm" onClick={() => {
-            const isInitial = request.status === 'Submitted' || request.status === 'Returned to HOD';
-            if (isInitial && userRole === 'hod' && selectedDepts.length === 0 && !noneSelected) {
-              setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
-              return;
-            }
-            setActiveAction('approve');
-            setComment('');
-            setCommentError('');
+        {isCoordinatorActingAsFinalHead && (
+          <div style={{ 
+            marginBottom: 20, 
+            padding: '14px 16px', 
+            background: 'var(--bg-base)', 
+            border: '1px solid var(--border)', 
+            borderRadius: 10,
+            maxWidth: '500px'
           }}>
-            {showSendLabel ? (
-              <><Send size={15} /> Send for Approval</>
-            ) : (
-              <><CheckCircle2 size={15} /> Approve</>
-            )}
-          </button>
-          <button className="btn btn-danger btn-sm" onClick={() => { setActiveAction('reject'); setComment(''); setCommentError(''); }}>
-            <XCircle size={15} /> Reject
-          </button>
+            <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: 10 }}>
+              Regional Head Availability Status
+            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', color: rhAvailability === 'available' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                <input 
+                  type="radio" 
+                  name="rh_availability" 
+                  value="available"
+                  checked={rhAvailability === 'available'} 
+                  onChange={() => setRhAvailability('available')} 
+                />
+                <span>Regional Head Available (View Only Mode)</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', color: rhAvailability === 'unavailable' ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                <input 
+                  type="radio" 
+                  name="rh_availability" 
+                  value="unavailable"
+                  checked={rhAvailability === 'unavailable'} 
+                  onChange={() => setRhAvailability('unavailable')} 
+                />
+                <span style={{ fontWeight: rhAvailability === 'unavailable' ? 700 : 500 }}>
+                  Regional Head Not Available – Approving on Behalf of Regional Head
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {(!(isCoordinatorActingAsFinalHead && rhAvailability === 'available')) && (
+            <button className="btn btn-success btn-sm" onClick={() => {
+              const isInitial = request.status === 'Submitted' || request.status === 'Returned to HOD';
+              if (isInitial && userRole === 'hod' && selectedDepts.length === 0 && !noneSelected) {
+                setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
+                return;
+              }
+              setActiveAction('approve');
+              setComment('');
+              setCommentError('');
+            }}>
+              {showSendLabel ? (
+                <><Send size={15} /> Send for Approval</>
+              ) : (
+                <><CheckCircle2 size={15} /> Approve</>
+              )}
+            </button>
+          )}
+          {(userRole === 'final_head' || (userRole === 'regional_coordinator' && !(isCoordinatorActingAsFinalHead && rhAvailability === 'available'))) && (
+            <button className="btn btn-danger btn-sm" onClick={() => { setActiveAction('reject'); setComment(''); setCommentError(''); }}>
+              <XCircle size={15} /> Reject
+            </button>
+          )}
           <button className="btn btn-warning btn-sm" onClick={() => { setActiveAction('return'); setComment(''); setCommentError(''); }}>
             <RotateCcw size={15} /> Return for Correction
           </button>
@@ -371,7 +422,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
 
 
 
-          {activeAction === 'return' && RETURN_OPTIONS[userRole] && RETURN_OPTIONS[userRole].length > 0 && (
+          {activeAction === 'return' && RETURN_OPTIONS[returnRole] && RETURN_OPTIONS[returnRole].length > 0 && (
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label" htmlFor="returnTo">Return To <span style={{ color: 'var(--danger)' }}>*</span></label>
               <select 
@@ -385,7 +436,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                 required
               >
                 <option value="">— Select Recipient —</option>
-                {RETURN_OPTIONS[userRole].map((opt) => (
+                {RETURN_OPTIONS[returnRole].map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>

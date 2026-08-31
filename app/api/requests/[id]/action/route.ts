@@ -11,7 +11,6 @@ const TRANSITIONS: Record<string, {
   nextRole: Role | null;
   requiresComment: boolean;
 }> = {
-  'reject:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD', 'Pending Home HOD Confirmation'], nextStatus: 'HOD Rejected', nextRole: null, requiresComment: true },
   'return:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD', 'Pending Home HOD Confirmation'], nextStatus: 'Returned to Requester', nextRole: 'user', requiresComment: true },
   'approve:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved'], nextStatus: 'Final Head Review', nextRole: 'final_head', requiresComment: false },
   'reject:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved'], nextStatus: 'HOD Rejected', nextRole: null, requiresComment: true },
@@ -21,7 +20,6 @@ const TRANSITIONS: Record<string, {
   'reject:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['Final Head Review', 'Returned to Regional Head'], nextStatus: 'Final Head Rejected', nextRole: null, requiresComment: true },
   'return:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['Final Head Review', 'Returned to Regional Head'], nextStatus: 'Returned to Regional Coordinator', nextRole: 'regional_coordinator', requiresComment: true },
   'approve:procurement_manager': { allowedRoles: ['procurement_manager'], allowedStatuses: ['Final Head Approved'], nextStatus: 'Procurement Approved', nextRole: 'section_manager', requiresComment: false },
-  'reject:procurement_manager': { allowedRoles: ['procurement_manager'], allowedStatuses: ['Final Head Approved'], nextStatus: 'Procurement Rejected', nextRole: null, requiresComment: true },
   'return:procurement_manager': { allowedRoles: ['procurement_manager'], allowedStatuses: ['Final Head Approved'], nextStatus: 'Returned to Regional Head', nextRole: 'final_head', requiresComment: true },
   'assign:section_manager': { allowedRoles: ['section_manager'], allowedStatuses: ['Procurement Approved'], nextStatus: 'Assigned', nextRole: 'employee', requiresComment: false },
   'complete:employee': { allowedRoles: ['employee'], allowedStatuses: ['Assigned'], nextStatus: 'Completed', nextRole: null, requiresComment: false },
@@ -62,9 +60,17 @@ export async function POST(
     if (!srcRequest) return Response.json({ error: 'Request not found' }, { status: 404 });
 
     const body = await request.json();
-    const { action, comment, assigned_employee_id, return_to, department_ids } = body;
+    const { action, comment, assigned_employee_id, return_to, department_ids, rh_availability } = body;
 
-    const transitionKey = `${action}:${user.role}`;
+    const isCoordinatorActingAsFinalHead = user.role === 'regional_coordinator' && 
+      (srcRequest.status === 'Final Head Review' || srcRequest.status === 'Returned to Regional Head');
+
+    if (isCoordinatorActingAsFinalHead && (action === 'approve' || action === 'reject') && rh_availability !== 'unavailable') {
+      return Response.json({ error: "You must select 'Regional Head Not Available' to approve or reject on behalf of the Regional Head." }, { status: 400 });
+    }
+
+    const roleForTransition = isCoordinatorActingAsFinalHead ? 'final_head' : user.role;
+    const transitionKey = `${action}:${roleForTransition}`;
     let transition = TRANSITIONS[transitionKey];
     let nextStatus = transition?.nextStatus;
     let nextRole = transition?.nextRole;
@@ -389,11 +395,18 @@ export async function POST(
 
     await db.update(sourceRequests).set(updatePayload).where(eq(sourceRequests.id, id));
     
+    let finalComment = comment?.trim() || null;
+    if (isCoordinatorActingAsFinalHead && rh_availability === 'unavailable') {
+      const actionText = action === 'approve' ? 'Approved' : action === 'reject' ? 'Rejected' : 'Returned';
+      const timeString = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+      finalComment = `${actionText} on behalf of Regional Head by Regional Coordinator ${user.name} (Regional Head Not Available) on ${timeString}.${comment?.trim() ? ` Reason: ${comment.trim()}` : ''}`;
+    }
+
     await db.insert(workflowActions).values({
       request_id: id,
       actor_id: user.id,
       action: ACTION_MAP[action as WorkflowTrigger],
-      comment: comment?.trim() || null,
+      comment: finalComment,
     });
 
     return Response.json({ success: true, new_status: nextStatus });

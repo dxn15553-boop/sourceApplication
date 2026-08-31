@@ -87,7 +87,7 @@ export function getAvailableActions(
   switch (userRole) {
     case 'hod':
       if (status === 'Submitted' && isHodOfDept) {
-        actions.push('approve', 'reject', 'return');
+        actions.push('approve', 'return');
       }
       if (status === 'Returned to HOD' && isHodOfDept) {
         actions.push('resubmit', 'return');
@@ -95,10 +95,10 @@ export function getAvailableActions(
       break;
 
     case 'regional_coordinator':
-      if (status === 'Regional Coordinator Review' || status === 'HOD Approved') {
+      if (status === 'Regional Coordinator Review' || status === 'HOD Approved' || status === 'Final Head Review') {
         actions.push('approve', 'reject', 'return');
       }
-      if (status === 'Returned to Regional Coordinator') {
+      if (status === 'Returned to Regional Coordinator' || status === 'Returned to Regional Head') {
         actions.push('resubmit', 'return');
       }
       break;
@@ -114,7 +114,7 @@ export function getAvailableActions(
 
     case 'procurement_manager':
       if (status === 'Final Head Approved') {
-        actions.push('approve', 'reject', 'return');
+        actions.push('approve', 'return');
       }
       break;
 
