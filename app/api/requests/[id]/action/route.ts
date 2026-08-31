@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-import { sourceRequests, workflowActions } from '@/lib/db/schema';
+import { sourceRequests, workflowActions, profiles } from '@/lib/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import type { WorkflowActionPayload, WorkflowStatus, Role, WorkflowTrigger } from '@/lib/types';
 
@@ -404,6 +404,13 @@ export async function POST(
       const actionText = action === 'approve' ? 'Approved' : action === 'reject' ? 'Rejected' : 'Returned';
       const timeString = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
       finalComment = `${actionText} on behalf of Regional Head by Regional Coordinator ${user.name} (Regional Head Not Available) on ${timeString}.${comment?.trim() ? ` Reason: ${comment.trim()}` : ''}`;
+    } else if (action === 'assign' && updatePayload.assigned_employee_id) {
+      const emp = await db.query.profiles.findFirst({
+        where: eq(profiles.id, updatePayload.assigned_employee_id),
+      });
+      if (emp) {
+        finalComment = `Assigned to ${emp.full_name}`;
+      }
     }
 
     await db.insert(workflowActions).values({

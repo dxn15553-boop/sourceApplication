@@ -65,7 +65,9 @@ export default function WorkflowTimeline({ entries }: WorkflowTimelineProps) {
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div>
                   <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                    {getActionLabel(entry.action)}
+                    {entry.action === 'assigned' && entry.comment?.startsWith('Assigned to ')
+                      ? entry.comment
+                      : getActionLabel(entry.action)}
                   </p>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 3, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color }}>
@@ -88,7 +90,7 @@ export default function WorkflowTimeline({ entries }: WorkflowTimelineProps) {
                 </div>
               </div>
 
-              {entry.comment && (
+              {entry.comment && !(entry.action === 'assigned' && entry.comment.startsWith('Assigned to ')) && (
                 <div style={{
                   marginTop: 10,
                   padding: '10px 14px',
