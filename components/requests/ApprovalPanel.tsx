@@ -80,9 +80,11 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     return ACTION_CONFIG[act].title;
   };
 
-  const isCoordinatorActingAsFinalHead = userRole === 'regional_coordinator' && 
-    (request.status === 'Final Head Review' || request.status === 'Returned to Regional Head');
+  const isCoordinatorActingAsFinalHead = userRole === 'regional_coordinator' && rhAvailability === 'unavailable';
   const returnRole = isCoordinatorActingAsFinalHead ? 'final_head' : userRole;
+
+  const isRHStage = request.status === 'Final Head Review' || request.status === 'Returned to Regional Head';
+  const showActions = userRole !== 'regional_coordinator' || !isRHStage || rhAvailability === 'unavailable';
 
   async function executeAction(action: ActionType) {
     if (!action) return;
@@ -144,7 +146,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
       if (userRole === 'hod') {
         payload.department_ids = noneSelected ? [] : selectedDepts;
       }
-      if (isCoordinatorActingAsFinalHead) {
+      if (userRole === 'regional_coordinator') {
         payload.rh_availability = rhAvailability;
       }
 
@@ -334,7 +336,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           </div>
         )}
 
-        {isCoordinatorActingAsFinalHead && (
+        {userRole === 'regional_coordinator' && (
           <div style={{ 
             marginBottom: 20, 
             padding: '14px 16px', 
@@ -374,7 +376,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
         )}
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {(!(isCoordinatorActingAsFinalHead && rhAvailability === 'available')) && (
+          {showActions && (
             <button className="btn btn-success btn-sm" onClick={() => {
               const isInitial = request.status === 'Submitted' || request.status === 'Returned to HOD';
               if (isInitial && userRole === 'hod' && selectedDepts.length === 0 && !noneSelected) {
@@ -392,14 +394,16 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               )}
             </button>
           )}
-          {(userRole === 'final_head' || (userRole === 'regional_coordinator' && !(isCoordinatorActingAsFinalHead && rhAvailability === 'available'))) && (
+          {(userRole === 'final_head' || (userRole === 'regional_coordinator' && showActions)) && (
             <button className="btn btn-danger btn-sm" onClick={() => { setActiveAction('reject'); setComment(''); setCommentError(''); }}>
               <XCircle size={15} /> Reject
             </button>
           )}
-          <button className="btn btn-warning btn-sm" onClick={() => { setActiveAction('return'); setComment(''); setCommentError(''); }}>
-            <RotateCcw size={15} /> Return for Correction
-          </button>
+          {showActions && (
+            <button className="btn btn-warning btn-sm" onClick={() => { setActiveAction('return'); setComment(''); setCommentError(''); }}>
+              <RotateCcw size={15} /> Return for Correction
+            </button>
+          )}
         </div>
       </div>
 

@@ -62,10 +62,10 @@ export async function POST(
     const body = await request.json();
     const { action, comment, assigned_employee_id, return_to, department_ids, rh_availability } = body;
 
-    const isCoordinatorActingAsFinalHead = user.role === 'regional_coordinator' && 
-      (srcRequest.status === 'Final Head Review' || srcRequest.status === 'Returned to Regional Head');
+    const isCoordinatorActingAsFinalHead = user.role === 'regional_coordinator' && rh_availability === 'unavailable';
 
-    if (isCoordinatorActingAsFinalHead && (action === 'approve' || action === 'reject') && rh_availability !== 'unavailable') {
+    const isRHStage = srcRequest.status === 'Final Head Review' || srcRequest.status === 'Returned to Regional Head';
+    if (user.role === 'regional_coordinator' && isRHStage && rh_availability !== 'unavailable') {
       return Response.json({ error: "You must select 'Regional Head Not Available' to approve or reject on behalf of the Regional Head." }, { status: 400 });
     }
 
@@ -171,7 +171,11 @@ export async function POST(
 
     if (!transition) return Response.json({ error: 'Action not permitted for your role' }, { status: 403 });
     if (action !== 'approve' || user.role !== 'hod') {
-      if (!transition.allowedStatuses.includes(srcRequest.status)) {
+      const allowed = [...transition.allowedStatuses];
+      if (user.role === 'regional_coordinator' && rh_availability === 'unavailable') {
+        allowed.push('Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator');
+      }
+      if (!allowed.includes(srcRequest.status)) {
         return Response.json({ error: `Action '${action}' not valid in status '${srcRequest.status}'` }, { status: 400 });
       }
     }
