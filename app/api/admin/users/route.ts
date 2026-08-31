@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     const [newProfile] = await db.insert(profiles).values({
       email,
       password_hash,
+      plaintext_password: password,
       full_name,
       role,
     }).returning();
