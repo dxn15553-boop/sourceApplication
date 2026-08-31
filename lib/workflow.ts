@@ -173,7 +173,7 @@ export const STATUS_CONFIG: Record<WorkflowStatus, {
   'HOD Approved':              { label: 'HOD Approved',              color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
   'HOD Rejected':              { label: 'HOD Rejected',              color: 'text-red-300',     bg: 'bg-red-500/10',     border: 'border-red-500/30',     dot: 'bg-red-400'     },
   'HOD Returned':              { label: 'Returned by HOD',           color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
-  'Under Required Review':     { label: 'Request Sent',              color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
+  'Under Required Review':     { label: 'Sent to RRF – Request Required From User Department', color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
   'Target Dept Approved':      { label: 'Target Dept Approved',      color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
   'Pending Home HOD Confirmation': { label: 'Pending Home HOD Confirmation', color: 'text-yellow-300', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', dot: 'bg-yellow-400' },
   'Final Head Review':         { label: 'Regional Head Review',         color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
