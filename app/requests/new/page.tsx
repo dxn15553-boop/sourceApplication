@@ -15,7 +15,7 @@ export default async function NewRequestPage() {
   const session = await auth();
   if (!session?.user) redirect('/login');
   const user = session.user as any;
-  
+
   const allDepartments = await db.select().from(departments).orderBy(departments.name);
   const cookieStore = await cookies();
   const activeDeptCookie = cookieStore.get('active_department_id');
@@ -24,9 +24,9 @@ export default async function NewRequestPage() {
 
   return (
     <AppShell pageTitle="New Source Request" pageSubtitle="Submit a new source request for HOD review">
-      <NewRequestForm 
-        departmentId={activeDeptId} 
-        departmentName={activeDept?.name || ''} 
+      <NewRequestForm
+        departmentId={activeDeptId}
+        departmentName={activeDept?.name || ''}
       />
     </AppShell>
   );

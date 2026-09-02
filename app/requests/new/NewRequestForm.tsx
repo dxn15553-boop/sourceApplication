@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Textarea from '@/components/ui/Textarea';
+import RequestDescriptionInput from '@/components/requests/RequestDescriptionInput';
 import FileUpload from '@/components/ui/FileUpload';
 import { FilePlus, Send, AlertCircle, CheckCircle } from 'lucide-react';
 
@@ -146,15 +146,15 @@ export default function NewRequestForm({
             />
           </div>
 
-          <Textarea
+          <RequestDescriptionInput
             id="description"
-            label="Source Request Description"
-            placeholder="Describe what you are requesting — source, product, specification, quantity, purpose, or any relevant details…"
             value={description}
-            onChange={e => { setDescription(e.target.value); if (e.target.value.trim()) setDescError(''); }}
+            onChange={(val) => {
+              setDescription(val);
+              if (val.trim()) setDescError('');
+            }}
             error={descError}
             required
-            rows={6}
           />
 
           <FileUpload onFileSelect={setFile} maxSizeMb={10} />

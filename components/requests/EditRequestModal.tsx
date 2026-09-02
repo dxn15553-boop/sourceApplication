@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Modal from '@/components/ui/Modal';
-import Textarea from '@/components/ui/Textarea';
+import RequestDescriptionInput from '@/components/requests/RequestDescriptionInput';
 import FileUpload from '@/components/ui/FileUpload';
 import { Save, AlertCircle } from 'lucide-react';
 import type { SourceRequest } from '@/lib/types';
@@ -142,14 +142,11 @@ export default function EditRequestModal({ open, onClose, request, onSaved }: Ed
             />
           </div>
 
-          <Textarea
+          <RequestDescriptionInput
             id="edit-description"
-            label="Source Request Description"
-            placeholder="Describe the requested items or services..."
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(val) => setDescription(val)}
             required
-            rows={5}
           />
 
           <FileUpload
