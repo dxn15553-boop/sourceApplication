@@ -70,6 +70,7 @@ export type WorkflowTrigger =
   | 'return'
   | 'resubmit'
   | 'assign'
+  | 'accept_assignment'
   | 'evaluate_vendor'
   | 'create_pr'
   | 'create_po'
@@ -121,6 +122,19 @@ export interface SourceRequest {
   current_assignee_role: Role;
   assigned_employee_id: string | null;
   assigned_employee?: Profile;
+  handler_accepted_at?: string | null;
+  promised_delivery_date?: string | null;
+  material_dispatch_date?: string | null;
+  material_received_date?: string | null;
+  ordered_qty?: number | null;
+  received_qty?: number | null;
+  accepted_qty?: number | null;
+  rejected_qty?: number | null;
+  rejection_reason?: string | null;
+  qc_status?: 'Passed' | 'Failed' | 'Conditionally Accepted' | string | null;
+  on_time_delivery?: boolean | null;
+  qc_remarks?: string | null;
+  work_completion_date?: string | null;
   created_at: string;
   updated_at: string;
   workflow_actions?: AuditEntry[];

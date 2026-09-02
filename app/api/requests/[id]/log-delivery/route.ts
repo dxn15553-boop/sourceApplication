@@ -40,9 +40,12 @@ export async function POST(
     const payload = await req.json();
     const { 
       ordered_qty, 
+      received_qty,
       accepted_qty, 
       rejected_qty, 
+      qc_status,
       rejection_reason,
+      qc_remarks,
       promised_delivery_date,
       material_dispatch_date,
       material_received_date
@@ -56,12 +59,23 @@ export async function POST(
       return NextResponse.json({ error: 'Rejection reason is required if rejected quantity > 0' }, { status: 400 });
     }
 
+    let onTime: boolean | null = null;
+    if (promised_delivery_date && material_received_date) {
+      onTime = new Date(material_received_date) <= new Date(promised_delivery_date);
+    }
+
+    const calculatedReceived = received_qty !== undefined ? Number(received_qty) : (Number(accepted_qty) + Number(rejected_qty));
+
     await db.update(sourceRequests)
       .set({ 
         ordered_qty: Number(ordered_qty),
+        received_qty: calculatedReceived,
         accepted_qty: Number(accepted_qty),
         rejected_qty: Number(rejected_qty),
         rejection_reason: rejection_reason || null,
+        qc_status: qc_status || 'Passed',
+        on_time_delivery: onTime,
+        qc_remarks: qc_remarks || null,
         promised_delivery_date: promised_delivery_date ? new Date(promised_delivery_date) : null,
         material_dispatch_date: material_dispatch_date ? new Date(material_dispatch_date) : null,
         material_received_date: material_received_date ? new Date(material_received_date) : null,
@@ -70,11 +84,14 @@ export async function POST(
       })
       .where(eq(sourceRequests.id, id));
 
+    const qcSummary = qc_status ? ` [QC: ${qc_status}]` : '';
+    const onTimeSummary = onTime !== null ? (onTime ? ' (On-Time)' : ' (Delayed)') : '';
+
     await db.insert(workflowActions).values({
       request_id: id,
       actor_id: user.id,
       action: 'delivered',
-      comment: `Delivery logged: ${accepted_qty} accepted, ${rejected_qty} rejected.`,
+      comment: `Delivery & QC logged: ${accepted_qty} accepted, ${rejected_qty} rejected${qcSummary}${onTimeSummary}.${qc_remarks ? ` Notes: ${qc_remarks}` : ''}`,
     });
 
     return NextResponse.json({ success: true });

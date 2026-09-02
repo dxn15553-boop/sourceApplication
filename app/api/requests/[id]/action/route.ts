@@ -33,6 +33,7 @@ const ACTION_MAP: Record<WorkflowTrigger, import('@/lib/types').WorkflowAction> 
   return: 'returned',
   resubmit: 'resubmitted',
   assign: 'assigned',
+  accept_assignment: 'processing_started',
   evaluate_vendor: 'vendor_selected',
   create_pr: 'pr_created',
   create_po: 'po_created',

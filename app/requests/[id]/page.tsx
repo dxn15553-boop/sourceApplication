@@ -6,7 +6,14 @@ import ApprovalPanel from '@/components/requests/ApprovalPanel';
 import AssignmentPanel from '@/components/requests/AssignmentPanel';
 import ResubmitPanel from '@/components/requests/ResubmitPanel';
 import ReviewPanel from '@/components/requests/ReviewPanel';
-import { ArrowLeft, Download, Paperclip, User, Building2, Calendar, Clock } from 'lucide-react';
+import HandlerAcceptancePanel from '@/components/requests/HandlerAcceptancePanel';
+import VendorEvaluationPanel from '@/components/requests/VendorEvaluationPanel';
+import PRCreationPanel from '@/components/requests/PRCreationPanel';
+import POCreationPanel from '@/components/requests/POCreationPanel';
+import PaymentPanel from '@/components/requests/PaymentPanel';
+import DeliveryPanel from '@/components/requests/DeliveryPanel';
+import CompletePanel from '@/components/requests/CompletePanel';
+import { ArrowLeft, Download, Paperclip, User, Building2, Calendar, Clock, CheckCircle, AlertTriangle, XCircle, Truck, ShieldCheck, Package } from 'lucide-react';
 import Link from 'next/link';
 import type { SourceRequest } from '@/lib/types';
 import EditRequestButton from '@/components/requests/EditRequestButton';
@@ -401,12 +408,156 @@ export default async function RequestDetailPage({
               );
             })()}
 
+            {/* Delivery Logistics & QC Inspection Details (Step 15) if logged */}
+            {req.ordered_qty !== null && req.ordered_qty !== undefined && (
+              <div className="card animate-fade-in" style={{ padding: '22px 26px', borderTop: '4px solid #10b981' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
+                    <Package size={18} style={{ color: '#10b981' }} /> Step 15: Delivery Logistics & QC Inspection
+                  </h2>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    {req.qc_status && (
+                      <span
+                        style={{
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          padding: '4px 10px',
+                          borderRadius: 99,
+                          background:
+                            req.qc_status === 'Passed'
+                              ? 'rgba(16,185,129,0.15)'
+                              : req.qc_status === 'Conditionally Accepted'
+                              ? 'rgba(245,158,11,0.15)'
+                              : 'rgba(239,68,68,0.15)',
+                          color:
+                            req.qc_status === 'Passed'
+                              ? 'var(--success)'
+                              : req.qc_status === 'Conditionally Accepted'
+                              ? 'var(--warning)'
+                              : 'var(--danger)',
+                          border: '1px solid currentColor',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <ShieldCheck size={13} /> QC: {req.qc_status}
+                      </span>
+                    )}
+                    {req.on_time_delivery !== null && req.on_time_delivery !== undefined && (
+                      <span
+                        style={{
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          padding: '4px 10px',
+                          borderRadius: 99,
+                          background: req.on_time_delivery ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                          color: req.on_time_delivery ? 'var(--success)' : 'var(--danger)',
+                          border: '1px solid currentColor',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        {req.on_time_delivery ? '🟢 On-Time Delivery' : '🔴 Delivery Delayed'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quantities grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12, marginBottom: 16 }}>
+                  <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--bg-hover)', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Ordered Qty</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginTop: 2 }}>{req.ordered_qty}</div>
+                  </div>
+                  <div style={{ padding: '10px 14px', borderRadius: 8, background: 'var(--bg-hover)', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Received Qty</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginTop: 2 }}>
+                      {req.received_qty ?? ((req.accepted_qty || 0) + (req.rejected_qty || 0))}
+                    </div>
+                  </div>
+                  <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--success)', fontWeight: 600, textTransform: 'uppercase' }}>Accepted Qty</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--success)', marginTop: 2 }}>{req.accepted_qty ?? 0}</div>
+                  </div>
+                  <div style={{ padding: '10px 14px', borderRadius: 8, background: (req.rejected_qty || 0) > 0 ? 'rgba(239,68,68,0.08)' : 'var(--bg-hover)', border: (req.rejected_qty || 0) > 0 ? '1px solid rgba(239,68,68,0.2)' : '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, color: (req.rejected_qty || 0) > 0 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Rejected Qty</div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: (req.rejected_qty || 0) > 0 ? 'var(--danger)' : 'var(--text-primary)', marginTop: 2 }}>{req.rejected_qty ?? 0}</div>
+                  </div>
+                </div>
+
+                {/* Rejection notice if any */}
+                {(req.rejected_qty || 0) > 0 && (
+                  <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', marginBottom: 14 }}>
+                    <p style={{ margin: 0, fontSize: 12.5, color: 'var(--danger)', fontWeight: 600 }}>
+                      ⚠️ Rejection Rate: {(((req.rejected_qty || 0) / (req.received_qty || ((req.accepted_qty || 0) + (req.rejected_qty || 0)) || 1)) * 100).toFixed(1)}%
+                    </p>
+                    {req.rejection_reason && (
+                      <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+                        <strong>Reason:</strong> {req.rejection_reason}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Dates & Remarks */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, fontSize: 12.5, color: 'var(--text-secondary)' }}>
+                  {req.promised_delivery_date && (
+                    <div>📅 <strong>Promised Date:</strong> {new Date(req.promised_delivery_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                  )}
+                  {req.material_dispatch_date && (
+                    <div>🚚 <strong>Dispatch Date (MDD):</strong> {new Date(req.material_dispatch_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                  )}
+                  {req.material_received_date && (
+                    <div>📦 <strong>Received Date (MRD):</strong> {new Date(req.material_received_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                  )}
+                </div>
+
+                {req.qc_remarks && (
+                  <p style={{ margin: '12px 0 0', fontSize: 12.5, color: 'var(--text-muted)', fontStyle: 'italic', borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                    <strong>QC Remarks:</strong> {req.qc_remarks}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Action Panels */}
             {pendingReviewForUser && <ReviewPanel reviewId={pendingReviewForUser.id} departmentName={pendingReviewForUser.department.name} />}
             {canApprove && <ApprovalPanel request={req} userRole={profile.role} allDepartments={allDepartments} />}
             {(canHodResubmit || canFinalHeadResubmit || canCoordinatorResubmit) && <ResubmitPanel request={req} />}
             {canAssign && <AssignmentPanel request={req} availableEmployees={allEmployees} />}
             {canResubmit && <ResubmitPanel request={req} />}
+
+            {/* Step 9: Handler Assignment Acceptance */}
+            {req.status === 'Assigned' && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager') && (
+              <HandlerAcceptancePanel request={req} assignedHandlerName={req.assigned_employee?.full_name} />
+            )}
+
+            {/* Step 10: Vendor Evaluation */}
+            {(req.status === 'Vendor Evaluation' || req.status === 'Processing') && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager') && (
+              <VendorEvaluationPanel requestId={req.id} />
+            )}
+
+            {/* Step 11: PR Creation */}
+            {req.status === 'PR Created' && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager') && (
+              <POCreationPanel requestId={req.id} />
+            )}
+
+            {/* Step 14: Payment */}
+            {req.status === 'PO Created' && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager' || profile.role === 'employee') && (
+              <PaymentPanel requestId={req.id} />
+            )}
+
+            {/* Step 15: Delivery & QC */}
+            {req.status === 'Payment Pending' && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager') && (
+              <DeliveryPanel requestId={req.id} />
+            )}
+
+            {/* Step 16: Work Completion & Closure */}
+            {req.status === 'Delivered' && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager') && (
+              <CompletePanel request={req as any} />
+            )}
           </div>
 
           {/* RIGHT COLUMN — Workflow History */}

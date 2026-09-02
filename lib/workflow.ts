@@ -55,7 +55,9 @@ export const WORKFLOW_TRANSITIONS: WorkflowTransition[] = [
   { from: 'Procurement Approved', action: 'assign',   to: 'Assigned',                next_assignee_role: 'employee',             requires_comment: false },
 
   // Employee processes
+  { from: 'Assigned',             action: 'accept_assignment', to: 'Processing',      next_assignee_role: 'employee',             requires_comment: false },
   { from: 'Assigned',             action: 'evaluate_vendor', to: 'Vendor Evaluation', next_assignee_role: 'employee',             requires_comment: false },
+  { from: 'Processing',           action: 'evaluate_vendor', to: 'Vendor Evaluation', next_assignee_role: 'employee',             requires_comment: false },
   { from: 'Vendor Evaluation',    action: 'create_pr',       to: 'PR Created',        next_assignee_role: 'employee',             requires_comment: false },
   { from: 'PR Created',           action: 'create_po',       to: 'PO Created',        next_assignee_role: 'employee',             requires_comment: false },
   { from: 'PO Created',           action: 'log_payment',     to: 'Payment Pending',   next_assignee_role: 'employee',             requires_comment: false },
@@ -126,6 +128,9 @@ export function getAvailableActions(
 
     case 'employee':
       if (status === 'Assigned' && isAssignedEmployee) {
+        actions.push('accept_assignment', 'evaluate_vendor');
+      }
+      if (status === 'Processing' && isAssignedEmployee) {
         actions.push('evaluate_vendor');
       }
       if (status === 'Vendor Evaluation' && isAssignedEmployee) {
