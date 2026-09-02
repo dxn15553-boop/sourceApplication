@@ -7,7 +7,6 @@ import { departments } from '@/lib/db/schema';
 import { inArray } from 'drizzle-orm';
 import type { Profile } from '@/lib/types';
 import NotificationBell from './NotificationBell';
-import RoleSwitcher from './RoleSwitcher';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -79,7 +78,6 @@ export default async function AppShell({
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <RoleSwitcher currentEmail={user.email} currentName={user.name} currentRole={user.role} />
             <NotificationBell />
             {headerAction && <div>{headerAction}</div>}
           </div>
