@@ -253,9 +253,12 @@ export async function POST(
             SELECT name, email FROM "User" WHERE id = ${assigned_employee_id} LIMIT 1
           `;
 
+          let empEmail: string | null = null;
+          let empName: string | null = null;
+
           if (empRows.length > 0) {
-            const empEmail = empRows[0].email;
-            const empName = empRows[0].name;
+            empEmail = empRows[0].email as string;
+            empName = empRows[0].name as string;
             
             // Map to local profile UUID using email
             const { profiles } = await import('@/lib/db/schema');
@@ -270,7 +273,6 @@ export async function POST(
               const hash = await bcrypt.hash(randomPassword, 10);
               
               const [newProfile] = await db.insert(profiles).values({
-                id: crypto.randomUUID(),
                 email: empEmail,
                 password_hash: hash,
                 plaintext_password: randomPassword,
@@ -331,7 +333,10 @@ export async function POST(
               // Update existing request
               await pSql`
                 UPDATE "ProcurementRequest"
-                SET "handlerId" = ${assigned_employee_id}, "updatedAt" = NOW()
+                SET 
+                  "handlerId" = ${assigned_employee_id}, 
+                  "nameOfHandler" = ${empName},
+                  "updatedAt" = NOW()
                 WHERE "sourceNo" = ${srcRequest.id}
               `;
 
@@ -356,18 +361,23 @@ export async function POST(
               await pSql`
                 INSERT INTO "ProcurementRequest" (
                   id, "sourceNo", "sourceDate", "sourceDescription", 
-                  "departmentId", "handlerId", "createdById", "createdAt", "updatedAt",
-                  "csStatus", "prStatus", "poStatus", "paymentStatus", "currentStage", "slaStatus"
+                  "departmentId", "handlerId", "nameOfHandler", "createdById", "createdAt", "updatedAt",
+                  "csStatus", "prStatus", "poStatus", "paymentStatus", "currentStage", "slaStatus",
+                  "slaCS", "slaPR", "slaPO", "slaPAR", "slaPDD", "slaMDD", "slaMRD", "slaWCD",
+                  "daysForCS", "daysForPR", "daysForPO", "daysForPayment", "noOfDays", "pendingDays"
                 ) VALUES (
                   ${newRequestId}, 
                   ${srcRequest.id}, 
                   ${srcRequest.created_at}, 
                   ${srcRequest.description}, 
                   ${procurementDeptId}, 
-                  ${assigned_employee_id}, 
+                  ${assigned_employee_id},
+                  ${empName},
                   ${createdById}, 
                   NOW(), NOW(),
-                  'PENDING', 'PENDING', 'PENDING', 'PENDING', 'CS', 'ON_TRACK'
+                  'PENDING', 'PENDING', 'PENDING', 'PENDING', 'CS', 'ON_TRACK',
+                  7, 14, 7, 5, 10, 7, 5, 30,
+                  0, 0, 0, 0, 0, 0
                 )
               `;
 
