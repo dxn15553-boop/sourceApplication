@@ -6,7 +6,6 @@ import ApprovalPanel from '@/components/requests/ApprovalPanel';
 import AssignmentPanel from '@/components/requests/AssignmentPanel';
 import ResubmitPanel from '@/components/requests/ResubmitPanel';
 import ReviewPanel from '@/components/requests/ReviewPanel';
-import HandlerAcceptancePanel from '@/components/requests/HandlerAcceptancePanel';
 import VendorEvaluationPanel from '@/components/requests/VendorEvaluationPanel';
 import PRCreationPanel from '@/components/requests/PRCreationPanel';
 import POCreationPanel from '@/components/requests/POCreationPanel';
@@ -529,13 +528,8 @@ export default async function RequestDetailPage({
             {canAssign && <AssignmentPanel request={req} availableEmployees={allEmployees} />}
             {canResubmit && <ResubmitPanel request={req} />}
 
-            {/* Step 9: Handler Assignment Acceptance */}
-            {req.status === 'Assigned' && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager') && (
-              <HandlerAcceptancePanel request={req} assignedHandlerName={req.assigned_employee?.full_name} />
-            )}
-
             {/* Step 10: Vendor Evaluation */}
-            {(req.status === 'Vendor Evaluation' || req.status === 'Processing') && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager') && (
+            {(req.status === 'Assigned' || req.status === 'Vendor Evaluation' || req.status === 'Processing') && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager') && (
               <VendorEvaluationPanel requestId={req.id} />
             )}
 
