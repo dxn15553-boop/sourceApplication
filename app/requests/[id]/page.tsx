@@ -6,12 +6,6 @@ import ApprovalPanel from '@/components/requests/ApprovalPanel';
 import AssignmentPanel from '@/components/requests/AssignmentPanel';
 import ResubmitPanel from '@/components/requests/ResubmitPanel';
 import ReviewPanel from '@/components/requests/ReviewPanel';
-import VendorEvaluationPanel from '@/components/requests/VendorEvaluationPanel';
-import PRCreationPanel from '@/components/requests/PRCreationPanel';
-import POCreationPanel from '@/components/requests/POCreationPanel';
-import PaymentPanel from '@/components/requests/PaymentPanel';
-import DeliveryPanel from '@/components/requests/DeliveryPanel';
-import CompletePanel from '@/components/requests/CompletePanel';
 import { ArrowLeft, Download, Paperclip, User, Building2, Calendar, Clock, CheckCircle, AlertTriangle, XCircle, Truck, ShieldCheck, Package } from 'lucide-react';
 import Link from 'next/link';
 import type { SourceRequest } from '@/lib/types';
@@ -527,31 +521,6 @@ export default async function RequestDetailPage({
             {(canHodResubmit || canFinalHeadResubmit || canCoordinatorResubmit) && <ResubmitPanel request={req} />}
             {canAssign && <AssignmentPanel request={req} availableEmployees={allEmployees} />}
             {canResubmit && <ResubmitPanel request={req} />}
-
-            {/* Step 10: Vendor Evaluation */}
-            {(req.status === 'Assigned' || req.status === 'Vendor Evaluation' || req.status === 'Processing') && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager') && (
-              <VendorEvaluationPanel requestId={req.id} />
-            )}
-
-            {/* Step 11: PR Creation */}
-            {req.status === 'PR Created' && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager') && (
-              <POCreationPanel requestId={req.id} />
-            )}
-
-            {/* Step 14: Payment */}
-            {req.status === 'PO Created' && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager' || profile.role === 'employee') && (
-              <PaymentPanel requestId={req.id} />
-            )}
-
-            {/* Step 15: Delivery & QC */}
-            {req.status === 'Payment Pending' && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager') && (
-              <DeliveryPanel requestId={req.id} />
-            )}
-
-            {/* Step 16: Work Completion & Closure */}
-            {req.status === 'Delivered' && (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager') && (
-              <CompletePanel request={req as any} />
-            )}
           </div>
 
           {/* RIGHT COLUMN — Workflow History */}
