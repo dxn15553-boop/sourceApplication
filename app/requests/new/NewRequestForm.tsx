@@ -16,12 +16,16 @@ export default function NewRequestForm({
   const router = useRouter();
   const [description, setDescription] = useState('');
   const [descError, setDescError] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [requesterName, setRequesterName] = useState('');
   const [requesterDesignation, setRequesterDesignation] = useState('');
+  const [priority, setPriority] = useState<'Low' | 'Medium' | 'High' | 'Urgent'>('Medium');
+  const [requiredByDate, setRequiredByDate] = useState('');
+  const [purposeJustification, setPurposeJustification] = useState('');
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -42,19 +46,23 @@ export default function NewRequestForm({
       return;
     }
 
+    const requiresUrs = description.toLowerCase().includes('machinery');
+    if (requiresUrs && files.length === 0) {
+      setError('A URS (User Requirement Specification) document is mandatory when requesting New Machinery Purchase. Please upload the URS document below.');
+      return;
+    }
+
     setLoading(true);
     try {
-      let attachmentPath: string | undefined;
-      let attachmentName: string | undefined;
+      let uploadedAttachments: { name: string; path: string; size?: number }[] = [];
 
-      if (file) {
+      if (files.length > 0) {
         const formData = new FormData();
-        formData.append('file', file);
+        files.forEach((f) => formData.append('files', f));
         const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
         const uploadJson = await uploadRes.json();
         if (!uploadRes.ok) { setError(uploadJson.error ?? 'File upload failed.'); return; }
-        attachmentPath = uploadJson.path;
-        attachmentName = uploadJson.name;
+        uploadedAttachments = uploadJson.files || [];
       }
 
       const res = await fetch('/api/requests', {
@@ -64,9 +72,13 @@ export default function NewRequestForm({
           department_id: departmentId,
           requester_name: requesterName.trim(),
           requester_designation: requesterDesignation.trim(),
+          priority,
+          required_by_date: requiredByDate || undefined,
+          purpose_justification: purposeJustification.trim() || undefined,
           description: description.trim(), 
-          attachment_path: attachmentPath, 
-          attachment_name: attachmentName 
+          attachment_path: uploadedAttachments[0]?.path ?? null, 
+          attachment_name: uploadedAttachments[0]?.name ?? null,
+          attachments: uploadedAttachments.length > 0 ? uploadedAttachments : null,
         }),
       });
       const json = await res.json();
@@ -146,6 +158,74 @@ export default function NewRequestForm({
             />
           </div>
 
+          {/* Priority and Required By Date */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+            <div className="form-group">
+              <label className="form-label">Priority</label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {(['Low', 'Medium', 'High', 'Urgent'] as const).map((p) => {
+                  const isSelected = priority === p;
+                  const colors = {
+                    Low: { bg: 'rgba(16,185,129,0.12)', border: '#10b981', text: '#10b981', dot: '🟢' },
+                    Medium: { bg: 'rgba(59,130,246,0.12)', border: '#3b82f6', text: '#3b82f6', dot: '🔵' },
+                    High: { bg: 'rgba(245,158,11,0.12)', border: '#f59e0b', text: '#f59e0b', dot: '🟠' },
+                    Urgent: { bg: 'rgba(239,68,68,0.12)', border: '#ef4444', text: '#ef4444', dot: '🔴' },
+                  }[p];
+
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setPriority(p)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: isSelected ? 700 : 500,
+                        border: isSelected ? `1.5px solid ${colors.border}` : '1px solid var(--border)',
+                        background: isSelected ? colors.bg : 'var(--bg-hover)',
+                        color: isSelected ? colors.text : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                      }}
+                    >
+                      <span>{colors.dot}</span>
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="requiredByDate">Required By Date</label>
+              <input
+                id="requiredByDate"
+                type="date"
+                className="form-input"
+                value={requiredByDate}
+                onChange={(e) => setRequiredByDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="purposeJustification">Purpose / Justification (Optional)</label>
+            <textarea
+              id="purposeJustification"
+              rows={2}
+              className="form-input"
+              placeholder="Explain the business need, purpose, or reason for this request..."
+              value={purposeJustification}
+              onChange={(e) => setPurposeJustification(e.target.value)}
+              style={{ resize: 'vertical' }}
+            />
+          </div>
+
           <RequestDescriptionInput
             id="description"
             value={description}
@@ -157,7 +237,31 @@ export default function NewRequestForm({
             required
           />
 
-          <FileUpload onFileSelect={setFile} maxSizeMb={10} />
+          {description.toLowerCase().includes('machinery') && (
+            <div
+              style={{
+                padding: '12px 16px',
+                borderRadius: 8,
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1.5px dashed rgba(239, 68, 68, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <span style={{ fontSize: 22 }}>📄</span>
+              <div>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--danger)' }}>
+                  URS Document Upload Mandatory
+                </p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+                  You have items categorized under <strong>New Machinery Purchase</strong>. A valid User Requirement Specification (URS) document must be attached below.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <FileUpload onFilesSelect={setFiles} maxSizeMb={15} />
 
           <div style={{ padding: '14px 16px', background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 8 }}>
             <p style={{ fontSize: 13, fontWeight: 600, color: '#60a5fa', margin: '0 0 6px' }}>After submission, this request will:</p>

@@ -66,7 +66,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { requester_name, requester_designation, description, attachment_path, attachment_name } = body;
+    const { requester_name, requester_designation, description, priority, required_by_date, purpose_justification, attachment_path, attachment_name, attachments } = body;
 
     const updatePayload: any = {
       updated_at: new Date(),
@@ -75,10 +75,16 @@ export async function PATCH(
     if (requester_name !== undefined) updatePayload.requester_name = requester_name;
     if (requester_designation !== undefined) updatePayload.requester_designation = requester_designation;
     if (description !== undefined) updatePayload.description = description;
+    if (priority !== undefined) updatePayload.priority = priority;
+    if (required_by_date !== undefined) updatePayload.required_by_date = required_by_date ? new Date(required_by_date) : null;
+    if (purpose_justification !== undefined) updatePayload.purpose_justification = purpose_justification;
     
     // Support clearing the attachment (setting path and name to null)
     updatePayload.attachment_path = attachment_path === null ? null : (attachment_path || undefined);
     updatePayload.attachment_name = attachment_name === null ? null : (attachment_name || undefined);
+    if (attachments !== undefined) {
+      updatePayload.attachments = attachments === null ? null : (typeof attachments === 'string' ? attachments : JSON.stringify(attachments));
+    }
 
     await db.update(sourceRequests).set(updatePayload).where(eq(sourceRequests.id, id));
 

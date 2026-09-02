@@ -4,9 +4,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Package } from 'lucide-react';
 
 export const ITEM_CATEGORIES = [
-  'New Material / Purchase',
+  'New Material Purchase',
+  'New Machinery Purchase',
   'Service Requirement',
   'Spare Parts',
+  'Insurance',
   'Others',
 ] as const;
 
@@ -101,23 +103,27 @@ export function parseStringToItems(text: string): RequestItem[] {
       const modelMatch = body.match(/•?\s*Model\s*:\s*([^\n]+)/i);
       const makeModelCombined = body.match(/•?\s*(?:Make\s*(?:&|and)\s*Model)\s*:\s*([^\n]+)/i);
       const qtyMatch = body.match(/•?\s*(?:Quantity|Qty)\s*:\s*(\d+(?:\.\d+)?)\s*([a-zA-Z]*)/i);
-      const descMatch = body.match(/•?\s*Description\s*:\s*([^\n]+)/i);
+      const descMatch = body.match(/•?\s*Description\s*:\s*([\s\S]*?)(?=(?:•|$))/i);
       const specsMatch = body.match(/•?\s*(?:Specifications\s*(?:\/\s*Remarks)?|Specs|Remarks)\s*:\s*([^\n]+)/i);
 
       let category = 'New Material / Purchase';
       let otherCategory = '';
       if (catMatch) {
         const rawCat = catMatch[1]?.trim() || '';
-        if (/Service/i.test(rawCat)) {
+        if (/Machinery/i.test(rawCat)) {
+          category = 'New Machinery Purchase';
+        } else if (/Service/i.test(rawCat)) {
           category = 'Service Requirement';
         } else if (/Spare/i.test(rawCat)) {
           category = 'Spare Parts';
+        } else if (/Insurance/i.test(rawCat)) {
+          category = 'Insurance';
         } else if (/Others?/i.test(rawCat)) {
           category = 'Others';
           const matchOther = rawCat.replace(/^Others?\s*[-:\(]?\s*/i, '').replace(/\)$/, '').trim();
           if (matchOther) otherCategory = matchOther;
         } else if (/Material|Purchase/i.test(rawCat)) {
-          category = 'New Material / Purchase';
+          category = 'New Material Purchase';
         } else {
           category = 'Others';
           otherCategory = rawCat;
@@ -132,13 +138,6 @@ export function parseStringToItems(text: string): RequestItem[] {
         make = makeModelCombined[1]?.trim() || '';
       }
 
-      let description = '';
-      if (descMatch) {
-        description = descMatch[1]?.trim() || '';
-      } else if (specsMatch) {
-        description = specsMatch[1]?.trim() || '';
-      }
-
       let quantity = '';
       let unit = 'Nos';
       if (qtyMatch) {
@@ -146,6 +145,13 @@ export function parseStringToItems(text: string): RequestItem[] {
         if (qtyMatch[2]) {
           unit = qtyMatch[2].trim();
         }
+      }
+
+      let description = '';
+      if (descMatch) {
+        description = descMatch[1]?.trim() || '';
+      } else if (specsMatch) {
+        description = specsMatch[1]?.trim() || '';
       }
 
       return {
@@ -162,14 +168,24 @@ export function parseStringToItems(text: string): RequestItem[] {
     });
 
     if (parsed.length === 1) {
-      parsed.push({ id: '2', category: 'New Material / Purchase', otherCategory: '', name: '', make: '', model: '', quantity: '', unit: 'Nos', description: '' });
+      parsed.push({
+        id: '2',
+        category: 'New Material Purchase',
+        otherCategory: '',
+        name: '',
+        make: '',
+        model: '',
+        quantity: '',
+        unit: 'Nos',
+        description: '',
+      });
     }
     return parsed;
   }
 
   return [
-    { id: '1', category: 'New Material / Purchase', otherCategory: '', name: text.trim(), make: '', model: '', quantity: '', unit: 'Nos', description: '' },
-    { id: '2', category: 'New Material / Purchase', otherCategory: '', name: '', make: '', model: '', quantity: '', unit: 'Nos', description: '' },
+    { id: '1', category: 'New Material Purchase', otherCategory: '', name: text.trim(), make: '', model: '', quantity: '', unit: 'Nos', description: '' },
+    { id: '2', category: 'New Material Purchase', otherCategory: '', name: '', make: '', model: '', quantity: '', unit: 'Nos', description: '' },
   ];
 }
 
@@ -201,7 +217,7 @@ export default function RequestDescriptionInput({
     onChange(formatted);
   };
 
-  const handleItemChange = (index: number, field: keyof RequestItem, val: string) => {
+  const handleItemChange = (index: number, field: keyof RequestItem, val: any) => {
     const updated = items.map((it, i) => {
       if (i !== index) return it;
       return {
@@ -226,7 +242,7 @@ export default function RequestDescriptionInput({
       ...items,
       {
         id: nextId,
-        category: 'New Material / Purchase',
+        category: 'New Material Purchase',
         otherCategory: '',
         name: '',
         make: '',
@@ -372,15 +388,37 @@ export default function RequestDescriptionInput({
                           gap: 6,
                         }}
                       >
-                        {cat === 'New Material / Purchase' && '📦'}
+                        {cat === 'New Material Purchase' && '📦'}
+                        {cat === 'New Machinery Purchase' && '🏭'}
                         {cat === 'Service Requirement' && '🔧'}
                         {cat === 'Spare Parts' && '⚙️'}
+                        {cat === 'Insurance' && '🛡️'}
                         {cat === 'Others' && '📋'}
                         {cat}
                       </button>
                     );
                   })}
                 </div>
+                {currentCategory === 'New Machinery Purchase' && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      background: 'rgba(245, 158, 11, 0.10)',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontSize: 12,
+                      color: '#f59e0b',
+                      fontWeight: 600,
+                    }}
+                  >
+                    <span>📄</span>
+                    <span>Mandatory: A <strong>URS (User Requirement Specification)</strong> document must be attached.</span>
+                  </div>
+                )}
                 {currentCategory === 'Others' && (
                   <input
                     type="text"
@@ -523,7 +561,7 @@ export default function RequestDescriptionInput({
                 </div>
               </div>
 
-              {/* Row: Description */}
+              {/* Spacious Description Textarea */}
               <div>
                 <label
                   style={{
@@ -531,18 +569,25 @@ export default function RequestDescriptionInput({
                     fontSize: 11.5,
                     fontWeight: 600,
                     color: 'var(--text-secondary)',
-                    marginBottom: 4,
+                    marginBottom: 6,
                   }}
                 >
                   Description / Specifications
                 </label>
+
                 <textarea
-                  rows={2}
+                  rows={3}
                   className="form-input"
-                  placeholder={`Describe specifications, dimensions, features, or requirements for Item ${itemNum}...`}
+                  placeholder={`Describe detailed specifications, dimensions, features, or requirements for Item ${itemNum}...`}
                   value={item.description || ''}
                   onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                  style={{ fontSize: 12.5, resize: 'vertical' }}
+                  style={{
+                    fontSize: 12.5,
+                    resize: 'vertical',
+                    lineHeight: 1.6,
+                    minHeight: 80,
+                    padding: '10px 12px',
+                  }}
                 />
               </div>
             </div>

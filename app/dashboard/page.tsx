@@ -187,8 +187,42 @@ export default async function DashboardPage() {
                   <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {req.description}
                   </p>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                    {req.department?.name} · {new Date(req.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    {req.priority && (
+                      <span
+                        style={{
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                          borderRadius: 6,
+                          background:
+                            req.priority === 'Urgent'
+                              ? 'rgba(239,68,68,0.12)'
+                              : req.priority === 'High'
+                              ? 'rgba(245,158,11,0.12)'
+                              : req.priority === 'Low'
+                              ? 'rgba(16,185,129,0.12)'
+                              : 'rgba(59,130,246,0.12)',
+                          color:
+                            req.priority === 'Urgent'
+                              ? 'var(--danger)'
+                              : req.priority === 'High'
+                              ? 'var(--warning)'
+                              : req.priority === 'Low'
+                              ? 'var(--success)'
+                              : 'var(--info)',
+                        }}
+                      >
+                        {req.priority === 'Urgent' && '🔴 '}
+                        {req.priority === 'High' && '🟠 '}
+                        {req.priority === 'Medium' && '🔵 '}
+                        {req.priority === 'Low' && '🟢 '}
+                        {req.priority}
+                      </span>
+                    )}
+                    <span>{req.department?.name}</span>
+                    <span>·</span>
+                    <span>{new Date(req.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}</span>
                   </p>
                 </div>
                 <StatusBadge status={req.status as any} animate />

@@ -161,9 +161,45 @@ export default async function RequestDetailPage({
             <div className="card" style={{ padding: '28px 32px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
                     <span className="src-id" style={{ fontSize: 13, padding: '5px 10px' }}>{req.id}</span>
                     <StatusBadge status={req.status as any} animate={req.current_assignee_role !== null || req.status === 'Under Required Review'} />
+                    {req.priority && (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          padding: '4px 10px',
+                          borderRadius: 99,
+                          background:
+                            req.priority === 'Urgent'
+                              ? 'rgba(239,68,68,0.15)'
+                              : req.priority === 'High'
+                              ? 'rgba(245,158,11,0.15)'
+                              : req.priority === 'Low'
+                              ? 'rgba(16,185,129,0.15)'
+                              : 'rgba(59,130,246,0.15)',
+                          color:
+                            req.priority === 'Urgent'
+                              ? 'var(--danger)'
+                              : req.priority === 'High'
+                              ? 'var(--warning)'
+                              : req.priority === 'Low'
+                              ? 'var(--success)'
+                              : 'var(--info)',
+                          border: '1px solid currentColor',
+                        }}
+                      >
+                        {req.priority === 'Urgent' && '🔴'}
+                        {req.priority === 'High' && '🟠'}
+                        {req.priority === 'Medium' && '🔵'}
+                        {req.priority === 'Low' && '🟢'}
+                        Priority: {req.priority}
+                      </span>
+                    )}
                   </div>
                   <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>
                     Source Request Details
@@ -183,7 +219,10 @@ export default async function RequestDetailPage({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16 }}>
                 <MetaItem icon={<User size={15} />} label="Requester" value={`${((req as any).requester_name || req.requester?.full_name) ?? '—'}${req.requester_designation ? ` (${req.requester_designation})` : ''}`} />
                 <MetaItem icon={<Building2 size={15} />} label="Target Department" value={req.department?.name ?? '—'} />
-                <MetaItem icon={<Clock size={15} />} label="Time" value={createdDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} />
+                <MetaItem icon={<Clock size={15} />} label="Submitted Time" value={createdDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} />
+                {req.required_by_date && (
+                  <MetaItem icon={<Calendar size={15} />} label="Required By" value={new Date(req.required_by_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })} />
+                )}
                 {req.assigned_employee && (
                   <MetaItem icon={<User size={15} />} label="Assigned To" value={req.assigned_employee.full_name} />
                 )}
@@ -254,6 +293,16 @@ export default async function RequestDetailPage({
               </div>
             )}
 
+            {/* Purpose / Justification (if provided) */}
+            {req.purpose_justification && (
+              <div className="card" style={{ padding: '20px 24px', background: 'rgba(59,130,246,0.03)', borderColor: 'rgba(59,130,246,0.15)' }}>
+                <h2 style={{ fontSize: 14.5, fontWeight: 700, margin: '0 0 8px', color: 'var(--text-primary)' }}>Purpose / Justification</h2>
+                <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>
+                  {req.purpose_justification}
+                </p>
+              </div>
+            )}
+
             {/* Description */}
             <div className="card" style={{ padding: '20px 24px' }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: 'var(--text-primary)' }}>Description</h2>
@@ -262,25 +311,95 @@ export default async function RequestDetailPage({
               </p>
             </div>
 
-            {/* Attachment */}
-            {req.attachment_name && (
-              <div className="card" style={{ padding: '20px 24px' }}>
-                <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 12px', color: 'var(--text-primary)' }}>Attachment</h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'var(--bg-hover)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--accent-glow)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)' }}>
-                    <Paperclip size={17} />
+            {/* Attachments / Supporting Documents */}
+            {(() => {
+              let allAttachments: { name: string; path: string; size?: number }[] = [];
+              if (req.attachments) {
+                try {
+                  const parsed = typeof req.attachments === 'string' ? JSON.parse(req.attachments) : req.attachments;
+                  if (Array.isArray(parsed)) allAttachments = parsed;
+                } catch (e) {}
+              }
+              if (allAttachments.length === 0 && req.attachment_name && req.attachment_path) {
+                allAttachments = [{ name: req.attachment_name, path: req.attachment_path }];
+              }
+
+              if (allAttachments.length === 0) return null;
+
+              return (
+                <div className="card" style={{ padding: '20px 24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                    <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                      Supporting Documents ({allAttachments.length})
+                    </h2>
                   </div>
-                  <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {req.attachment_name}
-                  </span>
-                  {attachmentUrl && (
-                    <a href={attachmentUrl} target="_blank" rel="noopener noreferrer" download={req.attachment_name} className="btn btn-primary btn-sm" style={{ flexShrink: 0 }}>
-                      <Download size={13} /> Download
-                    </a>
-                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {allAttachments.map((att, idx) => (
+                      <div
+                        key={`${att.name}-${idx}`}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 14,
+                          background: 'var(--bg-hover)',
+                          padding: '12px 16px',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px solid var(--border)',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 8,
+                            background: 'var(--accent-glow)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--accent)',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <Paperclip size={17} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <span
+                            style={{
+                              fontSize: 13.5,
+                              fontWeight: 600,
+                              color: 'var(--text-primary)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              display: 'block',
+                            }}
+                          >
+                            {att.name}
+                          </span>
+                          {att.size && (
+                            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                              {(att.size / 1024 / 1024).toFixed(2)} MB
+                            </span>
+                          )}
+                        </div>
+                        {att.path && (
+                          <a
+                            href={att.path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download={att.name}
+                            className="btn btn-primary btn-sm"
+                            style={{ flexShrink: 0 }}
+                          >
+                            <Download size={13} /> View / Download
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Action Panels */}
             {pendingReviewForUser && <ReviewPanel reviewId={pendingReviewForUser.id} departmentName={pendingReviewForUser.department.name} />}

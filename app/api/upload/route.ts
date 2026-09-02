@@ -7,32 +7,53 @@ export async function POST(request: Request) {
     if (!session?.user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const formData = await request.formData();
-    const file = formData.get('file') as File | null;
+    const rawFiles = formData.getAll('files') as File[];
+    const singleFile = formData.get('file') as File | null;
 
-    if (!file) return Response.json({ error: 'No file provided' }, { status: 400 });
+    const filesToUpload: File[] = rawFiles.length > 0 ? rawFiles : singleFile ? [singleFile] : [];
 
-    if (file.size > 10 * 1024 * 1024) {
-      return Response.json({ error: 'File too large. Maximum is 10MB.' }, { status: 400 });
+    if (filesToUpload.length === 0) {
+      return Response.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
+    for (const file of filesToUpload) {
+      if (file.size > 15 * 1024 * 1024) {
+        return Response.json({ error: `File "${file.name}" is too large. Maximum size is 15MB per file.` }, { status: 400 });
+      }
+    }
 
-    // Upload to Cloudinary using a stream
-    const uploadResult = await new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        { folder: 'source_requests', resource_type: 'auto', original_filename: file.name },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      );
-      uploadStream.end(buffer);
+    const uploadPromises = filesToUpload.map(async (file) => {
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = new Uint8Array(arrayBuffer);
+
+      const uploadResult = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: 'source_requests', resource_type: 'auto', original_filename: file.name },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(buffer);
+      });
+
+      return {
+        path: (uploadResult as any).secure_url,
+        name: file.name,
+        size: file.size,
+      };
     });
 
-    const secureUrl = (uploadResult as any).secure_url;
+    const uploadedFiles = await Promise.all(uploadPromises);
 
-    return Response.json({ path: secureUrl, name: file.name }, { status: 201 });
+    return Response.json(
+      {
+        files: uploadedFiles,
+        path: uploadedFiles[0]?.path,
+        name: uploadedFiles[0]?.name,
+      },
+      { status: 201 }
+    );
   } catch (err) {
     console.error(err);
     return Response.json({ error: 'Internal server error' }, { status: 500 });

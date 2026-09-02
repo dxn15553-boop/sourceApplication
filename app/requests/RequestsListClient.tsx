@@ -119,6 +119,38 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
                   {req.description}
                 </p>
                 <div style={{ display: 'flex', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
+                  {req.priority && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: '1px 6px',
+                        borderRadius: 6,
+                        background:
+                          req.priority === 'Urgent'
+                            ? 'rgba(239,68,68,0.12)'
+                            : req.priority === 'High'
+                            ? 'rgba(245,158,11,0.12)'
+                            : req.priority === 'Low'
+                            ? 'rgba(16,185,129,0.12)'
+                            : 'rgba(59,130,246,0.12)',
+                        color:
+                          req.priority === 'Urgent'
+                            ? 'var(--danger)'
+                            : req.priority === 'High'
+                            ? 'var(--warning)'
+                            : req.priority === 'Low'
+                            ? 'var(--success)'
+                            : 'var(--info)',
+                      }}
+                    >
+                      {req.priority === 'Urgent' && '🔴 '}
+                      {req.priority === 'High' && '🟠 '}
+                      {req.priority === 'Medium' && '🔵 '}
+                      {req.priority === 'Low' && '🟢 '}
+                      {req.priority}
+                    </span>
+                  )}
                   <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                     {(req as any).department?.name}
                   </span>

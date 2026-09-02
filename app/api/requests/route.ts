@@ -126,8 +126,12 @@ export async function POST(request: Request) {
       requester_department_id: user.departmentIds?.[0] ?? null,
       department_id: primaryDeptId,
       description: body.description.trim(),
+      priority: body.priority?.trim() || 'Medium',
+      required_by_date: body.required_by_date ? new Date(body.required_by_date) : null,
+      purpose_justification: body.purpose_justification?.trim() || null,
       attachment_path: body.attachment_path ?? null,
       attachment_name: body.attachment_name ?? null,
+      attachments: body.attachments ? (typeof body.attachments === 'string' ? body.attachments : JSON.stringify(body.attachments)) : null,
       status: 'Submitted',
       current_assignee_role: 'hod',
     }).returning();

@@ -111,8 +111,12 @@ export interface SourceRequest {
   department_id: string;
   department?: Department;
   description: string;
+  priority?: 'Low' | 'Medium' | 'High' | 'Urgent' | string | null;
+  required_by_date?: string | null;
+  purpose_justification?: string | null;
   attachment_path: string | null;
   attachment_name: string | null;
+  attachments?: AttachmentItem[] | string | null;
   status: WorkflowStatus;
   current_assignee_role: Role;
   assigned_employee_id: string | null;
@@ -120,6 +124,12 @@ export interface SourceRequest {
   created_at: string;
   updated_at: string;
   workflow_actions?: AuditEntry[];
+}
+
+export interface AttachmentItem {
+  name: string;
+  path: string;
+  size?: number;
 }
 
 export interface WorkflowTransition {
@@ -138,9 +148,13 @@ export type CreateRequestPayload = {
   requester_name?: string;
   requester_designation?: string;
   staff_requester_id?: string;
+  priority?: 'Low' | 'Medium' | 'High' | 'Urgent' | string;
+  required_by_date?: string;
+  purpose_justification?: string;
   description: string;
   attachment_path?: string;
   attachment_name?: string;
+  attachments?: AttachmentItem[] | string;
 };
 
 export interface WorkflowActionPayload {
