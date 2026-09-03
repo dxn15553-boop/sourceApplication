@@ -30,8 +30,8 @@ const PERSONAS: { category: string; icon: any; items: PersonaOption[] }[] = [
     category: 'Source Requesters & Staff',
     icon: User,
     items: [
-      { email: 'requester@dxn.com', name: 'Universal Requester', role: 'user', badge: 'Creator', color: '#10b981' },
-      { email: 'employee@dxn.com', name: 'Universal Employee', role: 'employee', badge: 'Employee', color: '#06b6d4' },
+      { email: 'requester@dxn.com', name: 'Requester', role: 'user', badge: 'Creator', color: '#10b981' },
+      { email: 'employee@dxn.com', name: 'Employee', role: 'employee', badge: 'Employee', color: '#06b6d4' },
       { email: 'itemployee@gmail.com', name: 'IT Staff Employee', role: 'employee', department: 'IT', badge: 'IT Staff', color: '#3b82f6' },
       { email: 'agroemployee@gmail.com', name: 'Agro Staff Employee', role: 'employee', department: 'Agro Food', badge: 'Agro Staff', color: '#10b981' },
     ],
@@ -40,7 +40,7 @@ const PERSONAS: { category: string; icon: any; items: PersonaOption[] }[] = [
     category: 'HODs & FPIC Approvers (Step 2-4)',
     icon: Building2,
     items: [
-      { email: 'hod@dxn.com', name: 'Universal HOD', role: 'hod', badge: 'FPIC (All Depts)', color: '#6366f1' },
+      { email: 'hod@dxn.com', name: 'Head of Department (HOD)', role: 'hod', badge: 'FPIC (All Depts)', color: '#6366f1' },
       { email: 'ithod@gmail.com', name: 'HOD (IT Dept)', role: 'hod', department: 'IT', badge: 'IT FPIC', color: '#3b82f6' },
       { email: 'ehs@gmail.com', name: 'HOD (EHS Dept)', role: 'hod', department: 'EHS', badge: 'EHS Review', color: '#10b981' },
       { email: 'agro@gmail.com', name: 'HOD (Agro Food)', role: 'hod', department: 'Agro Food', badge: 'Agro FPIC', color: '#f59e0b' },

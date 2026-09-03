@@ -19,7 +19,10 @@ export default async function NewRequestPage() {
   const allDepartments = await db.select().from(departments).orderBy(departments.name);
   const cookieStore = await cookies();
   const activeDeptCookie = cookieStore.get('active_department_id');
-  const activeDeptId = activeDeptCookie?.value || (allDepartments.length > 0 ? allDepartments[0].id : '');
+  
+  // Prioritize the user's assigned department, then active department cookie, then first department
+  const userDeptId = user.departmentIds?.[0];
+  const activeDeptId = userDeptId || activeDeptCookie?.value || (allDepartments.length > 0 ? allDepartments[0].id : '');
   const activeDept = allDepartments.find(d => d.id === activeDeptId);
 
   return (

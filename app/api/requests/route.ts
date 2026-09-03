@@ -88,6 +88,11 @@ export async function POST(request: Request) {
     let userDeptId = user.departmentIds?.[0] || null;
     let selectedDeptId = body.department_id || (body.department_ids && body.department_ids[0]) || null;
 
+    // If employee/user has an assigned department, always route to their assigned department
+    if (user.role !== 'hod' && user.role !== 'admin' && userDeptId) {
+      selectedDeptId = userDeptId;
+    }
+
     // If user has no department assigned, fallback to selectedDeptId or fetch the first default department
     if (!userDeptId && selectedDeptId) {
       userDeptId = selectedDeptId;

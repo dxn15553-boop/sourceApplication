@@ -33,7 +33,7 @@ export default async function AppShell({
       orderBy: (d: any, { asc }: any) => [asc(d.name)],
     });
   } else if (user.role === 'user' || user.role === 'hod') {
-    // Universal logins can access all departments
+    // Shared role logins can access all departments
     departmentsData = await db.query.departments.findMany({
       orderBy: (d: any, { asc }: any) => [asc(d.name)],
     });
