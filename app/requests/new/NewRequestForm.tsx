@@ -6,12 +6,12 @@ import RequestDescriptionInput from '@/components/requests/RequestDescriptionInp
 import FileUpload from '@/components/ui/FileUpload';
 import { FilePlus, Send, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function NewRequestForm({ 
-  departmentId, 
-  departmentName, 
-}: { 
-  departmentId: string; 
-  departmentName: string; 
+export default function NewRequestForm({
+  departmentId,
+  departmentName,
+}: {
+  departmentId: string;
+  departmentName: string;
 }) {
   const router = useRouter();
   const [description, setDescription] = useState('');
@@ -22,7 +22,7 @@ export default function NewRequestForm({
   const [success, setSuccess] = useState<string | null>(null);
   const [requesterName, setRequesterName] = useState('');
   const [requesterDesignation, setRequesterDesignation] = useState('');
-  const [priority, setPriority] = useState<'Low' | 'Medium' | 'High' | 'Urgent'>('Medium');
+  const [priority, setPriority] = useState<'NORMAL' | 'IMPORTANT' | 'URGENT'>('IMPORTANT');
   const [requiredByDate, setRequiredByDate] = useState('');
   const [purposeJustification, setPurposeJustification] = useState('');
 
@@ -68,15 +68,15 @@ export default function NewRequestForm({
       const res = await fetch('/api/requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           department_id: departmentId,
           requester_name: requesterName.trim(),
           requester_designation: requesterDesignation.trim(),
           priority,
           required_by_date: requiredByDate || undefined,
           purpose_justification: purposeJustification.trim() || undefined,
-          description: description.trim(), 
-          attachment_path: uploadedAttachments[0]?.path ?? null, 
+          description: description.trim(),
+          attachment_path: uploadedAttachments[0]?.path ?? null,
           attachment_name: uploadedAttachments[0]?.name ?? null,
           attachments: uploadedAttachments.length > 0 ? uploadedAttachments : null,
         }),
@@ -134,7 +134,7 @@ export default function NewRequestForm({
 
           <div className="form-group">
             <label className="form-label" htmlFor="requesterName">Requester Name <span style={{ color: 'var(--danger)' }}>*</span></label>
-            <input 
+            <input
               id="requesterName"
               type="text"
               className="form-input"
@@ -147,7 +147,7 @@ export default function NewRequestForm({
 
           <div className="form-group">
             <label className="form-label" htmlFor="requesterDesignation">Designation <span style={{ color: 'var(--danger)' }}>*</span></label>
-            <input 
+            <input
               id="requesterDesignation"
               type="text"
               className="form-input"
@@ -163,13 +163,12 @@ export default function NewRequestForm({
             <div className="form-group">
               <label className="form-label">Priority</label>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {(['Low', 'Medium', 'High', 'Urgent'] as const).map((p) => {
+                {(['NORMAL', 'IMPORTANT', 'URGENT'] as const).map((p) => {
                   const isSelected = priority === p;
                   const colors = {
-                    Low: { bg: 'rgba(16,185,129,0.12)', border: '#10b981', text: '#10b981', dot: '🟢' },
-                    Medium: { bg: 'rgba(59,130,246,0.12)', border: '#3b82f6', text: '#3b82f6', dot: '🔵' },
-                    High: { bg: 'rgba(245,158,11,0.12)', border: '#f59e0b', text: '#f59e0b', dot: '🟠' },
-                    Urgent: { bg: 'rgba(239,68,68,0.12)', border: '#ef4444', text: '#ef4444', dot: '🔴' },
+                    NORMAL: { bg: 'rgba(16,185,129,0.12)', border: '#10b981', text: '#10b981', dot: '🟢' },
+                    IMPORTANT: { bg: 'rgba(59,130,246,0.12)', border: '#3b82f6', text: '#3b82f6', dot: '🔵' },
+                    URGENT: { bg: 'rgba(239,68,68,0.12)', border: '#ef4444', text: '#ef4444', dot: '🔴' },
                   }[p];
 
                   return (
@@ -201,7 +200,7 @@ export default function NewRequestForm({
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="requiredByDate">Required By Date</label>
+              <label className="form-label" htmlFor="requiredByDate">Expected Date</label>
               <input
                 id="requiredByDate"
                 type="date"

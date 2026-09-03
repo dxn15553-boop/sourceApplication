@@ -175,28 +175,28 @@ export default async function RequestDetailPage({
                           padding: '4px 10px',
                           borderRadius: 99,
                           background:
-                            req.priority === 'Urgent'
+                            ['URGENT', 'Urgent'].includes(req.priority)
                               ? 'rgba(239,68,68,0.15)'
-                              : req.priority === 'High'
+                              : ['HIGH', 'High'].includes(req.priority)
                               ? 'rgba(245,158,11,0.15)'
-                              : req.priority === 'Low'
+                              : ['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority)
                               ? 'rgba(16,185,129,0.15)'
                               : 'rgba(59,130,246,0.15)',
                           color:
-                            req.priority === 'Urgent'
+                            ['URGENT', 'Urgent'].includes(req.priority)
                               ? 'var(--danger)'
-                              : req.priority === 'High'
+                              : ['HIGH', 'High'].includes(req.priority)
                               ? 'var(--warning)'
-                              : req.priority === 'Low'
+                              : ['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority)
                               ? 'var(--success)'
                               : 'var(--info)',
                           border: '1px solid currentColor',
                         }}
                       >
-                        {req.priority === 'Urgent' && '🔴'}
-                        {req.priority === 'High' && '🟠'}
-                        {req.priority === 'Medium' && '🔵'}
-                        {req.priority === 'Low' && '🟢'}
+                        {['URGENT', 'Urgent'].includes(req.priority) && '🔴 '}
+                        {['HIGH', 'High'].includes(req.priority) && '🟠 '}
+                        {['IMPORTANT', 'Important', 'MEDIUM', 'Medium'].includes(req.priority) && '🔵 '}
+                        {['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority) && '🟢 '}
                         Priority: {req.priority}
                       </span>
                     )}
@@ -221,7 +221,7 @@ export default async function RequestDetailPage({
                 <MetaItem icon={<Building2 size={15} />} label="Target Department" value={req.department?.name ?? '—'} />
                 <MetaItem icon={<Clock size={15} />} label="Submitted Time" value={createdDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} />
                 {req.required_by_date && (
-                  <MetaItem icon={<Calendar size={15} />} label="Required By" value={new Date(req.required_by_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })} />
+                  <MetaItem icon={<Calendar size={15} />} label="Expected Date" value={new Date(req.required_by_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })} />
                 )}
                 {req.assigned_employee && (
                   <MetaItem icon={<User size={15} />} label="Assigned To" value={req.assigned_employee.full_name} />

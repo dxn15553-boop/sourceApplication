@@ -147,7 +147,7 @@ export async function POST(request: Request) {
       requester_department_id: userDeptId,
       department_id: primaryDeptId,
       description: body.description.trim(),
-      priority: body.priority?.trim() || 'Medium',
+      priority: body.priority?.trim() || 'IMPORTANT',
       required_by_date: parsedRequiredByDate,
       purpose_justification: body.purpose_justification?.trim() || null,
       attachment_path: body.attachment_path ?? null,

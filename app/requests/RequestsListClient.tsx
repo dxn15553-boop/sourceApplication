@@ -127,27 +127,27 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
                         padding: '1px 6px',
                         borderRadius: 6,
                         background:
-                          req.priority === 'Urgent'
+                          ['URGENT', 'Urgent'].includes(req.priority)
                             ? 'rgba(239,68,68,0.12)'
-                            : req.priority === 'High'
+                            : ['HIGH', 'High'].includes(req.priority)
                             ? 'rgba(245,158,11,0.12)'
-                            : req.priority === 'Low'
+                            : ['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority)
                             ? 'rgba(16,185,129,0.12)'
                             : 'rgba(59,130,246,0.12)',
                         color:
-                          req.priority === 'Urgent'
+                          ['URGENT', 'Urgent'].includes(req.priority)
                             ? 'var(--danger)'
-                            : req.priority === 'High'
+                            : ['HIGH', 'High'].includes(req.priority)
                             ? 'var(--warning)'
-                            : req.priority === 'Low'
+                            : ['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority)
                             ? 'var(--success)'
                             : 'var(--info)',
                       }}
                     >
-                      {req.priority === 'Urgent' && '🔴 '}
-                      {req.priority === 'High' && '🟠 '}
-                      {req.priority === 'Medium' && '🔵 '}
-                      {req.priority === 'Low' && '🟢 '}
+                      {['URGENT', 'Urgent'].includes(req.priority) && '🔴 '}
+                      {['HIGH', 'High'].includes(req.priority) && '🟠 '}
+                      {['IMPORTANT', 'Important', 'MEDIUM', 'Medium'].includes(req.priority) && '🔵 '}
+                      {['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority) && '🟢 '}
                       {req.priority}
                     </span>
                   )}

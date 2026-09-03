@@ -17,8 +17,8 @@ interface EditRequestModalProps {
 export default function EditRequestModal({ open, onClose, request, onSaved }: EditRequestModalProps) {
   const [requesterName, setRequesterName] = useState(request.requester_name || '');
   const [requesterDesignation, setRequesterDesignation] = useState(request.requester_designation || '');
-  const [priority, setPriority] = useState<'Low' | 'Medium' | 'High' | 'Urgent'>(
-    (request.priority as any) || 'Medium'
+  const [priority, setPriority] = useState<'NORMAL' | 'IMPORTANT' | 'URGENT'>(
+    (['NORMAL', 'IMPORTANT', 'URGENT'].includes(request.priority as any) ? request.priority : 'IMPORTANT') as any
   );
   const [requiredByDate, setRequiredByDate] = useState(
     request.required_by_date ? new Date(request.required_by_date).toISOString().split('T')[0] : ''
@@ -169,13 +169,12 @@ export default function EditRequestModal({ open, onClose, request, onSaved }: Ed
             <div className="form-group">
               <label className="form-label">Priority</label>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {(['Low', 'Medium', 'High', 'Urgent'] as const).map((p) => {
+                {(['NORMAL', 'IMPORTANT', 'URGENT'] as const).map((p) => {
                   const isSelected = priority === p;
                   const colors = {
-                    Low: { bg: 'rgba(16,185,129,0.12)', border: '#10b981', text: '#10b981', dot: '🟢' },
-                    Medium: { bg: 'rgba(59,130,246,0.12)', border: '#3b82f6', text: '#3b82f6', dot: '🔵' },
-                    High: { bg: 'rgba(245,158,11,0.12)', border: '#f59e0b', text: '#f59e0b', dot: '🟠' },
-                    Urgent: { bg: 'rgba(239,68,68,0.12)', border: '#ef4444', text: '#ef4444', dot: '🔴' },
+                    NORMAL: { bg: 'rgba(16,185,129,0.12)', border: '#10b981', text: '#10b981', dot: '🟢' },
+                    IMPORTANT: { bg: 'rgba(59,130,246,0.12)', border: '#3b82f6', text: '#3b82f6', dot: '🔵' },
+                    URGENT: { bg: 'rgba(239,68,68,0.12)', border: '#ef4444', text: '#ef4444', dot: '🔴' },
                   }[p];
 
                   return (
@@ -206,7 +205,7 @@ export default function EditRequestModal({ open, onClose, request, onSaved }: Ed
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="edit-requiredByDate">Required By Date</label>
+              <label className="form-label" htmlFor="edit-requiredByDate">Expected Date</label>
               <input
                 id="edit-requiredByDate"
                 type="date"
