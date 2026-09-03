@@ -17,8 +17,8 @@ export async function POST(request: Request) {
     }
 
     for (const file of filesToUpload) {
-      if (file.size > 15 * 1024 * 1024) {
-        return Response.json({ error: `File "${file.name}" is too large. Maximum size is 15MB per file.` }, { status: 400 });
+      if (file.size > 4.5 * 1024 * 1024) {
+        return Response.json({ error: `File "${file.name}" exceeds maximum allowed size of 4.5MB for serverless upload.` }, { status: 400 });
       }
     }
 
@@ -54,8 +54,8 @@ export async function POST(request: Request) {
       },
       { status: 201 }
     );
-  } catch (err) {
-    console.error(err);
-    return Response.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (err: any) {
+    console.error('Upload route error:', err);
+    return Response.json({ error: err?.message || 'File upload failed' }, { status: 500 });
   }
 }

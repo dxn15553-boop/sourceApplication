@@ -25,7 +25,7 @@ export default function FileUpload({
   onFilesSelect,
   onFileSelect,
   accept = '*/*',
-  maxSizeMb = 15,
+  maxSizeMb = 4,
   multiple = true,
   currentFileName,
   existingAttachments = [],

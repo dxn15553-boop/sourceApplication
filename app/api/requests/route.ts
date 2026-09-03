@@ -84,22 +84,38 @@ export async function POST(request: Request) {
 
     const body: CreateRequestPayload = await request.json();
     
-    let targetDeptIds = body.department_ids && body.department_ids.length > 0
-      ? body.department_ids
-      : (body.department_id ? [body.department_id] : [user.departmentIds?.[0] || '']);
+    // Resolve user's department or form department
+    let userDeptId = user.departmentIds?.[0] || null;
+    let selectedDeptId = body.department_id || (body.department_ids && body.department_ids[0]) || null;
 
-    if (user.role !== 'hod') {
-      // Employees cannot request cross-department approvals, default to their own department
-      targetDeptIds = [user.departmentIds?.[0] || ''];
+    // If user has no department assigned, fallback to selectedDeptId or fetch the first default department
+    if (!userDeptId && selectedDeptId) {
+      userDeptId = selectedDeptId;
+    }
+    if (!userDeptId && !selectedDeptId) {
+      const defaultDept = await db.query.departments.findFirst();
+      if (defaultDept) {
+        userDeptId = defaultDept.id;
+        selectedDeptId = defaultDept.id;
+      }
     }
 
-    const primaryDeptId = targetDeptIds[0];
+    const primaryDeptId = selectedDeptId || userDeptId;
     if (!primaryDeptId) {
       return Response.json({ error: 'Department selection is required' }, { status: 400 });
     }
 
     if (!body.description?.trim()) {
       return Response.json({ error: 'Description is required' }, { status: 400 });
+    }
+
+    // Safely parse required_by_date
+    let parsedRequiredByDate: Date | null = null;
+    if (body.required_by_date) {
+      const d = new Date(body.required_by_date);
+      if (!isNaN(d.getTime())) {
+        parsedRequiredByDate = d;
+      }
     }
 
     const year = new Date().getFullYear();
@@ -117,17 +133,17 @@ export async function POST(request: Request) {
     const seq = String(counterResult.last_seq).padStart(4, '0');
     const srcId = `SRC-${year}-${seq}`;
 
-    // Insert request inside transaction logic (simplified with awaiting consecutive inserts)
+    // Insert request
     const [newRequest] = await db.insert(sourceRequests).values({
       id: srcId,
       requester_id: user.id,
       requester_name: body.requester_name?.trim() ?? user.name ?? null,
       requester_designation: body.requester_designation?.trim() ?? null,
-      requester_department_id: user.departmentIds?.[0] ?? null,
+      requester_department_id: userDeptId,
       department_id: primaryDeptId,
       description: body.description.trim(),
       priority: body.priority?.trim() || 'Medium',
-      required_by_date: body.required_by_date ? new Date(body.required_by_date) : null,
+      required_by_date: parsedRequiredByDate,
       purpose_justification: body.purpose_justification?.trim() || null,
       attachment_path: body.attachment_path ?? null,
       attachment_name: body.attachment_name ?? null,
@@ -136,19 +152,19 @@ export async function POST(request: Request) {
       current_assignee_role: 'hod',
     }).returning();
 
-    // Insert cross-department reviews if target departments are different
-    const requesterDeptId = user.departmentIds?.[0] || null;
-    const crossDeptIds = targetDeptIds.filter(id => id !== requesterDeptId);
-    
-    if (crossDeptIds.length > 0) {
-      const { requiredReviews } = await import('@/lib/db/schema');
-      await db.insert(requiredReviews).values(
-        crossDeptIds.map(deptId => ({
-          request_id: srcId,
-          department_id: deptId,
-          status: 'Pending' as const,
-        }))
-      );
+    // Insert cross-department reviews if HOD submitted multi-department request
+    if (user.role === 'hod' && body.department_ids && body.department_ids.length > 0) {
+      const crossDeptIds = body.department_ids.filter(id => id && id !== userDeptId);
+      if (crossDeptIds.length > 0) {
+        const { requiredReviews } = await import('@/lib/db/schema');
+        await db.insert(requiredReviews).values(
+          crossDeptIds.map(deptId => ({
+            request_id: srcId,
+            department_id: deptId,
+            status: 'Pending' as const,
+          }))
+        );
+      }
     }
 
     await db.insert(workflowActions).values({
@@ -159,8 +175,8 @@ export async function POST(request: Request) {
     });
 
     return Response.json({ data: newRequest }, { status: 201 });
-  } catch (err) {
-    console.error(err);
-    return Response.json({ error: 'Internal server error' }, { status: 500 });
+  } catch (err: any) {
+    console.error('Error creating source request:', err);
+    return Response.json({ error: err?.message || 'Internal server error' }, { status: 500 });
   }
 }
