@@ -229,52 +229,55 @@ export default async function RequestDetailPage({
               </div>
             </div>
 
-            {/* Cross-Department Permissions */}
+            {/* User Department Reviews */}
             {latestReviews && latestReviews.length > 0 && (
               <div className="card" style={{ padding: '20px 24px' }}>
-                <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 14px', color: 'var(--text-primary)' }}>Cross-Department Permissions</h2>
+                <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 14px', color: 'var(--text-primary)' }}>User Department Reviews</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {latestReviews.map((r: any) => (
-                    <div key={r.id} style={{
-                      display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 14px', borderRadius: 10,
-                      background: r.status === 'Approved' ? 'var(--success-glow)' : r.status === 'Rejected' ? 'var(--danger-glow)' : 'rgba(245, 158, 11, 0.05)',
-                      border: `1px solid ${r.status === 'Approved' ? 'rgba(16,185,129,0.2)' : r.status === 'Rejected' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{r.department?.name || 'Department'}</span>
-                          <span style={{
-                            padding: '3px 8px', borderRadius: 99, fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                            background: r.status === 'Approved' ? 'rgba(16,185,129,0.15)' : r.status === 'Rejected' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
-                            color: r.status === 'Approved' ? 'var(--success)' : r.status === 'Rejected' ? 'var(--danger)' : '#d97706'
+                  {latestReviews.map((r: any) => {
+                    const isApproved = r.status === 'Approved';
+                    const isReturned = r.status === 'Returned' || r.status === 'Rejected';
+                    return (
+                      <div key={r.id} style={{
+                        display: 'flex', flexDirection: 'column', gap: 6, padding: '12px 14px', borderRadius: 10,
+                        background: isApproved ? 'var(--success-glow)' : isReturned ? 'rgba(245, 158, 11, 0.08)' : 'rgba(245, 158, 11, 0.05)',
+                        border: `1px solid ${isApproved ? 'rgba(16,185,129,0.2)' : isReturned ? 'rgba(245, 158, 11, 0.3)' : 'rgba(245,158,11,0.2)'}`
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{r.department?.name || 'Department'}</span>
+                            <span style={{
+                              padding: '3px 8px', borderRadius: 99, fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+                              background: isApproved ? 'rgba(16,185,129,0.15)' : isReturned ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245,158,11,0.15)',
+                              color: isApproved ? 'var(--success)' : isReturned ? '#d97706' : '#d97706'
+                            }}>
+                              {r.status}
+                            </span>
+                          </div>
+                          {r.reviewer && (
+                            <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
+                              Reviewed by: <strong>{r.reviewer.full_name}</strong>
+                            </span>
+                          )}
+                        </div>
+                        {isReturned && r.remarks && (
+                          <div style={{ 
+                            fontSize: 12, color: 'var(--text-secondary)', padding: '8px 12px', 
+                            background: 'rgba(245, 158, 11, 0.08)', borderRadius: 6, 
+                            borderLeft: '3px solid #f59e0b', marginTop: 4 
                           }}>
-                            {r.status}
-                          </span>
-                        </div>
-                        {r.reviewer && (
-                          <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                            Reviewed by: <strong>{r.reviewer.full_name}</strong>
-                          </span>
+                            <strong>Return Reason:</strong> &ldquo;{r.remarks}&rdquo;
+                          </div>
                         )}
-                      </div>
-                      {r.status === 'Rejected' && r.remarks && (
-                        <div style={{ 
-                          fontSize: 12, color: 'var(--text-secondary)', padding: '8px 12px', 
-                          background: 'rgba(239,68,68,0.04)', borderRadius: 6, 
-                          borderLeft: '3px solid var(--danger)', marginTop: 4 
-                        }}>
-                          <strong>Return Reason:</strong> &ldquo;{r.remarks}&rdquo;
-                        </div>
-                      )}
-                      {r.remarks && r.status !== 'Rejected' && (
-                        <div style={{ 
-                          fontSize: 12, color: 'var(--text-secondary)', padding: '8px 12px', 
-                          background: 'rgba(16,185,129,0.04)', borderRadius: 6, 
-                          borderLeft: '3px solid var(--success)', marginTop: 4 
-                        }}>
-                          <strong>Remarks:</strong> &ldquo;{r.remarks}&rdquo;
-                        </div>
-                      )}
+                        {r.remarks && !isReturned && (
+                          <div style={{ 
+                            fontSize: 12, color: 'var(--text-secondary)', padding: '8px 12px', 
+                            background: 'rgba(16,185,129,0.04)', borderRadius: 6, 
+                            borderLeft: '3px solid var(--success)', marginTop: 4 
+                          }}>
+                            <strong>Remarks:</strong> &ldquo;{r.remarks}&rdquo;
+                          </div>
+                        )}
                       {r.attachment_name && (
                         <div style={{ 
                           display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, 
@@ -288,7 +291,8 @@ export default async function RequestDetailPage({
                         </div>
                       )}
                     </div>
-                  ))}
+                  );
+                })}
                 </div>
               </div>
             )}

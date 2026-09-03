@@ -16,7 +16,7 @@ export async function POST(
     }
 
     const { action, remarks, attachment_path, attachment_name } = await req.json();
-    if (!['Approved', 'Rejected'].includes(action)) {
+    if (!['Approved', 'Returned', 'Rejected'].includes(action)) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
@@ -43,7 +43,7 @@ export async function POST(
     // Update review
     await db.update(requiredReviews)
       .set({
-        status: action,
+        status: action as any,
         remarks: remarks || null,
         reviewer_id: user.id,
         reviewed_at: new Date(),
@@ -56,14 +56,12 @@ export async function POST(
     await db.insert(workflowActions).values({
       request_id: review.request_id,
       actor_id: user.id,
-      action: action === 'Approved' ? 'approved' : 'rejected',
-      comment: `${review.department.name} Review ${action}${remarks ? ': ' + remarks : ''}${attachment_name ? ' (Attachment: ' + attachment_name + ')' : ''}`,
+      action: action === 'Approved' ? 'approved' : 'returned',
+      comment: `${review.department.name} User Department Review ${action}${remarks ? ': ' + remarks : ''}${attachment_name ? ' (Attachment: ' + attachment_name + ')' : ''}`,
     });
 
-    // Check if ALL reviews for this request are now completed. If one is rejected, maybe we should change the main status?
-    // The flowchart says: "All Required Reviews Completed -> RHoF Approval". 
-    // If one is rejected, it usually goes back to Creator or stops the workflow. Let's say if any is rejected, it goes to "HOD Returned".
-    if (action === 'Rejected') {
+    // If returned (or rejected), return to Home HOD
+    if (action === 'Returned' || action === 'Rejected') {
       await db.update(sourceRequests)
         .set({ 
           status: 'Returned to HOD', // Return to Home HOD
@@ -76,7 +74,7 @@ export async function POST(
         request_id: review.request_id,
         actor_id: user.id,
         action: 'returned',
-        comment: `Request returned due to ${review.department.name} rejection`,
+        comment: `Request returned by ${review.department.name} User Department${remarks ? ': ' + remarks : ''}`,
       });
     } else {
       // Check if all reviews are now approved (only considering the latest review per department)

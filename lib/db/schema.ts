@@ -33,7 +33,7 @@ export const workflowActionEnum = pgEnum('workflow_action', [
   'vendor_selected', 'pr_created', 'po_created', 'prl_completed', 'payment_done', 'delivered', 'completed', 'closed'
 ]);
 
-export const reviewStatusEnum = pgEnum('review_status', ['Pending', 'Approved', 'Rejected']);
+export const reviewStatusEnum = pgEnum('review_status', ['Pending', 'Approved', 'Rejected', 'Returned']);
 export const vendorSelectionEnum = pgEnum('vendor_selection', ['L1', 'L2', 'L3']);
 
 // Tables

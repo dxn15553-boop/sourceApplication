@@ -122,10 +122,10 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           }
         });
 
-        const rejectedDepts = Object.values(latestReviews).filter((r: any) => r.status === 'Rejected');
+        const rejectedDepts = Object.values(latestReviews).filter((r: any) => r.status === 'Returned' || r.status === 'Rejected');
         const rejectedDeptIds = rejectedDepts.map((r: any) => r.department_id);
 
-        // Verify if HOD has selected "Yes" for all previously rejected departments
+        // Verify if HOD has selected "Yes" for all previously returned departments
         const missingApprovals = rejectedDeptIds.filter(id => !selectedDepts.includes(id));
         if (missingApprovals.length > 0) {
           const missingNames = missingApprovals.map(id => {
@@ -133,7 +133,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
             return dept ? dept.name : 'Unknown';
           }).join(', ');
           
-          setDeptValidationError(`Cannot forward. You must select 'Yes' for the department(s) that previously returned/rejected the request: ${missingNames}.`);
+          setDeptValidationError(`Cannot forward. You must select 'Yes' for the department(s) that previously returned the request: ${missingNames}.`);
           return;
         }
       }
@@ -185,11 +185,11 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           </div>
         )}
 
-        {/* Permission Required From checklist (Yes/No buttons) */}
+        {/* User Department checklist (Yes/No buttons) */}
         {userRole === 'hod' && (request.status === 'Submitted' || request.status === 'Returned to HOD') && allDepartments && (
           <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>
-              Permission Required From <span style={{ color: 'var(--danger)' }}>*</span>
+              User Department <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
 
             {/* None / N/A Toggle Option */}
@@ -205,7 +205,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               marginBottom: 4
             }}>
               <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)' }}>
-                None / N/A (No additional permissions needed)
+                None / N/A (No additional user departments needed)
               </span>
               <div style={{ display: 'flex', gap: 2, background: 'rgba(255, 255, 255, 0.05)', padding: 2, borderRadius: 6, border: '1px solid var(--border)' }}>
                 <button
@@ -331,7 +331,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               </p>
             )}
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, marginBottom: 0 }}>
-              HOD of each selected department (Yes) must approve this request before it can proceed to the Regional Coordinator.
+              HOD of each selected User Department (Yes) must approve this request before it can proceed to the Regional Coordinator.
             </p>
           </div>
         )}
