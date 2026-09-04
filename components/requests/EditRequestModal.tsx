@@ -20,6 +20,13 @@ export default function EditRequestModal({ open, onClose, request, onSaved }: Ed
   const [priority, setPriority] = useState<'NORMAL' | 'IMPORTANT' | 'URGENT'>(
     (['NORMAL', 'IMPORTANT', 'URGENT'].includes(request.priority as any) ? request.priority : 'IMPORTANT') as any
   );
+  const [requestDate, setRequestDate] = useState(
+    request.request_date
+      ? new Date(request.request_date).toISOString().split('T')[0]
+      : request.created_at
+      ? new Date(request.created_at).toISOString().split('T')[0]
+      : ''
+  );
   const [requiredByDate, setRequiredByDate] = useState(
     request.required_by_date ? new Date(request.required_by_date).toISOString().split('T')[0] : ''
   );
@@ -98,6 +105,7 @@ export default function EditRequestModal({ open, onClose, request, onSaved }: Ed
           requester_name: requesterName.trim(),
           requester_designation: requesterDesignation.trim(),
           priority,
+          request_date: requestDate || null,
           required_by_date: requiredByDate || null,
           purpose_justification: purposeJustification.trim() || null,
           description: description.trim(),
@@ -164,8 +172,31 @@ export default function EditRequestModal({ open, onClose, request, onSaved }: Ed
             />
           </div>
 
-          {/* Priority & Required By Date */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+          {/* Dates & Priority */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="edit-requestDate">Date of Request</label>
+              <input
+                id="edit-requestDate"
+                type="date"
+                className="form-input"
+                value={requestDate}
+                onChange={(e) => setRequestDate(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="edit-requiredByDate">Expected Date</label>
+              <input
+                id="edit-requiredByDate"
+                type="date"
+                className="form-input"
+                value={requiredByDate}
+                onChange={(e) => setRequiredByDate(e.target.value)}
+                min={requestDate}
+              />
+            </div>
+
             <div className="form-group">
               <label className="form-label">Priority</label>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -202,17 +233,6 @@ export default function EditRequestModal({ open, onClose, request, onSaved }: Ed
                   );
                 })}
               </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="edit-requiredByDate">Expected Date</label>
-              <input
-                id="edit-requiredByDate"
-                type="date"
-                className="form-input"
-                value={requiredByDate}
-                onChange={(e) => setRequiredByDate(e.target.value)}
-              />
             </div>
           </div>
 

@@ -73,6 +73,7 @@ export const sourceRequests = pgTable('source_requests', {
   attachment_name: text('attachment_name'),
   attachments: text('attachments'),
   priority: text('priority').default('Medium'),
+  request_date: timestamp('request_date'),
   required_by_date: timestamp('required_by_date'),
   purpose_justification: text('purpose_justification'),
   status: workflowStatusEnum('status').notNull().default('Submitted'),

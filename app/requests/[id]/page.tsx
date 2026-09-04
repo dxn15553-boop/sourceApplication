@@ -14,6 +14,7 @@ import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { sourceRequests, profiles, departments } from '@/lib/db/schema';
 import { eq, inArray } from 'drizzle-orm';
+import { getProcurementEmployees } from '@/lib/procurement';
 
 export const dynamic = 'force-dynamic';
 
@@ -114,34 +115,7 @@ export default async function RequestDetailPage({
 
   let allEmployees: any[] = [];
   if (canAssign) {
-    const procurementDbUrl = process.env.PROCUREMENT_DATABASE_URL;
-    if (procurementDbUrl) {
-      try {
-        const { neon } = await import('@neondatabase/serverless');
-        const pSql = neon(procurementDbUrl);
-        const rows = await pSql`
-          SELECT u.id, u.name as "full_name", u.email, d.name as "department_name"
-          FROM "User" u
-          LEFT JOIN "Department" d ON u."departmentId" = d.id
-          WHERE u.role = 'TEAM' AND u."isActive" = true
-          ORDER BY u.name
-        `;
-        allEmployees = rows.map((r: any) => ({
-          id: r.id,
-          full_name: r.full_name,
-          email: r.email,
-          profileDepartments: r.department_name ? [{ department: { name: r.department_name } }] : []
-        }));
-      } catch (err) {
-        console.error('Error fetching procurement employees:', err);
-      }
-    } else {
-      allEmployees = await db.query.profiles.findMany({
-        where: eq(profiles.role, 'employee'),
-        with: { profileDepartments: { with: { department: { columns: { name: true } } } } },
-        orderBy: (p: any, { asc }: any) => [asc(p.full_name)],
-      });
-    }
+    allEmployees = await getProcurementEmployees();
   }
 
   return (
@@ -219,6 +193,7 @@ export default async function RequestDetailPage({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16 }}>
                 <MetaItem icon={<User size={15} />} label="Requester" value={`${((req as any).requester_name || req.requester?.full_name) ?? '—'}${req.requester_designation ? ` (${req.requester_designation})` : ''}`} />
                 <MetaItem icon={<Building2 size={15} />} label="Target Department" value={req.department?.name ?? '—'} />
+                <MetaItem icon={<Calendar size={15} />} label="Date of Request" value={new Date(req.request_date || req.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })} />
                 <MetaItem icon={<Clock size={15} />} label="Submitted Time" value={createdDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} />
                 {req.required_by_date && (
                   <MetaItem icon={<Calendar size={15} />} label="Expected Date" value={new Date(req.required_by_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })} />

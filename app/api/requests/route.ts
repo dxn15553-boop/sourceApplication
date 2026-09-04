@@ -114,6 +114,15 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Description is required' }, { status: 400 });
     }
 
+    // Safely parse request_date
+    let parsedRequestDate: Date = new Date();
+    if (body.request_date) {
+      const d = new Date(body.request_date);
+      if (!isNaN(d.getTime())) {
+        parsedRequestDate = d;
+      }
+    }
+
     // Safely parse required_by_date
     let parsedRequiredByDate: Date | null = null;
     if (body.required_by_date) {
@@ -148,7 +157,9 @@ export async function POST(request: Request) {
       department_id: primaryDeptId,
       description: body.description.trim(),
       priority: body.priority?.trim() || 'IMPORTANT',
+      request_date: parsedRequestDate,
       required_by_date: parsedRequiredByDate,
+      created_at: parsedRequestDate,
       purpose_justification: body.purpose_justification?.trim() || null,
       attachment_path: body.attachment_path ?? null,
       attachment_name: body.attachment_name ?? null,

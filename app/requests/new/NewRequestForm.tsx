@@ -22,6 +22,7 @@ export default function NewRequestForm({
   const [success, setSuccess] = useState<string | null>(null);
   const [requesterName, setRequesterName] = useState('');
   const [requesterDesignation, setRequesterDesignation] = useState('');
+  const [requestDate, setRequestDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [priority, setPriority] = useState<'NORMAL' | 'IMPORTANT' | 'URGENT'>('IMPORTANT');
   const [requiredByDate, setRequiredByDate] = useState('');
   const [purposeJustification, setPurposeJustification] = useState('');
@@ -73,6 +74,7 @@ export default function NewRequestForm({
           requester_name: requesterName.trim(),
           requester_designation: requesterDesignation.trim(),
           priority,
+          request_date: requestDate || undefined,
           required_by_date: requiredByDate || undefined,
           purpose_justification: purposeJustification.trim() || undefined,
           description: description.trim(),
@@ -132,34 +134,60 @@ export default function NewRequestForm({
 
           {/* Permission Required From field is now managed by HODs in the approval panel */}
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="requesterName">Requester Name <span style={{ color: 'var(--danger)' }}>*</span></label>
-            <input
-              id="requesterName"
-              type="text"
-              className="form-input"
-              value={requesterName}
-              onChange={(e) => setRequesterName(e.target.value)}
-              placeholder="Enter your full name"
-              required
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="requesterName">Requester Name <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <input
+                id="requesterName"
+                type="text"
+                className="form-input"
+                value={requesterName}
+                onChange={(e) => setRequesterName(e.target.value)}
+                placeholder="Enter your full name"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="requesterDesignation">Designation <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <input
+                id="requesterDesignation"
+                type="text"
+                className="form-input"
+                value={requesterDesignation}
+                onChange={(e) => setRequesterDesignation(e.target.value)}
+                placeholder="Enter your designation (e.g., Engineer, Manager)"
+                required
+              />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="requesterDesignation">Designation <span style={{ color: 'var(--danger)' }}>*</span></label>
-            <input
-              id="requesterDesignation"
-              type="text"
-              className="form-input"
-              value={requesterDesignation}
-              onChange={(e) => setRequesterDesignation(e.target.value)}
-              placeholder="Enter your designation (e.g., Engineer, Manager)"
-              required
-            />
-          </div>
+          {/* Date of Request, Expected Date, and Priority */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="requestDate">Date of Request <span style={{ color: 'var(--danger)' }}>*</span></label>
+              <input
+                id="requestDate"
+                type="date"
+                className="form-input"
+                value={requestDate}
+                onChange={(e) => setRequestDate(e.target.value)}
+                required
+              />
+            </div>
 
-          {/* Priority and Required By Date */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+            <div className="form-group">
+              <label className="form-label" htmlFor="requiredByDate">Expected Date</label>
+              <input
+                id="requiredByDate"
+                type="date"
+                className="form-input"
+                value={requiredByDate}
+                onChange={(e) => setRequiredByDate(e.target.value)}
+                min={requestDate || new Date().toISOString().split('T')[0]}
+              />
+            </div>
+
             <div className="form-group">
               <label className="form-label">Priority</label>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -197,18 +225,6 @@ export default function NewRequestForm({
                   );
                 })}
               </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="requiredByDate">Expected Date</label>
-              <input
-                id="requiredByDate"
-                type="date"
-                className="form-input"
-                value={requiredByDate}
-                onChange={(e) => setRequiredByDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-              />
             </div>
           </div>
 

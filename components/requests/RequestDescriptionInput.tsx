@@ -23,6 +23,7 @@ export interface RequestItem {
   model: string;
   quantity: string;
   unit: string;
+  customUnit?: string;
   description: string;
 }
 
@@ -34,7 +35,54 @@ interface RequestDescriptionInputProps {
   required?: boolean;
 }
 
-const COMMON_UNITS = ['Nos', 'Pcs', 'Boxes', 'Sets', 'Kg', 'Pack', 'Units', 'Meters', 'Liters', 'Reams', 'Rolls', 'Pairs'];
+export const COMMON_UNITS = [
+  'Nos',
+  'Pcs',
+  'Boxes',
+  'Sets',
+  'Pack',
+  'Units',
+  'Kg',
+  'Grams',
+  'Meters',
+  'Feet',
+  'Liters',
+  'Reams',
+  'Rolls',
+  'Pairs',
+  'Bags',
+  'Bottles',
+  'Cans',
+  'Drums',
+  'Hours',
+  'Days',
+  'Lot',
+] as const;
+
+export const UNIT_OPTIONS = [
+  { value: 'Nos', label: 'Nos (Numbers)' },
+  { value: 'Pcs', label: 'Pcs (Pieces)' },
+  { value: 'Boxes', label: 'Boxes' },
+  { value: 'Sets', label: 'Sets' },
+  { value: 'Pack', label: 'Pack' },
+  { value: 'Units', label: 'Units' },
+  { value: 'Kg', label: 'Kg (Kilograms)' },
+  { value: 'Grams', label: 'Grams (g)' },
+  { value: 'Meters', label: 'Meters (m)' },
+  { value: 'Feet', label: 'Feet (ft)' },
+  { value: 'Liters', label: 'Liters (L)' },
+  { value: 'Rolls', label: 'Rolls' },
+  { value: 'Pairs', label: 'Pairs' },
+  { value: 'Reams', label: 'Reams' },
+  { value: 'Bags', label: 'Bags' },
+  { value: 'Bottles', label: 'Bottles' },
+  { value: 'Cans', label: 'Cans' },
+  { value: 'Drums', label: 'Drums' },
+  { value: 'Hours', label: 'Hours (Service)' },
+  { value: 'Days', label: 'Days (Service)' },
+  { value: 'Lot', label: 'Lot / Job' },
+  { value: 'Other', label: 'Other (Custom...)' },
+];
 
 export function formatItemsToString(items: RequestItem[]): string {
   if (!Array.isArray(items)) return '';
@@ -71,7 +119,11 @@ export function formatItemsToString(items: RequestItem[]): string {
         lines.push(`• Model: ${it.model.trim()}`);
       }
       if (it.quantity?.trim()) {
-        const unitPart = it.unit?.trim() ? ` ${it.unit.trim()}` : '';
+        const resolvedUnit =
+          it.unit === 'Other'
+            ? it.customUnit?.trim() || ''
+            : it.unit?.trim() || 'Nos';
+        const unitPart = resolvedUnit ? ` ${resolvedUnit}` : '';
         lines.push(`• Quantity: ${it.quantity.trim()}${unitPart}`);
       }
       if (it.description?.trim()) {
@@ -85,8 +137,8 @@ export function formatItemsToString(items: RequestItem[]): string {
 export function parseStringToItems(text: string): RequestItem[] {
   if (!text || !text.trim()) {
     return [
-      { id: '1', category: 'New Material / Purchase', otherCategory: '', name: '', make: '', model: '', quantity: '', unit: 'Nos', description: '' },
-      { id: '2', category: 'New Material / Purchase', otherCategory: '', name: '', make: '', model: '', quantity: '', unit: 'Nos', description: '' },
+      { id: '1', category: 'New Material / Purchase', otherCategory: '', name: '', make: '', model: '', quantity: '', unit: 'Nos', customUnit: '', description: '' },
+      { id: '2', category: 'New Material / Purchase', otherCategory: '', name: '', make: '', model: '', quantity: '', unit: 'Nos', customUnit: '', description: '' },
     ];
   }
 
@@ -102,7 +154,7 @@ export function parseStringToItems(text: string): RequestItem[] {
       const makeMatch = body.match(/•?\s*Make\s*:\s*([^\n]+)/i);
       const modelMatch = body.match(/•?\s*Model\s*:\s*([^\n]+)/i);
       const makeModelCombined = body.match(/•?\s*(?:Make\s*(?:&|and)\s*Model)\s*:\s*([^\n]+)/i);
-      const qtyMatch = body.match(/•?\s*(?:Quantity|Qty)\s*:\s*(\d+(?:\.\d+)?)\s*([a-zA-Z]*)/i);
+      const qtyMatch = body.match(/•?\s*(?:Quantity|Qty)\s*:\s*(\d+(?:\.\d+)?)\s*([^\n\r•]*)/i);
       const descMatch = body.match(/•?\s*Description\s*:\s*([\s\S]*?)(?=(?:•|$))/i);
       const specsMatch = body.match(/•?\s*(?:Specifications\s*(?:\/\s*Remarks)?|Specs|Remarks)\s*:\s*([^\n]+)/i);
 
@@ -140,10 +192,20 @@ export function parseStringToItems(text: string): RequestItem[] {
 
       let quantity = '';
       let unit = 'Nos';
+      let customUnit = '';
       if (qtyMatch) {
         quantity = qtyMatch[1] || '';
         if (qtyMatch[2]) {
-          unit = qtyMatch[2].trim();
+          const rawUnit = qtyMatch[2].trim();
+          const match = (COMMON_UNITS as readonly string[]).find(
+            (u) => u.toLowerCase() === rawUnit.toLowerCase()
+          );
+          if (match) {
+            unit = match;
+          } else if (rawUnit) {
+            unit = 'Other';
+            customUnit = rawUnit;
+          }
         }
       }
 
@@ -163,6 +225,7 @@ export function parseStringToItems(text: string): RequestItem[] {
         model,
         quantity,
         unit: unit || 'Nos',
+        customUnit,
         description,
       };
     });
@@ -177,6 +240,7 @@ export function parseStringToItems(text: string): RequestItem[] {
         model: '',
         quantity: '',
         unit: 'Nos',
+        customUnit: '',
         description: '',
       });
     }
@@ -184,8 +248,8 @@ export function parseStringToItems(text: string): RequestItem[] {
   }
 
   return [
-    { id: '1', category: 'New Material Purchase', otherCategory: '', name: text.trim(), make: '', model: '', quantity: '', unit: 'Nos', description: '' },
-    { id: '2', category: 'New Material Purchase', otherCategory: '', name: '', make: '', model: '', quantity: '', unit: 'Nos', description: '' },
+    { id: '1', category: 'New Material Purchase', otherCategory: '', name: text.trim(), make: '', model: '', quantity: '', unit: 'Nos', customUnit: '', description: '' },
+    { id: '2', category: 'New Material Purchase', otherCategory: '', name: '', make: '', model: '', quantity: '', unit: 'Nos', customUnit: '', description: '' },
   ];
 }
 
@@ -217,7 +281,16 @@ export default function RequestDescriptionInput({
     onChange(formatted);
   };
 
-  const handleItemChange = (index: number, field: keyof RequestItem, val: any) => {
+  const handleItemChange = (
+    index: number,
+    fieldOrUpdates: keyof RequestItem | Partial<RequestItem>,
+    val?: any
+  ) => {
+    const updates =
+      typeof fieldOrUpdates === 'string'
+        ? { [fieldOrUpdates]: val }
+        : fieldOrUpdates;
+
     const updated = items.map((it, i) => {
       if (i !== index) return it;
       return {
@@ -229,8 +302,9 @@ export default function RequestDescriptionInput({
         model: it.model || '',
         quantity: it.quantity || '',
         unit: it.unit || 'Nos',
+        customUnit: it.customUnit || '',
         description: it.description || '',
-        [field]: val,
+        ...updates,
       };
     });
     updateItems(updated);
@@ -249,6 +323,7 @@ export default function RequestDescriptionInput({
         model: '',
         quantity: '',
         unit: 'Nos',
+        customUnit: '',
         description: '',
       },
     ];
@@ -544,19 +619,59 @@ export default function RequestDescriptionInput({
                     Unit
                   </label>
                   <div style={{ position: 'relative' }}>
-                    <input
-                      list={`units-list-${item.id || index}`}
-                      className="form-input"
-                      placeholder="Nos, Pcs, Boxes, Kg..."
-                      value={item.unit || 'Nos'}
-                      onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
+                    <select
+                      className="form-input form-select"
+                      value={
+                        (COMMON_UNITS as readonly string[]).includes(item.unit)
+                          ? item.unit
+                          : 'Other'
+                      }
+                      onChange={(e) => {
+                        const chosen = e.target.value;
+                        if (chosen === 'Other') {
+                          handleItemChange(index, {
+                            unit: 'Other',
+                            customUnit:
+                              item.customUnit ||
+                              ((COMMON_UNITS as readonly string[]).includes(item.unit)
+                                ? ''
+                                : item.unit),
+                          });
+                        } else {
+                          handleItemChange(index, {
+                            unit: chosen,
+                            customUnit: '',
+                          });
+                        }
+                      }}
                       style={{ fontSize: 13 }}
-                    />
-                    <datalist id={`units-list-${item.id || index}`}>
-                      {COMMON_UNITS.map((u) => (
-                        <option key={u} value={u} />
+                    >
+                      {UNIT_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
                       ))}
-                    </datalist>
+                    </select>
+
+                    {(item.unit === 'Other' ||
+                      (!(COMMON_UNITS as readonly string[]).includes(item.unit) &&
+                        Boolean(item.unit))) && (
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="Specify custom unit (e.g. Sq. Ft, Ton)..."
+                        value={item.customUnit || (item.unit === 'Other' ? '' : item.unit)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleItemChange(index, {
+                            unit: val || 'Other',
+                            customUnit: val,
+                          });
+                        }}
+                        style={{ marginTop: 6, fontSize: 12.5 }}
+                        autoFocus
+                      />
+                    )}
                   </div>
                 </div>
               </div>

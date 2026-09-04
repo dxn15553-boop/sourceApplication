@@ -66,7 +66,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { requester_name, requester_designation, description, priority, required_by_date, purpose_justification, attachment_path, attachment_name, attachments } = body;
+    const { requester_name, requester_designation, description, priority, request_date, required_by_date, purpose_justification, attachment_path, attachment_name, attachments } = body;
 
     const updatePayload: any = {
       updated_at: new Date(),
@@ -76,6 +76,10 @@ export async function PATCH(
     if (requester_designation !== undefined) updatePayload.requester_designation = requester_designation;
     if (description !== undefined) updatePayload.description = description;
     if (priority !== undefined) updatePayload.priority = priority;
+    if (request_date !== undefined) {
+      updatePayload.request_date = request_date ? new Date(request_date) : null;
+      updatePayload.created_at = request_date ? new Date(request_date) : undefined;
+    }
     if (required_by_date !== undefined) updatePayload.required_by_date = required_by_date ? new Date(required_by_date) : null;
     if (purpose_justification !== undefined) updatePayload.purpose_justification = purpose_justification;
     

@@ -113,6 +113,7 @@ export interface SourceRequest {
   department?: Department;
   description: string;
   priority?: 'Low' | 'Medium' | 'High' | 'Urgent' | string | null;
+  request_date?: string | null;
   required_by_date?: string | null;
   purpose_justification?: string | null;
   attachment_path: string | null;
@@ -163,6 +164,7 @@ export type CreateRequestPayload = {
   requester_designation?: string;
   staff_requester_id?: string;
   priority?: 'Low' | 'Medium' | 'High' | 'Urgent' | string;
+  request_date?: string;
   required_by_date?: string;
   purpose_justification?: string;
   description: string;
