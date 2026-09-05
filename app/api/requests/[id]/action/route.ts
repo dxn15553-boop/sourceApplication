@@ -367,7 +367,7 @@ export async function POST(
               WHERE "sourceNo" = ${srcRequest.id} LIMIT 1
             `;
 
-            const descriptionWithPdf = `${srcRequest.description}\n\n[Official SRF PDF: ${srfDownloadUrl}]`;
+            const cleanDescription = srcRequest.description;
 
             if (existingRows.length > 0) {
               const existingRequestId = existingRows[0].id;
@@ -377,7 +377,7 @@ export async function POST(
                 SET 
                   "handlerId" = ${procurementHandlerId}, 
                   "nameOfHandler" = ${empName},
-                  "sourceDescription" = ${descriptionWithPdf},
+                  "sourceDescription" = ${cleanDescription},
                   "updatedAt" = NOW()
                 WHERE "sourceNo" = ${srcRequest.id}
               `;
@@ -392,7 +392,7 @@ export async function POST(
                   ${existingRequestId},
                   'ASSIGNMENT',
                   ${`New Sourcing Assignment & SRF PDF: ${srfNum}`},
-                  ${`Section Manager has assigned Source Request ${srcRequest.id} ("${srcRequest.description}") to you with official SRF (${srfNum}).\n\nOfficial SRF PDF: ${srfDownloadUrl}`},
+                  ${`Section Manager has assigned Source Request ${srcRequest.id} ("${srcRequest.description}") to you with official SRF (${srfNum}).`},
                   false,
                   NOW()
                 )
@@ -411,7 +411,7 @@ export async function POST(
                   ${newRequestId}, 
                   ${srcRequest.id}, 
                   ${srcRequest.created_at}, 
-                  ${descriptionWithPdf}, 
+                  ${cleanDescription}, 
                   ${procurementDeptId}, 
                   ${procurementHandlerId},
                   ${empName},
@@ -433,7 +433,7 @@ export async function POST(
                   ${newRequestId},
                   'ASSIGNMENT',
                   ${`New Sourcing Assignment & SRF PDF: ${srfNum}`},
-                  ${`Section Manager has assigned Source Request ${srcRequest.id} ("${srcRequest.description}") to you with official SRF (${srfNum}).\n\nOfficial SRF PDF: ${srfDownloadUrl}`},
+                  ${`Section Manager has assigned Source Request ${srcRequest.id} ("${srcRequest.description}") to you with official SRF (${srfNum}).`},
                   false,
                   NOW()
                 )
