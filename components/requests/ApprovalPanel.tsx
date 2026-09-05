@@ -419,7 +419,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               )}
             </button>
           )}
-          {(userRole === 'final_head' || (userRole === 'regional_coordinator' && showActions)) && (
+          {(userRole === 'procurement_manager' || userRole === 'final_head' || (userRole === 'regional_coordinator' && showActions)) && (
             <button className="btn btn-danger btn-sm" onClick={() => { setActiveAction('reject'); setComment(''); setCommentError(''); }}>
               <XCircle size={15} /> Reject
             </button>
@@ -512,18 +512,16 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                   : 'Approving this request will move it to the next stage automatically.'}
               </p>
 
-              {userRole === 'hod' && (
-                <div style={{ marginTop: 8 }}>
-                  <Textarea
-                    id="hod-approval-remarks"
-                    label="Remarks (Optional)"
-                    placeholder="Add any remarks or notes for this approval (optional)…"
-                    value={comment}
-                    onChange={e => setComment(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-              )}
+              <div style={{ marginTop: 8 }}>
+                <Textarea
+                  id="approval-comment"
+                  label="Comments / Remarks (Optional)"
+                  placeholder="Add any comments or notes for this approval (optional)…"
+                  value={comment}
+                  onChange={e => setComment(e.target.value)}
+                  rows={3}
+                />
+              </div>
             </>
           )}
 

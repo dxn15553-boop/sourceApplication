@@ -116,7 +116,7 @@ export function getAvailableActions(
 
     case 'procurement_manager':
       if (status === 'Final Head Approved') {
-        actions.push('approve', 'return');
+        actions.push('approve', 'reject', 'return');
       }
       break;
 
