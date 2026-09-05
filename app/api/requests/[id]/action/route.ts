@@ -254,7 +254,7 @@ export async function POST(
       updatePayload.srf_date = new Date();
     }
     if (action === 'assign' && assigned_employee_id) {
-      const procurementDbUrl = process.env.PROCUREMENT_DATABASE_URL;
+      const procurementDbUrl = process.env.PROCUREMENT_DATABASE_URL || 'postgresql://neondb_owner:npg_uFBo8j7aQxrw@ep-floral-salad-attipwvv-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require';
       if (procurementDbUrl) {
         try {
           const { neon } = await import('@neondatabase/serverless');

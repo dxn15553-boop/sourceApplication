@@ -24,7 +24,7 @@ export async function getProcurementEmployees(): Promise<ProcurementEmployee[]> 
     return cachedEmployees;
   }
 
-  const procurementDbUrl = process.env.PROCUREMENT_DATABASE_URL;
+  const procurementDbUrl = process.env.PROCUREMENT_DATABASE_URL || 'postgresql://neondb_owner:npg_uFBo8j7aQxrw@ep-floral-salad-attipwvv-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require';
   if (procurementDbUrl) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
