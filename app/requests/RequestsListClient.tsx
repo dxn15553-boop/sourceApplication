@@ -102,6 +102,7 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
             <Link
               key={req.id}
               href={`/requests/${req.id}`}
+              prefetch={false}
               style={{
                 display: 'flex', alignItems: 'center', gap: 16,
                 padding: '16px 20px',

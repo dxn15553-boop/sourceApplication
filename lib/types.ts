@@ -138,6 +138,8 @@ export interface SourceRequest {
   on_time_delivery?: boolean | null;
   qc_remarks?: string | null;
   hod_remarks?: string | null;
+  srf_number?: string | null;
+  srf_date?: string | null;
   work_completion_date?: string | null;
   created_at: string;
   updated_at: string;

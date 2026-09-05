@@ -13,6 +13,17 @@ export async function GET() {
 
     const data = await db.query.notifications.findMany({
       where: eq(notifications.user_id, user.id),
+      with: {
+        request: {
+          columns: {
+            id: true,
+            srf_number: true,
+            srf_date: true,
+            status: true,
+            description: true,
+          },
+        },
+      },
       orderBy: [desc(notifications.created_at)],
     });
 

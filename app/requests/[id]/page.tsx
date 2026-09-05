@@ -6,7 +6,8 @@ import ApprovalPanel from '@/components/requests/ApprovalPanel';
 import AssignmentPanel from '@/components/requests/AssignmentPanel';
 import ResubmitPanel from '@/components/requests/ResubmitPanel';
 import ReviewPanel from '@/components/requests/ReviewPanel';
-import { ArrowLeft, Download, Paperclip, User, Building2, Calendar, Clock, CheckCircle, AlertTriangle, XCircle, Truck, ShieldCheck, Package, Ban } from 'lucide-react';
+import HandlerAcknowledgmentPanel from '@/components/requests/HandlerAcknowledgmentPanel';
+import { ArrowLeft, Download, Paperclip, User, Building2, Calendar, Clock, CheckCircle, AlertTriangle, XCircle, Truck, ShieldCheck, Package, Ban, FileText } from 'lucide-react';
 import Link from 'next/link';
 import type { SourceRequest } from '@/lib/types';
 import EditRequestButton from '@/components/requests/EditRequestButton';
@@ -87,6 +88,10 @@ export default async function RequestDetailPage({
     : null;
 
   const canAssign = profile.role === 'section_manager' && req.status === 'Procurement Approved';
+
+  const canAccept =
+    req.status === 'Assigned' &&
+    (isAssignedEmployee || profile.role === 'admin' || profile.role === 'section_manager');
 
   const canResubmit =
     isRequester &&
@@ -205,9 +210,22 @@ export default async function RequestDetailPage({
                     Submitted on {createdDate.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
-                {canEdit && (
-                  <EditRequestButton request={req} />
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  {(req.srf_number || ['Assigned', 'Vendor Evaluation', 'PR Created', 'PO Created', 'Payment Pending', 'Delivered', 'Processing', 'Completed', 'Closed'].includes(req.status)) && (
+                    <Link
+                      href={`/requests/${req.id}/srf`}
+                      target="_blank"
+                      className="btn btn-secondary btn-sm"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontWeight: 600 }}
+                    >
+                      <FileText size={15} />
+                      <span>Download SRF 📥</span>
+                    </Link>
+                  )}
+                  {canEdit && (
+                    <EditRequestButton request={req} />
+                  )}
+                </div>
               </div>
 
               <div style={{ width: '100%', height: 1, background: 'var(--border)', margin: '20px 0 16px' }} />
@@ -220,6 +238,12 @@ export default async function RequestDetailPage({
                 <MetaItem icon={<Clock size={15} />} label="Submitted Time" value={createdDate.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} />
                 {req.required_by_date && (
                   <MetaItem icon={<Calendar size={15} />} label="Expected Date" value={new Date(req.required_by_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })} />
+                )}
+                {req.srf_number && (
+                  <MetaItem icon={<FileText size={15} />} label="SRF No." value={req.srf_number} />
+                )}
+                {req.srf_date && (
+                  <MetaItem icon={<Calendar size={15} />} label="SRF Date" value={new Date(req.srf_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })} />
                 )}
                 {req.assigned_employee && (
                   <MetaItem icon={<User size={15} />} label="Assigned To" value={req.assigned_employee.full_name} />
@@ -534,6 +558,7 @@ export default async function RequestDetailPage({
             {canApprove && <ApprovalPanel request={req} userRole={profile.role} allDepartments={allDepartments} />}
             {(canHodResubmit || canFinalHeadResubmit || canCoordinatorResubmit) && <ResubmitPanel request={req} />}
             {canAssign && <AssignmentPanel request={req} availableEmployees={allEmployees} />}
+            {canAccept && <HandlerAcknowledgmentPanel request={req} />}
             {canResubmit && <ResubmitPanel request={req} />}
           </div>
 

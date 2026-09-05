@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import AppShell from '@/components/layout/AppShell';
 import StatusBadge from '@/components/requests/StatusBadge';
-import { FilePlus, Clock, CheckCircle2, AlertCircle, ArrowRight, ChevronRight } from 'lucide-react';
+import { FilePlus, Clock, CheckCircle2, AlertCircle, ArrowRight, ChevronRight, FileText } from 'lucide-react';
 import type { Metadata } from 'next';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
       conditions.push(
         and(
           eq(sourceRequests.assigned_employee_id, user.id),
-          eq(sourceRequests.status, 'Assigned')
+          inArray(sourceRequests.status, ['Assigned', 'Vendor Evaluation', 'PR Created', 'PO Created', 'Payment Pending', 'Delivered'])
         )
       );
       break;
@@ -225,6 +225,31 @@ export default async function DashboardPage() {
                     <span>{new Date(req.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}</span>
                   </p>
                 </div>
+                {req.srf_number && (
+                  <span
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.open(`/requests/${req.id}/srf?download=1`, '_blank');
+                    }}
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: '#0284c7',
+                      background: 'rgba(2, 132, 199, 0.12)',
+                      padding: '4px 8px',
+                      borderRadius: 6,
+                      border: '1px solid rgba(2, 132, 199, 0.25)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      cursor: 'pointer',
+                    }}
+                    title="Download Official SRF PDF"
+                  >
+                    <FileText size={12} />
+                    <span>{req.srf_number} PDF 📥</span>
+                  </span>
+                )}
                 <StatusBadge status={req.status as any} animate />
                 <ArrowRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
               </Link>

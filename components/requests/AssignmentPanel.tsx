@@ -42,10 +42,15 @@ export default function AssignmentPanel({ request, availableEmployees }: Assignm
       borderRadius: 12,
       marginTop: 20,
     }}>
-      <p style={{ fontSize: 13, fontWeight: 700, color: '#a78bfa', marginBottom: 14 }}>
-        <UserCheck size={15} style={{ display: 'inline', marginRight: 6 }} />
-        Assign Employee to Process This Request
-      </p>
+      <div style={{ marginBottom: 14 }}>
+        <p style={{ fontSize: 13.5, fontWeight: 700, color: '#a78bfa', margin: 0 }}>
+          <UserCheck size={16} style={{ display: 'inline', marginRight: 6 }} />
+          Section Manager Procurement Reviews the Source Request
+        </p>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+          Nominate the Procurement Handler. The system will automatically generate the official SRF document and notify the handler.
+        </p>
+      </div>
 
       {error && (
         <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, marginBottom: 12 }}>
@@ -56,14 +61,14 @@ export default function AssignmentPanel({ request, availableEmployees }: Assignm
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
         <div className="form-group" style={{ flex: 1, minWidth: 220, marginBottom: 0 }}>
-          <label className="form-label">Select Employee</label>
+          <label className="form-label">Nominate the Handler</label>
           <select
             className="form-input form-select"
             value={selectedId}
             onChange={e => setSelectedId(e.target.value)}
             disabled={loading}
           >
-            <option value="">— Select employee —</option>
+            <option value="">— Select Handler —</option>
             {availableEmployees.map(emp => (
               <option key={emp.id} value={emp.id}>
                 {emp.full_name} {(emp as any).profileDepartments?.length ? `(${(emp as any).profileDepartments.map((pd: any) => pd.department.name).join(', ')})` : ''}
@@ -76,7 +81,7 @@ export default function AssignmentPanel({ request, availableEmployees }: Assignm
           onClick={handleAssign}
           disabled={loading || !selectedId}
         >
-          {loading ? 'Assigning…' : <><UserCheck size={15} /> Assign</>}
+          {loading ? 'Nominating & Generating SRF…' : <><UserCheck size={15} /> Reviewed & Nominate Handler</>}
         </button>
       </div>
     </div>

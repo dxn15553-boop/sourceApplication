@@ -1,6 +1,6 @@
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-import { sourceRequests, workflowActions, profiles } from '@/lib/db/schema';
+import { sourceRequests, workflowActions, profiles, notifications } from '@/lib/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import type { WorkflowActionPayload, WorkflowStatus, Role, WorkflowTrigger } from '@/lib/types';
 
@@ -248,6 +248,11 @@ export async function POST(
     if (user.role === 'hod' && action === 'approve' && comment?.trim()) {
       updatePayload.hod_remarks = comment.trim();
     }
+    if (action === 'assign') {
+      const srfNumber = srcRequest.id.replace('SRC-', 'SRF-');
+      updatePayload.srf_number = srfNumber;
+      updatePayload.srf_date = new Date();
+    }
     if (action === 'assign' && assigned_employee_id) {
       const procurementDbUrl = process.env.PROCUREMENT_DATABASE_URL;
       if (procurementDbUrl) {
@@ -255,18 +260,39 @@ export async function POST(
           const { neon } = await import('@neondatabase/serverless');
           const pSql = neon(procurementDbUrl);
 
-          // Find the email of the assigned employee in the procurement database
-          const empRows = await pSql`
-            SELECT name, email FROM "User" WHERE id = ${assigned_employee_id} LIMIT 1
+          let procUser: { id: string; name: string; email: string } | null = null;
+
+          // 1. Try finding by ID directly in Procurement DB
+          const procRowsById = await pSql`
+            SELECT id, name, email FROM "User" WHERE id = ${assigned_employee_id} LIMIT 1
           `;
+          if (procRowsById.length > 0) {
+            procUser = procRowsById[0] as any;
+          } else {
+            // 2. If not found by ID in Procurement DB, check if assigned_employee_id is a local profile ID
+            const { profiles } = await import('@/lib/db/schema');
+            const localEmp = await db.query.profiles.findFirst({
+              where: eq(profiles.id, assigned_employee_id),
+            });
+            if (localEmp?.email) {
+              const procRowsByEmail = await pSql`
+                SELECT id, name, email FROM "User" WHERE email ILIKE ${localEmp.email.trim()} LIMIT 1
+              `;
+              if (procRowsByEmail.length > 0) {
+                procUser = procRowsByEmail[0] as any;
+              }
+            }
+          }
 
           let empEmail: string | null = null;
           let empName: string | null = null;
+          let procurementHandlerId: string | null = null;
 
-          if (empRows.length > 0) {
-            empEmail = empRows[0].email as string;
-            empName = empRows[0].name as string;
-            
+          if (procUser) {
+            procurementHandlerId = procUser.id;
+            empEmail = procUser.email;
+            empName = procUser.name;
+
             // Map to local profile UUID using email
             const { profiles } = await import('@/lib/db/schema');
             let localProfile = await db.query.profiles.findFirst({
@@ -278,7 +304,7 @@ export async function POST(
               const bcrypt = await import('bcryptjs');
               const randomPassword = Math.random().toString(36).substring(2, 10);
               const hash = await bcrypt.hash(randomPassword, 10);
-              
+
               const [newProfile] = await db.insert(profiles).values({
                 email: empEmail,
                 password_hash: hash,
@@ -286,7 +312,7 @@ export async function POST(
                 full_name: empName,
                 role: 'employee',
               }).returning();
-              
+
               localProfile = newProfile;
               console.log(`Self-healed: created local profile for procurement handler ${empName} (${empEmail})`);
             }
@@ -295,7 +321,8 @@ export async function POST(
               updatePayload.assigned_employee_id = localProfile.id;
             }
           } else {
-            console.warn(`Could not find procurement user for ID ${assigned_employee_id}`);
+            console.warn(`Could not find procurement user for ID/email: ${assigned_employee_id}`);
+            updatePayload.assigned_employee_id = assigned_employee_id;
           }
 
           // 1. Get the department name of this request
@@ -328,12 +355,19 @@ export async function POST(
           `;
           const createdById = managerRows.length > 0 ? managerRows[0].id : null;
 
-          if (procurementDeptId && createdById) {
+          const appBaseUrl = process.env.AUTH_URL || 'http://localhost:3000';
+          const srfDownloadUrl = `${appBaseUrl}/requests/${srcRequest.id}/srf?download=1`;
+
+          if (procurementDeptId && createdById && procurementHandlerId) {
+            const srfNum = updatePayload.srf_number || srcRequest.id.replace('SRC-', 'SRF-');
+
             // 3. Check if ProcurementRequest already exists
             const existingRows = await pSql`
               SELECT id FROM "ProcurementRequest" 
               WHERE "sourceNo" = ${srcRequest.id} LIMIT 1
             `;
+
+            const descriptionWithPdf = `${srcRequest.description}\n\n[Official SRF PDF: ${srfDownloadUrl}]`;
 
             if (existingRows.length > 0) {
               const existingRequestId = existingRows[0].id;
@@ -341,23 +375,24 @@ export async function POST(
               await pSql`
                 UPDATE "ProcurementRequest"
                 SET 
-                  "handlerId" = ${assigned_employee_id}, 
+                  "handlerId" = ${procurementHandlerId}, 
                   "nameOfHandler" = ${empName},
+                  "sourceDescription" = ${descriptionWithPdf},
                   "updatedAt" = NOW()
                 WHERE "sourceNo" = ${srcRequest.id}
               `;
 
-              // Send notification to the handler
+              // Send notification to the handler in the Procurement DB
               await pSql`
                 INSERT INTO "Notification" (
                   id, "userId", "requestId", type, title, message, "isRead", "createdAt"
                 ) VALUES (
                   ${crypto.randomUUID()},
-                  ${assigned_employee_id},
+                  ${procurementHandlerId},
                   ${existingRequestId},
                   'ASSIGNMENT',
-                  'New Sourcing Assignment',
-                  ${`Section Manager has assigned Source Request ${srcRequest.id} ("${srcRequest.description}") to you.`},
+                  ${`New Sourcing Assignment & SRF PDF: ${srfNum}`},
+                  ${`Section Manager has assigned Source Request ${srcRequest.id} ("${srcRequest.description}") to you with official SRF (${srfNum}).\n\nOfficial SRF PDF: ${srfDownloadUrl}`},
                   false,
                   NOW()
                 )
@@ -376,9 +411,9 @@ export async function POST(
                   ${newRequestId}, 
                   ${srcRequest.id}, 
                   ${srcRequest.created_at}, 
-                  ${srcRequest.description}, 
+                  ${descriptionWithPdf}, 
                   ${procurementDeptId}, 
-                  ${assigned_employee_id},
+                  ${procurementHandlerId},
                   ${empName},
                   ${createdById}, 
                   NOW(), NOW(),
@@ -388,24 +423,24 @@ export async function POST(
                 )
               `;
 
-              // Send notification to the handler
+              // Send notification to the handler in the Procurement DB
               await pSql`
                 INSERT INTO "Notification" (
                   id, "userId", "requestId", type, title, message, "isRead", "createdAt"
                 ) VALUES (
                   ${crypto.randomUUID()},
-                  ${assigned_employee_id},
+                  ${procurementHandlerId},
                   ${newRequestId},
                   'ASSIGNMENT',
-                  'New Sourcing Assignment',
-                  ${`Section Manager has assigned Source Request ${srcRequest.id} ("${srcRequest.description}") to you.`},
+                  ${`New Sourcing Assignment & SRF PDF: ${srfNum}`},
+                  ${`Section Manager has assigned Source Request ${srcRequest.id} ("${srcRequest.description}") to you with official SRF (${srfNum}).\n\nOfficial SRF PDF: ${srfDownloadUrl}`},
                   false,
                   NOW()
                 )
               `;
             }
           } else {
-            console.error('Could not find department or manager in procurement database', { procurementDeptId, createdById });
+            console.error('Could not find department, manager, or handler in procurement database', { procurementDeptId, createdById, procurementHandlerId });
           }
         } catch (err) {
           console.error('Error sync assigning to procurement database:', err);
@@ -426,8 +461,21 @@ export async function POST(
       const emp = await db.query.profiles.findFirst({
         where: eq(profiles.id, updatePayload.assigned_employee_id),
       });
+      const srfNum = updatePayload.srf_number || srcRequest.id.replace('SRC-', 'SRF-');
       if (emp) {
-        finalComment = `Assigned to ${emp.full_name}`;
+        finalComment = `Nominated Handler: ${emp.full_name} · SRF Generated (${srfNum})`;
+
+        try {
+          await db.insert(notifications).values({
+            user_id: emp.id,
+            request_id: id,
+            title: `Sourcing Assignment & SRF PDF: ${srfNum}`,
+            message: `Section Manager has nominated you as Procurement Handler for ${srfNum}. Please review and download your official SRF PDF to acknowledge.`,
+            is_read: false,
+          });
+        } catch (notifErr) {
+          console.error('Error creating local handler notification:', notifErr);
+        }
       }
     }
 

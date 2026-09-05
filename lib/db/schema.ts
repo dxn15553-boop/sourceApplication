@@ -102,6 +102,8 @@ export const sourceRequests = pgTable('source_requests', {
   qc_remarks: text('qc_remarks'),
   work_completion_date: timestamp('work_completion_date'),
   hod_remarks: text('hod_remarks'),
+  srf_number: text('srf_number'),
+  srf_date: timestamp('srf_date'),
 
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),
