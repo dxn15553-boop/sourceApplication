@@ -6,7 +6,7 @@ import ApprovalPanel from '@/components/requests/ApprovalPanel';
 import AssignmentPanel from '@/components/requests/AssignmentPanel';
 import ResubmitPanel from '@/components/requests/ResubmitPanel';
 import ReviewPanel from '@/components/requests/ReviewPanel';
-import { ArrowLeft, Download, Paperclip, User, Building2, Calendar, Clock, CheckCircle, AlertTriangle, XCircle, Truck, ShieldCheck, Package } from 'lucide-react';
+import { ArrowLeft, Download, Paperclip, User, Building2, Calendar, Clock, CheckCircle, AlertTriangle, XCircle, Truck, ShieldCheck, Package, Ban } from 'lucide-react';
 import Link from 'next/link';
 import type { SourceRequest } from '@/lib/types';
 import EditRequestButton from '@/components/requests/EditRequestButton';
@@ -130,6 +130,29 @@ export default async function RequestDetailPage({
 
           {/* LEFT COLUMN — All main content */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
+
+            {/* Cancelled Banner */}
+            {req.status === 'Cancelled' && (
+              <div style={{
+                padding: '14px 18px',
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: 10,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10
+              }}>
+                <Ban size={18} style={{ color: '#f87171', flexShrink: 0 }} />
+                <div>
+                  <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: '#f87171' }}>
+                    This request has been cancelled.
+                  </p>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+                    No further actions can be taken on this request. See Workflow History for details.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Header Card */}
             <div className="card" style={{ padding: '28px 32px' }}>
@@ -278,6 +301,18 @@ export default async function RequestDetailPage({
                 <h2 style={{ fontSize: 14.5, fontWeight: 700, margin: '0 0 8px', color: 'var(--text-primary)' }}>Purpose / Justification</h2>
                 <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>
                   {req.purpose_justification}
+                </p>
+              </div>
+            )}
+
+            {/* HOD Remarks (if provided) */}
+            {req.hod_remarks && (
+              <div className="card" style={{ padding: '20px 24px', background: 'rgba(16, 185, 129, 0.03)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+                <h2 style={{ fontSize: 14.5, fontWeight: 700, margin: '0 0 8px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <CheckCircle size={16} style={{ color: 'var(--success)' }} /> HOD Approval Remarks
+                </h2>
+                <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>
+                  {req.hod_remarks}
                 </p>
               </div>
             )}

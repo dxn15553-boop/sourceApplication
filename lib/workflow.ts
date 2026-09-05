@@ -9,6 +9,7 @@ export const WORKFLOW_TRANSITIONS: WorkflowTransition[] = [
   { from: 'Submitted',            action: 'approve',  to: 'HOD Approved',           next_assignee_role: 'regional_coordinator',           requires_comment: false },
   { from: 'Submitted',            action: 'reject',   to: 'HOD Rejected',            next_assignee_role: null,                   requires_comment: true  },
   { from: 'Submitted',            action: 'return',   to: 'HOD Returned',            next_assignee_role: 'user',                 requires_comment: true  },
+  { from: 'Submitted',            action: 'cancel',   to: 'Cancelled',               next_assignee_role: null,                   requires_comment: true  },
 
   // HOD Returned → User resubmits
   { from: 'HOD Returned',         action: 'resubmit', to: 'Submitted',               next_assignee_role: 'hod',                  requires_comment: false },
@@ -45,6 +46,7 @@ export const WORKFLOW_TRANSITIONS: WorkflowTransition[] = [
 
   { from: 'Returned to HOD',           action: 'resubmit', to: 'HOD Approved',        next_assignee_role: 'regional_coordinator', requires_comment: false },
   { from: 'Returned to HOD',           action: 'return',   to: 'Returned to Requester', next_assignee_role: 'user',              requires_comment: true  },
+  { from: 'Returned to HOD',           action: 'cancel',   to: 'Cancelled',             next_assignee_role: null,                 requires_comment: true  },
 
   { from: 'Returned to Requester',     action: 'resubmit', to: 'Submitted',           next_assignee_role: 'hod',                 requires_comment: false },
 
@@ -87,10 +89,10 @@ export function getAvailableActions(
   switch (userRole) {
     case 'hod':
       if (status === 'Submitted' && isHodOfDept) {
-        actions.push('approve', 'return');
+        actions.push('approve', 'return', 'cancel');
       }
       if (status === 'Returned to HOD' && isHodOfDept) {
-        actions.push('resubmit', 'return');
+        actions.push('resubmit', 'return', 'cancel');
       }
       break;
 
@@ -235,6 +237,7 @@ export function getActionLabel(action: string): string {
     payment_done:       'Payment Logged',
     delivered:          'Delivery Logged',
     closed:             'Request Closed',
+    cancelled:          'Request Cancelled',
     processing_started: 'Processing Started',
     completed:          'Completed',
   };

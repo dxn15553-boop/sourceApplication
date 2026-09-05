@@ -2,7 +2,7 @@
 
 import type { AuditEntry } from '@/lib/types';
 import { getActionLabel, ROLE_LABELS } from '@/lib/workflow';
-import { CheckCircle2, XCircle, RotateCcw, Send, UserCheck, PlayCircle, Flag, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, RotateCcw, Send, UserCheck, PlayCircle, Flag, Clock, Ban } from 'lucide-react';
 
 const ACTION_ICONS: Record<string, React.ReactNode> = {
   submitted:          <Send size={16} />,
@@ -13,6 +13,7 @@ const ACTION_ICONS: Record<string, React.ReactNode> = {
   assigned:           <UserCheck size={16} />,
   processing_started: <PlayCircle size={16} />,
   completed:          <Flag size={16} />,
+  cancelled:          <Ban size={16} />,
 };
 
 const ACTION_COLORS: Record<string, string> = {
@@ -24,6 +25,7 @@ const ACTION_COLORS: Record<string, string> = {
   assigned:           '#8b5cf6',
   processing_started: '#06b6d4',
   completed:          '#10b981',
+  cancelled:          '#ef4444',
 };
 
 interface WorkflowTimelineProps {

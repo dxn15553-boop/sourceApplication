@@ -12,6 +12,7 @@ const TRANSITIONS: Record<string, {
   requiresComment: boolean;
 }> = {
   'return:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD', 'Pending Home HOD Confirmation'], nextStatus: 'Returned to Requester', nextRole: 'user', requiresComment: true },
+  'cancel:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD', 'Under Required Review', 'Target Dept Approved', 'Pending Home HOD Confirmation'], nextStatus: 'Cancelled', nextRole: null, requiresComment: true },
   'approve:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved'], nextStatus: 'Final Head Review', nextRole: 'final_head', requiresComment: false },
   'reject:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved'], nextStatus: 'HOD Rejected', nextRole: null, requiresComment: true },
   'return:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator'], nextStatus: 'Returned to HOD', nextRole: 'hod', requiresComment: true },
@@ -41,6 +42,7 @@ const ACTION_MAP: Record<WorkflowTrigger, import('@/lib/types').WorkflowAction> 
   log_delivery: 'delivered',
   close_request: 'closed',
   complete: 'completed',
+  cancel: 'cancelled',
 };
 
 export async function POST(
@@ -241,6 +243,10 @@ export async function POST(
       current_assignee_role: nextRole,
       updated_at: new Date(),
     };
+
+    if (user.role === 'hod' && action === 'approve' && comment?.trim()) {
+      updatePayload.hod_remarks = comment.trim();
+    }
     if (action === 'assign' && assigned_employee_id) {
       const procurementDbUrl = process.env.PROCUREMENT_DATABASE_URL;
       if (procurementDbUrl) {

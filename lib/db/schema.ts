@@ -30,7 +30,7 @@ export const workflowStatusEnum = pgEnum('workflow_status', [
 
 export const workflowActionEnum = pgEnum('workflow_action', [
   'submitted', 'approved', 'rejected', 'returned', 'resubmitted', 'assigned', 'processing_started',
-  'vendor_selected', 'pr_created', 'po_created', 'prl_completed', 'payment_done', 'delivered', 'completed', 'closed'
+  'vendor_selected', 'pr_created', 'po_created', 'prl_completed', 'payment_done', 'delivered', 'completed', 'closed', 'cancelled'
 ]);
 
 export const reviewStatusEnum = pgEnum('review_status', ['Pending', 'Approved', 'Rejected', 'Returned']);
@@ -101,6 +101,7 @@ export const sourceRequests = pgTable('source_requests', {
   on_time_delivery: boolean('on_time_delivery'),
   qc_remarks: text('qc_remarks'),
   work_completion_date: timestamp('work_completion_date'),
+  hod_remarks: text('hod_remarks'),
 
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull(),

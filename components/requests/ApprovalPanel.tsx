@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/ui/Modal';
 import Textarea from '@/components/ui/Textarea';
-import { CheckCircle2, XCircle, RotateCcw, AlertCircle, Send } from 'lucide-react';
+import { CheckCircle2, XCircle, RotateCcw, AlertCircle, Send, Ban } from 'lucide-react';
 import type { SourceRequest } from '@/lib/types';
 
 interface ApprovalPanelProps {
@@ -13,12 +13,13 @@ interface ApprovalPanelProps {
   allDepartments?: { id: string; name: string }[];
 }
 
-type ActionType = 'approve' | 'reject' | 'return' | null;
+type ActionType = 'approve' | 'reject' | 'return' | 'cancel' | null;
 
 const ACTION_CONFIG = {
   approve: { label: 'Approve',        icon: <CheckCircle2 size={15} />, btnClass: 'btn-success', title: 'Confirm Approval',             requiresComment: false },
   reject:  { label: 'Reject',         icon: <XCircle size={15} />,      btnClass: 'btn-danger',  title: 'Reject Request',               requiresComment: true  },
   return:  { label: 'Return',         icon: <RotateCcw size={15} />,    btnClass: 'btn-warning', title: 'Return for Correction',        requiresComment: true  },
+  cancel:  { label: 'Cancel Request', icon: <Ban size={15} />,          btnClass: 'btn-danger',  title: 'Cancel Source Request',        requiresComment: true  },
 };
 
 const RETURN_OPTIONS: Record<string, { label: string, value: string }[]> = {
@@ -91,7 +92,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     const cfg = ACTION_CONFIG[action];
 
     if (cfg.requiresComment && !comment.trim()) {
-      setCommentError('Please provide a reason or comment.');
+      setCommentError(action === 'cancel' ? 'Please provide a reason for cancellation.' : 'Please provide a reason or comment.');
       return;
     }
 
@@ -182,6 +183,30 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8 }}>
             <AlertCircle size={15} style={{ color: 'var(--danger)' }} />
             <p style={{ fontSize: 13, color: '#fca5a5', margin: 0 }}>{error}</p>
+          </div>
+        )}
+
+        {/* Notice if request was returned to HOD */}
+        {request.status === 'Returned to HOD' && userRole === 'hod' && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: '12px 16px',
+            background: 'rgba(245, 158, 11, 0.08)',
+            border: '1px solid rgba(245, 158, 11, 0.25)',
+            borderRadius: 8,
+            marginBottom: 16
+          }}>
+            <RotateCcw size={16} style={{ color: '#fbbf24', marginTop: 2, flexShrink: 0 }} />
+            <div>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fbbf24' }}>
+                Request Returned to HOD
+              </p>
+              <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                A User Department has returned this request. If the return reason indicates that this request is no longer required, you can click <strong>Cancel Request</strong> below to cancel it. Otherwise, you can adjust the departments and send it forward again or return it to the requester.
+              </p>
+            </div>
           </div>
         )}
 
@@ -404,6 +429,14 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               <RotateCcw size={15} /> Return for Correction
             </button>
           )}
+          {userRole === 'hod' && showActions && (
+            <button 
+              className="btn btn-danger btn-sm" 
+              onClick={() => { setActiveAction('cancel'); setComment(''); setCommentError(''); }}
+            >
+              <Ban size={15} /> Cancel Request
+            </button>
+          )}
         </div>
       </div>
 
@@ -448,12 +481,20 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
             </div>
           )}
 
+          {activeAction === 'cancel' && (
+            <div style={{ padding: '10px 14px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: 8, fontSize: 13, color: '#fca5a5' }}>
+              ⚠️ Are you sure you want to cancel this request? This will terminate the request workflow.
+            </div>
+          )}
+
           {activeAction && ACTION_CONFIG[activeAction].requiresComment && (
             <Textarea
               id="action-comment"
-              label={activeAction === 'reject' ? 'Reason for Rejection *' : 'Reason / Correction Required *'}
+              label={activeAction === 'reject' ? 'Reason for Rejection *' : activeAction === 'cancel' ? 'Reason for Cancellation *' : 'Reason / Correction Required *'}
               placeholder={activeAction === 'reject'
                 ? 'Explain why this request is being rejected…'
+                : activeAction === 'cancel'
+                ? 'Explain why this request is being cancelled…'
                 : 'Describe what needs to be corrected or added…'}
               value={comment}
               onChange={e => { setComment(e.target.value); if (e.target.value.trim()) setCommentError(''); }}
@@ -464,11 +505,26 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           )}
 
           {activeAction === 'approve' && (
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-              {showSendLabel
-                ? 'Sending this request for approval will notify the selected departments to review.'
-                : 'Approving this request will move it to the next stage automatically.'}
-            </p>
+            <>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
+                {showSendLabel
+                  ? 'Sending this request for approval will notify the selected departments to review.'
+                  : 'Approving this request will move it to the next stage automatically.'}
+              </p>
+
+              {userRole === 'hod' && (
+                <div style={{ marginTop: 8 }}>
+                  <Textarea
+                    id="hod-approval-remarks"
+                    label="Remarks (Optional)"
+                    placeholder="Add any remarks or notes for this approval (optional)…"
+                    value={comment}
+                    onChange={e => setComment(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              )}
+            </>
           )}
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
