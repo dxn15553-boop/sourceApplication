@@ -5,6 +5,7 @@ import { Search, FilePlus, ArrowRight, Filter, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import StatusBadge from '@/components/requests/StatusBadge';
 import type { SourceRequest } from '@/lib/types';
+import { STATUS_CONFIG } from '@/lib/workflow';
 
 interface RequestsListClientProps {
   userRole: string;
@@ -64,7 +65,7 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
             onChange={e => setStatusFilter(e.target.value)}
           >
             <option value="">All Statuses</option>
-            {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
+            {statusOptions.map(s => <option key={s} value={s}>{STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]?.label || s}</option>)}
           </select>
         </div>
         <button onClick={fetchRequests} className="btn btn-ghost btn-sm" title="Refresh">

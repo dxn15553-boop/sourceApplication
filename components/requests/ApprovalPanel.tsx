@@ -69,20 +69,29 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
   const isInitialHodApproval = (request.status === 'Submitted' || request.status === 'Returned to HOD') && userRole === 'hod';
   const showSendLabel = isInitialHodApproval && !noneSelected;
 
+  const isCoordinatorActingAsFinalHead = userRole === 'regional_coordinator' && rhAvailability === 'unavailable';
+  const isRegionalHead = userRole === 'final_head' || isCoordinatorActingAsFinalHead;
+  const returnRole = isCoordinatorActingAsFinalHead ? 'final_head' : userRole;
+
   const getActionLabelText = (act: ActionType) => {
     if (!act) return '';
-    if (act === 'approve' && showSendLabel) return 'Send for Approval';
+    if (act === 'approve') {
+      if (showSendLabel) return 'Send to User Departments';
+      if (isRegionalHead) return 'Approve';
+      return 'Accept';
+    }
     return ACTION_CONFIG[act].label;
   };
 
   const getActionTitleText = (act: ActionType) => {
     if (!act) return '';
-    if (act === 'approve' && showSendLabel) return 'Send for Approval';
+    if (act === 'approve') {
+      if (showSendLabel) return 'Send to User Departments';
+      if (isRegionalHead) return 'Confirm Approval';
+      return 'Confirm Acceptance';
+    }
     return ACTION_CONFIG[act].title;
   };
-
-  const isCoordinatorActingAsFinalHead = userRole === 'regional_coordinator' && rhAvailability === 'unavailable';
-  const returnRole = isCoordinatorActingAsFinalHead ? 'final_head' : userRole;
 
   const isRHStage = request.status === 'Final Head Review' || request.status === 'Returned to Regional Head';
   const showActions = userRole !== 'regional_coordinator' || !isRHStage || rhAvailability === 'unavailable';
@@ -413,9 +422,11 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               setCommentError('');
             }}>
               {showSendLabel ? (
-                <><Send size={15} /> Send for Approval</>
-              ) : (
+                <><Send size={15} /> Send to User Departments</>
+              ) : isRegionalHead ? (
                 <><CheckCircle2 size={15} /> Approve</>
+              ) : (
+                <><CheckCircle2 size={15} /> Accept</>
               )}
             </button>
           )}
@@ -508,15 +519,17 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
             <>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
                 {showSendLabel
-                  ? 'Sending this request for approval will notify the selected departments to review.'
-                  : 'Approving this request will move it to the next stage automatically.'}
+                  ? 'Sending this request for review will notify the selected departments to review.'
+                  : isRegionalHead
+                  ? 'Approving this request will move it to the next stage automatically.'
+                  : 'Accepting this request will move it to the next stage automatically.'}
               </p>
 
               <div style={{ marginTop: 8 }}>
                 <Textarea
                   id="approval-comment"
                   label="Comments / Remarks (Optional)"
-                  placeholder="Add any comments or notes for this approval (optional)…"
+                  placeholder={isRegionalHead ? "Add any comments or notes for this approval (optional)…" : "Add any comments or notes for this acceptance (optional)…"}
                   value={comment}
                   onChange={e => setComment(e.target.value)}
                   rows={3}

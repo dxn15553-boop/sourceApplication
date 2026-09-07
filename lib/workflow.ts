@@ -172,18 +172,18 @@ export const STATUS_CONFIG: Record<WorkflowStatus, {
 }> = {
   'Submitted':                 { label: 'Submitted',                 color: 'text-yellow-300',  bg: 'bg-yellow-500/10',  border: 'border-yellow-500/30',  dot: 'bg-yellow-400'  },
   'HOD Review':                { label: 'HOD Review',                color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
-  'HOD Approved':              { label: 'HOD Approved',              color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
+  'HOD Approved':              { label: 'HOD Accepted',              color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
   'HOD Rejected':              { label: 'HOD Rejected',              color: 'text-red-300',     bg: 'bg-red-500/10',     border: 'border-red-500/30',     dot: 'bg-red-400'     },
   'HOD Returned':              { label: 'Returned by HOD',           color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
   'Under Required Review':     { label: 'Sent to RRF – Request Required From User Department', color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
-  'Target Dept Approved':      { label: 'Target Dept Approved',      color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
+  'Target Dept Approved':      { label: 'Target Dept Reviewed',      color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
   'Pending Home HOD Confirmation': { label: 'Pending Home HOD Confirmation', color: 'text-yellow-300', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', dot: 'bg-yellow-400' },
   'Final Head Review':         { label: 'Regional Head Review',         color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
   'Final Head Approved':       { label: 'Regional Head Approved',       color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
   'Final Head Rejected':       { label: 'Regional Head Rejected',       color: 'text-red-300',     bg: 'bg-red-500/10',     border: 'border-red-500/30',     dot: 'bg-red-400'     },
   'Final Head Returned':       { label: 'Returned by Regional Head',    color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
   'Procurement Review':        { label: 'Procurement Review',        color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
-  'Procurement Approved':      { label: 'Procurement Approved',      color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
+  'Procurement Approved':      { label: 'Procurement Accepted',      color: 'text-blue-300',    bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    dot: 'bg-blue-400'    },
   'Procurement Rejected':      { label: 'Procurement Rejected',      color: 'text-red-300',     bg: 'bg-red-500/10',     border: 'border-red-500/30',     dot: 'bg-red-400'     },
   'Procurement Returned':      { label: 'Returned by Procurement',   color: 'text-orange-300',  bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  dot: 'bg-orange-400'  },
   'Section Manager Assignment':{ label: 'Awaiting Assignment',       color: 'text-purple-300',  bg: 'bg-purple-500/10',  border: 'border-purple-500/30',  dot: 'bg-purple-400'  },
@@ -223,10 +223,19 @@ export const ROLE_LABELS: Record<Role, string> = {
 // Workflow stage labels for the timeline
 // ============================================================
 
-export function getActionLabel(action: string): string {
+export function getActionLabel(action: string, role?: Role | string, comment?: string | null): string {
+  if (action === 'approved') {
+    if (role === 'final_head' || comment?.includes('on behalf of Regional Head')) {
+      return 'Approved';
+    }
+    if (comment?.includes('User Department Review')) {
+      return 'Reviewed';
+    }
+    return 'Accepted';
+  }
+
   const labels: Record<string, string> = {
     submitted:          'Request Submitted',
-    approved:           'Approved',
     rejected:           'Rejected',
     returned:           'Returned for Correction',
     resubmitted:        'Resubmitted',

@@ -546,10 +546,10 @@ export default async function SourceRequestFormPage({
 
               {/* 3. HOD */}
               <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>3. HOD Approval</td>
+                <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>3. HOD Acceptance</td>
                 <td style={{ padding: '7px 10px' }}>{hodAction?.actor?.full_name || 'Head of Department'}</td>
                 <td style={{ padding: '7px 10px', color: hodAction ? '#16a34a' : '#64748b', fontWeight: 700 }}>
-                  {hodAction ? 'Approved' : 'Pending / Not Recorded'}
+                  {hodAction ? 'Accepted' : 'Pending / Not Recorded'}
                 </td>
                 <td style={{ padding: '7px 10px', color: '#64748b' }}>
                   {hodAction?.created_at ? new Date(hodAction.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
@@ -562,7 +562,7 @@ export default async function SourceRequestFormPage({
                 <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>4. Regional Coordinator</td>
                   <td style={{ padding: '7px 10px' }}>{regCoordAction.actor?.full_name || 'Regional Coordinator'}</td>
-                  <td style={{ padding: '7px 10px', color: '#16a34a', fontWeight: 700 }}>Verified &amp; Forwarded</td>
+                  <td style={{ padding: '7px 10px', color: '#16a34a', fontWeight: 700 }}>Accepted &amp; Forwarded</td>
                   <td style={{ padding: '7px 10px', color: '#64748b' }}>
                     {new Date(regCoordAction.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </td>
@@ -588,7 +588,7 @@ export default async function SourceRequestFormPage({
                 <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>6. Procurement Manager</td>
                 <td style={{ padding: '7px 10px' }}>{procMgrAction?.actor?.full_name || 'Procurement Manager'}</td>
                 <td style={{ padding: '7px 10px', color: procMgrAction ? '#16a34a' : '#64748b', fontWeight: 700 }}>
-                  {procMgrAction ? 'Approved' : 'Pending'}
+                  {procMgrAction ? 'Accepted' : 'Pending'}
                 </td>
                 <td style={{ padding: '7px 10px', color: '#64748b' }}>
                   {procMgrAction?.created_at ? new Date(procMgrAction.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
