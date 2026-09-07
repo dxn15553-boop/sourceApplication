@@ -16,7 +16,8 @@ export async function POST(
     }
 
     const { action, remarks, attachment_path, attachment_name } = await req.json();
-    if (!['Approved', 'Returned', 'Rejected'].includes(action)) {
+    const effectiveAction = (action === 'Reviewed' || action === 'Approved') ? 'Approved' : action;
+    if (!['Approved', 'Returned', 'Rejected'].includes(effectiveAction)) {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
@@ -43,7 +44,7 @@ export async function POST(
     // Update review
     await db.update(requiredReviews)
       .set({
-        status: action as any,
+        status: effectiveAction as any,
         remarks: remarks || null,
         reviewer_id: user.id,
         reviewed_at: new Date(),
@@ -53,11 +54,12 @@ export async function POST(
       .where(eq(requiredReviews.id, reviewId));
 
     // Log action on main request
+    const reviewActionText = effectiveAction === 'Approved' ? 'Reviewed' : effectiveAction;
     await db.insert(workflowActions).values({
       request_id: review.request_id,
       actor_id: user.id,
-      action: action === 'Approved' ? 'approved' : 'returned',
-      comment: `${review.department.name} User Department Review ${action}${remarks ? ': ' + remarks : ''}${attachment_name ? ' (Attachment: ' + attachment_name + ')' : ''}`,
+      action: effectiveAction === 'Approved' ? 'approved' : 'returned',
+      comment: `${review.department.name} User Department Review ${reviewActionText}${remarks ? ': ' + remarks : ''}${attachment_name ? ' (Attachment: ' + attachment_name + ')' : ''}`,
     });
 
     // If returned (or rejected), return to Home HOD

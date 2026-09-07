@@ -67,7 +67,9 @@ export default function WorkflowTimeline({ entries }: WorkflowTimelineProps) {
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div>
                   <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                    {entry.action === 'assigned' && entry.comment?.startsWith('Assigned to ')
+                    {entry.comment?.includes('User Department Review') && entry.action === 'approved'
+                      ? 'Reviewed'
+                      : entry.action === 'assigned' && entry.comment?.startsWith('Assigned to ')
                       ? entry.comment
                       : getActionLabel(entry.action)}
                   </p>

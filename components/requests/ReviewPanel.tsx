@@ -11,7 +11,7 @@ export default function ReviewPanel({ reviewId, departmentName }: { reviewId: st
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (action: 'Approved' | 'Returned') => {
+  const handleSubmit = async (action: 'Approved' | 'Returned' | 'Reviewed') => {
     if (action === 'Returned' && !remarks.trim()) {
       setError('Remarks are required to return the request.');
       return;
@@ -64,12 +64,12 @@ export default function ReviewPanel({ reviewId, departmentName }: { reviewId: st
         <ShieldAlert size={18} style={{ color: '#f59e0b' }} /> User Department Review: {departmentName}
       </h2>
       <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>
-        Your department has been assigned to review this request. Please review and choose to <strong>Approve</strong> or <strong>Return</strong> the request.
+        Your department has been assigned to review this request. Please review and choose to <strong>Review</strong> or <strong>Return</strong> the request.
       </p>
 
       <div style={{ marginBottom: 20 }}>
         <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>
-          Remarks <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 400 }}>(optional for approval, required for return)</span>
+          Remarks <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 400 }}>(optional for review, required for return)</span>
         </label>
         <textarea
           value={remarks}
@@ -93,12 +93,12 @@ export default function ReviewPanel({ reviewId, departmentName }: { reviewId: st
 
       <div style={{ display: 'flex', gap: 12 }}>
         <button
-          onClick={() => handleSubmit('Approved')}
+          onClick={() => handleSubmit('Reviewed')}
           disabled={isSubmitting}
           className="btn btn-primary"
           style={{ flex: 1, background: 'var(--success)', color: 'white', borderColor: 'var(--success)' }}
         >
-          {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Approve
+          {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} Reviewed
         </button>
         <button
           onClick={() => handleSubmit('Returned')}

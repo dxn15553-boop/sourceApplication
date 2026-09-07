@@ -535,7 +535,7 @@ export default async function SourceRequestFormPage({
                   </td>
                   <td style={{ padding: '7px 10px' }}>{rev.reviewer?.full_name || 'Department Reviewer'}</td>
                   <td style={{ padding: '7px 10px', color: rev.status === 'Approved' ? '#16a34a' : '#d97706', fontWeight: 700 }}>
-                    {rev.status}
+                    {rev.status === 'Approved' ? 'Reviewed' : rev.status}
                   </td>
                   <td style={{ padding: '7px 10px', color: '#64748b' }}>
                     {rev.created_at ? new Date(rev.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}

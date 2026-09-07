@@ -273,7 +273,7 @@ export default async function RequestDetailPage({
                               background: isApproved ? 'rgba(16,185,129,0.15)' : isReturned ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245,158,11,0.15)',
                               color: isApproved ? 'var(--success)' : isReturned ? '#d97706' : '#d97706'
                             }}>
-                              {r.status}
+                              {r.status === 'Approved' ? 'Reviewed' : r.status}
                             </span>
                           </div>
                           {r.reviewer && (
