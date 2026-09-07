@@ -544,9 +544,9 @@ export default async function SourceRequestFormPage({
                 </tr>
               ))}
 
-              {/* 3. Home HOD */}
+              {/* 3. HOD */}
               <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>3. Home HOD Approval</td>
+                <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>3. HOD Approval</td>
                 <td style={{ padding: '7px 10px' }}>{hodAction?.actor?.full_name || 'Head of Department'}</td>
                 <td style={{ padding: '7px 10px', color: hodAction ? '#16a34a' : '#64748b', fontWeight: 700 }}>
                   {hodAction ? 'Approved' : 'Pending / Not Recorded'}
