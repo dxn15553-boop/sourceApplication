@@ -22,6 +22,17 @@ export async function POST(request: Request) {
       }
     }
 
+    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || 'fqeqqzye';
+    const apiKey = process.env.CLOUDINARY_API_KEY || '318123676451762';
+    const apiSecret = process.env.CLOUDINARY_API_SECRET || 'yFd-hetu6rm-vaalT88HAmZ8bzI';
+
+    cloudinary.config({
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
+      secure: true,
+    });
+
     const uploadPromises = filesToUpload.map(async (file) => {
       const arrayBuffer = await file.arrayBuffer();
       const buffer = new Uint8Array(arrayBuffer);
