@@ -78,7 +78,6 @@ export async function PATCH(
     if (priority !== undefined) updatePayload.priority = priority;
     if (request_date !== undefined) {
       updatePayload.request_date = request_date ? new Date(request_date) : null;
-      updatePayload.created_at = request_date ? new Date(request_date) : undefined;
     }
     if (required_by_date !== undefined) updatePayload.required_by_date = required_by_date ? new Date(required_by_date) : null;
     if (purpose_justification !== undefined) updatePayload.purpose_justification = purpose_justification;

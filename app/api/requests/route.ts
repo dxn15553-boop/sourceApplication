@@ -159,7 +159,7 @@ export async function POST(request: Request) {
       priority: body.priority?.trim() || 'IMPORTANT',
       request_date: parsedRequestDate,
       required_by_date: parsedRequiredByDate,
-      created_at: parsedRequestDate,
+      created_at: new Date(),
       purpose_justification: body.purpose_justification?.trim() || null,
       attachment_path: body.attachment_path ?? null,
       attachment_name: body.attachment_name ?? null,

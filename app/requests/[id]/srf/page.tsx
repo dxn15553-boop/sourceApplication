@@ -522,7 +522,7 @@ export default async function SourceRequestFormPage({
                 <td style={{ padding: '7px 10px' }}>{req.requester_name || req.requester?.full_name}</td>
                 <td style={{ padding: '7px 10px', color: '#16a34a', fontWeight: 700 }}>Submitted</td>
                 <td style={{ padding: '7px 10px', color: '#64748b' }}>
-                  {new Date(req.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  {new Date(submissionAction?.created_at || req.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </td>
                 <td style={{ padding: '7px 10px', color: '#475569' }}>Initial Source Requisition</td>
               </tr>

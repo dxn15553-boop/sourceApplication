@@ -104,7 +104,8 @@ export default async function RequestDetailPage({
   // Cloudinary returns a secure_url which we stored in attachment_path
   let attachmentUrl: string | null = req.attachment_path ?? null;
 
-  const createdDate = new Date(req.created_at);
+  const submissionAction = req.workflow_actions?.find((a: any) => a.action === 'submitted');
+  const createdDate = submissionAction?.created_at ? new Date(submissionAction.created_at) : new Date(req.created_at);
 
   const canEdit = isHomeHod && req.status === 'Returned to HOD';
 
