@@ -48,6 +48,9 @@ export default function PendingRequestsList({ pendingRequests, userId = 'default
               transition: 'all 0.18s ease',
               flexWrap: 'wrap',
               position: 'relative',
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
             }}
             className="animate-fade-in"
           >
