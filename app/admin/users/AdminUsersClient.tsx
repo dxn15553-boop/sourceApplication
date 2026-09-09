@@ -115,50 +115,52 @@ export default function AdminUsersClient({ users, departments }: AdminUsersClien
 
       {/* Users table */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid var(--border)' }}>
-              {['Name', 'Role', 'Department', 'Actions'].map(h => (
-                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u, idx) => (
-              <tr key={u.id} style={{ borderBottom: idx < users.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                <td style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0,
-                    }}>
-                      {u.full_name.charAt(0)}
-                    </div>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{u.full_name}</span>
-                  </div>
-                </td>
-                <td style={{ padding: '14px 16px' }}>
-                  <span className="role-badge">{ROLE_LABELS[u.role]}</span>
-                </td>
-                <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
-                  {(u as any).profileDepartments?.map((pd: any) => pd.department.name).join(', ') || '—'}
-                </td>
-                <td style={{ padding: '14px 16px' }}>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button className="btn btn-ghost btn-sm" title="Edit user" onClick={() => handleEditClick(u)}>
-                      <Pencil size={13} />
-                    </button>
-                    <button className="btn btn-ghost btn-sm" title="Delete user" onClick={() => handleDeleteUser(u.id, u.full_name)}>
-                      <Trash2 size={13} style={{ color: 'var(--danger)' }} />
-                    </button>
-                  </div>
-                </td>
+        <div className="table-responsive">
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                {['Name', 'Role', 'Department', 'Actions'].map(h => (
+                  <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {users.map((u, idx) => (
+                <tr key={u.id} style={{ borderBottom: idx < users.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <td style={{ padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: '50%',
+                        background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0,
+                      }}>
+                        {u.full_name.charAt(0)}
+                      </div>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{u.full_name}</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '14px 16px' }}>
+                    <span className="role-badge">{ROLE_LABELS[u.role]}</span>
+                  </td>
+                  <td style={{ padding: '14px 16px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                    {(u as any).profileDepartments?.map((pd: any) => pd.department.name).join(', ') || '—'}
+                  </td>
+                  <td style={{ padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-ghost btn-sm" title="Edit user" onClick={() => handleEditClick(u)}>
+                        <Pencil size={13} />
+                      </button>
+                      <button className="btn btn-ghost btn-sm" title="Delete user" onClick={() => handleDeleteUser(u.id, u.full_name)}>
+                        <Trash2 size={13} style={{ color: 'var(--danger)' }} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {users.length === 0 && (
           <div className="empty-state">
             <UserPlus />

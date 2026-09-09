@@ -32,8 +32,8 @@ export default function SearchClient() {
   return (
     <div style={{ maxWidth: 760, margin: '0 auto' }}>
       <div className="card" style={{ marginBottom: 24 }}>
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: 12 }}>
-          <div style={{ flex: 1, position: 'relative' }}>
+        <form onSubmit={handleSearch} style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 240px', position: 'relative' }}>
             <Search size={18} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               className="form-input"
@@ -44,7 +44,7 @@ export default function SearchClient() {
               autoFocus
             />
           </div>
-          <button type="submit" className="btn btn-primary" disabled={loading || !query.trim()}>
+          <button type="submit" className="btn btn-primary" style={{ flexShrink: 0 }} disabled={loading || !query.trim()}>
             {loading ? 'Searching…' : <><Search size={15} /> Search</>}
           </button>
         </form>

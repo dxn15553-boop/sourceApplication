@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FileStack, Mail, Lock, Eye, EyeOff, AlertCircle, ShieldCheck, Zap, Globe, CheckCircle2 } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
-export default function LoginClient({ departments }: { departments: { id: string, name: string }[] }) {
+export default function LoginClient({ departments }: { departments?: { id: string, name: string }[] } = {}) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -113,17 +113,20 @@ export default function LoginClient({ departments }: { departments: { id: string
       </div>
 
       {/* RIGHT PANEL */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
-        padding: '60px 48px',
-        position: 'relative',
-        overflow: 'hidden',
-        minHeight: '100vh',
-      }}>
+      <div
+        className="login-right-panel"
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
+          padding: '60px 48px',
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: '100vh',
+        }}
+      >
 
         {/* Right panel ambient orbs */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
@@ -143,33 +146,47 @@ export default function LoginClient({ departments }: { departments: { id: string
         </svg>
 
         {/* Glass login card */}
-        <div style={{
-          width: '100%',
-          maxWidth: 440,
-          background: 'rgba(255,255,255,0.04)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderRadius: 28,
-          padding: '52px 44px',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: '0 32px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
-          position: 'relative',
-          zIndex: 1,
-          animation: 'fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) forwards',
-        }}>
+        <div
+          className="login-card"
+          style={{
+            width: '100%',
+            maxWidth: 440,
+            background: 'rgba(255,255,255,0.04)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            borderRadius: 28,
+            padding: '52px 44px',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 32px 64px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+            position: 'relative',
+            zIndex: 1,
+            animation: 'fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) forwards',
+          }}
+        >
 
           {/* Top shimmer line on card */}
           <div style={{ position: 'absolute', top: 0, left: '10%', right: '10%', height: 1, background: 'linear-gradient(90deg, transparent, rgba(129,140,248,0.7), rgba(56,189,248,0.7), transparent)', borderRadius: 1 }} />
 
-          {/* Card header */}
-          <div style={{ marginBottom: 36 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(14,165,233,0.2))', border: '1px solid rgba(99,102,241,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-              <Lock size={20} color="#818cf8" />
+          {/* Mobile Brand Header (Visible <= 768px) */}
+          <div className="login-mobile-brand" style={{ display: 'none', alignItems: 'center', gap: 10, marginBottom: 26 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg, #6366f1, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <FileStack size={18} color="#fff" />
             </div>
-            <h2 style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.025em', lineHeight: 1.25, margin: '0 0 8px 0' }}>
+            <div>
+              <span style={{ color: '#fff', fontWeight: 700, fontSize: 14, letterSpacing: '-0.01em', display: 'block', lineHeight: 1.2 }}>DXN Procurement</span>
+              <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, fontWeight: 500 }}>Source Request Management</span>
+            </div>
+          </div>
+
+          {/* Card header */}
+          <div style={{ marginBottom: 32 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 13, background: 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(14,165,233,0.2))', border: '1px solid rgba(99,102,241,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+              <Lock size={19} color="#818cf8" />
+            </div>
+            <h2 style={{ fontSize: 'clamp(22px, 5vw, 26px)', fontWeight: 800, color: '#fff', letterSpacing: '-0.025em', lineHeight: 1.25, margin: '0 0 8px 0' }}>
               Welcome back 👋
             </h2>
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, margin: 0 }}>
               Sign in to access your dashboard and manage requests.
             </p>
           </div>
@@ -287,15 +304,15 @@ export default function LoginClient({ departments }: { departments: { id: string
           </form>
 
           {/* Trust badges */}
-          <div style={{ marginTop: 32, display: 'flex', gap: 10 }}>
+          <div className="login-trust-badges" style={{ marginTop: 28, display: 'flex', gap: 10 }}>
             {[
               { icon: <ShieldCheck size={12} />, label: 'Secure login' },
               { icon: <CheckCircle2 size={12} />, label: 'SSL encrypted' },
               { icon: <Zap size={12} />, label: 'Fast & reliable' },
             ].map(b => (
-              <div key={b.label} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px 6px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 }}>
-                <span style={{ color: '#818cf8' }}>{b.icon}</span>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 500, whiteSpace: 'nowrap' }}>{b.label}</span>
+              <div key={b.label} style={{ flex: 1, minWidth: 'fit-content', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 }}>
+                <span style={{ color: '#818cf8', display: 'flex', flexShrink: 0 }}>{b.icon}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 500, whiteSpace: 'nowrap' }}>{b.label}</span>
               </div>
             ))}
           </div>
@@ -331,6 +348,37 @@ export default function LoginClient({ departments }: { departments: { id: string
         input::placeholder { color: rgba(255,255,255,0.2) !important; }
         @media (max-width: 768px) {
           .login-left-panel { display: none !important; }
+          .login-right-panel {
+            padding: 32px 16px !important;
+          }
+          .login-card {
+            padding: 32px 22px !important;
+            border-radius: 20px !important;
+          }
+          .login-mobile-brand {
+            display: flex !important;
+          }
+          .login-trust-badges {
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .login-right-panel {
+            padding: 24px 12px !important;
+          }
+          .login-card {
+            padding: 24px 16px !important;
+            border-radius: 16px !important;
+          }
+          .login-trust-badges {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 6px !important;
+          }
+          .login-trust-badges > div:last-child {
+            grid-column: span 2;
+          }
         }
       `}</style>
     </div>

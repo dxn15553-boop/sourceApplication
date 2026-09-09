@@ -2,8 +2,8 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import AppShell from '@/components/layout/AppShell';
-import StatusBadge from '@/components/requests/StatusBadge';
-import { FilePlus, Clock, CheckCircle2, AlertCircle, ArrowRight, ChevronRight, FileText } from 'lucide-react';
+import PendingRequestsList from '@/components/dashboard/PendingRequestsList';
+import { FilePlus, Clock, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
 import type { Metadata } from 'next';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
@@ -141,7 +141,7 @@ export default async function DashboardPage() {
         ) : null
       }
     >
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 28 }} className="stagger">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 14, marginBottom: 28 }} className="stagger">
         <StatCard icon={<FilePlus size={20} />} value={total} label="Total Requests" color="#3b82f6" />
         <StatCard icon={<Clock size={20} />} value={pending} label="In Progress" color="#f59e0b" />
         <StatCard icon={<CheckCircle2 size={20} />} value={completed} label="Completed" color="#10b981" />
@@ -159,103 +159,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        {!pendingRequests.length ? (
-          <div className="empty-state">
-            <CheckCircle2 size={40} style={{ color: 'var(--success)', opacity: 0.6 }} />
-            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-secondary)' }}>All caught up!</p>
-            <p style={{ fontSize: 13 }}>No requests are waiting for your action.</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }} className="stagger">
-            {pendingRequests.map((req: any) => (
-              <Link
-                key={req.id}
-                href={`/requests/${req.id}`}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '14px 16px',
-                  background: 'var(--bg-base)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 10,
-                  textDecoration: 'none',
-                  transition: 'all 0.15s',
-                }}
-                className="animate-fade-in"
-              >
-                <span className="src-id">{req.id}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {req.description}
-                  </p>
-                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    {req.priority && (
-                      <span
-                        style={{
-                          fontSize: 10.5,
-                          fontWeight: 700,
-                          padding: '1px 6px',
-                          borderRadius: 6,
-                          background:
-                            ['URGENT', 'Urgent'].includes(req.priority)
-                              ? 'rgba(239,68,68,0.12)'
-                              : ['HIGH', 'High'].includes(req.priority)
-                              ? 'rgba(245,158,11,0.12)'
-                              : ['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority)
-                              ? 'rgba(16,185,129,0.12)'
-                              : 'rgba(59,130,246,0.12)',
-                          color:
-                            ['URGENT', 'Urgent'].includes(req.priority)
-                              ? 'var(--danger)'
-                              : ['HIGH', 'High'].includes(req.priority)
-                              ? 'var(--warning)'
-                              : ['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority)
-                              ? 'var(--success)'
-                              : 'var(--info)',
-                        }}
-                      >
-                        {['URGENT', 'Urgent'].includes(req.priority) && '🔴 '}
-                        {['HIGH', 'High'].includes(req.priority) && '🟠 '}
-                        {['IMPORTANT', 'Important', 'MEDIUM', 'Medium'].includes(req.priority) && '🔵 '}
-                        {['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority) && '🟢 '}
-                        {req.priority}
-                      </span>
-                    )}
-                    <span>{req.department?.name}</span>
-                    <span>·</span>
-                    <span>{new Date(req.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                  </p>
-                </div>
-                {req.srf_number && (
-                  <span
-                    onClick={(e) => {
-                      e.preventDefault();
-                      window.open(`/requests/${req.id}/srf?download=1`, '_blank');
-                    }}
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: '#0284c7',
-                      background: 'rgba(2, 132, 199, 0.12)',
-                      padding: '4px 8px',
-                      borderRadius: 6,
-                      border: '1px solid rgba(2, 132, 199, 0.25)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      cursor: 'pointer',
-                    }}
-                    title="Download Official SRF PDF"
-                  >
-                    <FileText size={12} />
-                    <span>{req.srf_number} PDF 📥</span>
-                  </span>
-                )}
-                <StatusBadge status={req.status as any} animate />
-                <ArrowRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-              </Link>
-            ))}
-          </div>
-        )}
+        <PendingRequestsList pendingRequests={pendingRequests} userId={user.id} />
       </div>
     </AppShell>
   );

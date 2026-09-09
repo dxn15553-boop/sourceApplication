@@ -72,7 +72,7 @@ export default function SelectReviewersPanel({
         Your Head of Department has approved this request. Please select all applicable departments (EHS, Admin, QA, Legal, etc.) that need to review this request before it proceeds to the Regional Head. If no cross-functional reviews are needed, you can skip this step.
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 24 }}>
         {departments.map(dept => (
           <div 
             key={dept.id}

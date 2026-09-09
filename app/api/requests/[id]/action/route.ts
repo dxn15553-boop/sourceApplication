@@ -180,6 +180,9 @@ export async function POST(
         allowed.push('Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator');
       }
       if (!allowed.includes(srcRequest.status)) {
+        if (srcRequest.status === transition.nextStatus) {
+          return Response.json({ success: true, message: `Request is already in status '${srcRequest.status}'`, status: srcRequest.status });
+        }
         return Response.json({ error: `Action '${action}' not valid in status '${srcRequest.status}'` }, { status: 400 });
       }
     }

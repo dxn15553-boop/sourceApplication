@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, FilePlus, FolderOpen, Search,
-  Users, LogOut, ChevronRight, FileStack,
+  Users, LogOut, ChevronRight, FileStack, X,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import type { Profile } from '@/lib/types';
@@ -30,9 +30,11 @@ const NAV_ITEMS: NavItem[] = [
 interface SidebarProps {
   profile: Profile;
   departmentName?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export default function Sidebar({ profile, departmentName }: SidebarProps) {
+export default function Sidebar({ profile, departmentName, isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
 
   const visibleItems = NAV_ITEMS.filter(
@@ -50,9 +52,9 @@ export default function Sidebar({ profile, departmentName }: SidebarProps) {
   }
 
   return (
-    <aside className="sidebar">
-      {/* Logo */}
-      <div style={{ position: 'relative', zIndex: 1, padding: '22px 20px 18px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+      {/* Logo & Mobile Close */}
+      <div style={{ position: 'relative', zIndex: 1, padding: '18px 18px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #6366f1, #4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(99,102,241,0.4)' }}>
             <FileStack size={18} className="text-white" />
@@ -62,6 +64,16 @@ export default function Sidebar({ profile, departmentName }: SidebarProps) {
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.38)', marginTop: 2, fontWeight: 500 }}>DXN Procurement</p>
           </div>
         </div>
+
+        {/* Mobile close button */}
+        <button
+          type="button"
+          className="sidebar-close-btn"
+          onClick={onClose}
+          aria-label="Close navigation"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -73,6 +85,7 @@ export default function Sidebar({ profile, departmentName }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => onClose?.()}
                 className={`nav-link ${isActive ? 'active' : ''}`}
               >
                 {item.icon}

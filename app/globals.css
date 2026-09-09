@@ -628,6 +628,34 @@ body {
   border: 1px solid rgba(255,255,255,0.10);
 }
 
+/* === Unopened / New request badge === */
+.badge-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.38);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.badge-new-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 6px #ffffff;
+  animation: pulse-dot 1.8s infinite;
+}
+
+
 /* === Tables === */
 table { width: 100%; border-collapse: collapse; }
 thead tr { border-bottom: 1.5px solid var(--border-strong); }
@@ -637,19 +665,140 @@ tbody tr:last-child { border-bottom: none; }
 tbody tr:hover { background: var(--bg-hover); }
 td { padding: 13px 14px; font-size: 13.5px; color: var(--text-secondary); vertical-align: middle; }
 
-/* === Responsive === */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* === Mobile Navigation & Drawer === */
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+.mobile-menu-btn:hover {
+  background: var(--bg-hover);
+  color: var(--accent);
+}
+
+.sidebar-close-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-xs);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sidebar-close-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 65;
+  animation: fadeIn 0.2s ease forwards;
+}
+
+/* === Responsive Breakpoints === */
 @media (max-width: 1024px) {
   :root { --sidebar-width: 240px; }
-  .page-content { padding: 24px; }
+  .page-content { padding: 24px 20px; }
 }
 
 @media (max-width: 768px) {
-  :root { --sidebar-width: 0px; }
-  .sidebar { transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); width: 272px; }
-  .sidebar.open { transform: translateX(0); }
-  .main-content { margin-left: 0; }
-  .topbar { padding: 0 20px; }
-  .page-content { padding: 20px 16px; }
+  :root {
+    --sidebar-width: 0px;
+    --topbar-height: 58px;
+  }
+  .mobile-menu-btn {
+    display: inline-flex;
+  }
+  .sidebar-close-btn {
+    display: inline-flex;
+  }
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 280px;
+    max-width: 85vw;
+    z-index: 70;
+    box-shadow: 0 0 32px rgba(0, 0, 0, 0.5);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    min-width: 0;
+  }
+  .topbar {
+    padding: 0 16px;
+    gap: 12px;
+  }
+  .page-content {
+    padding: 18px 14px 36px;
+  }
+  .card {
+    padding: 20px 16px;
+  }
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .modal-box {
+    padding: 22px 18px;
+    border-radius: var(--radius);
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar {
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .page-content {
+    padding: 14px 12px 28px;
+  }
+  .card {
+    padding: 16px 12px;
+    border-radius: var(--radius-sm);
+  }
+  .stat-card {
+    padding: 14px 12px;
+    gap: 12px;
+  }
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .stat-value {
+    font-size: 22px;
+  }
+  .stat-label {
+    font-size: 11px;
+  }
 }
 
 /* === Request Detail Grid Layout === */
@@ -662,6 +811,7 @@ td { padding: 13px 14px; font-size: 13.5px; color: var(--text-secondary); vertic
 
 @media (min-width: 1024px) {
   .request-detail-grid {
-    grid-template-columns: 1fr 380px;
+    grid-template-columns: 1fr 420px;
   }
 }
+

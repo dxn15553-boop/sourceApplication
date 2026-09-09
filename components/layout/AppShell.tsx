@@ -8,6 +8,8 @@ import { inArray } from 'drizzle-orm';
 import type { Profile } from '@/lib/types';
 import NotificationBell from './NotificationBell';
 
+import AppLayoutClient from './AppLayoutClient';
+
 interface AppShellProps {
   children: React.ReactNode;
   pageTitle?: string;
@@ -60,33 +62,14 @@ export default async function AppShell({
   };
 
   return (
-    <div className="app-layout">
-      <Sidebar profile={profile} departmentName={activeDeptName} />
-      <div className="main-content">
-        <header className="topbar">
-          <div style={{ flex: 1 }}>
-            {pageTitle && (
-              <div>
-                <h1 className="text-lg font-bold text-[var(--text-primary)] m-0">
-                  {pageTitle}
-                </h1>
-                {pageSubtitle && (
-                  <p className="text-xs text-[var(--text-muted)] m-0 mt-1 font-medium">{pageSubtitle}</p>
-                )}
-              </div>
-            )}
-          </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <NotificationBell />
-            {headerAction && <div>{headerAction}</div>}
-          </div>
-        </header>
-
-        <main className="page-content animate-fade-in">
-          {children}
-        </main>
-      </div>
-    </div>
+    <AppLayoutClient
+      profile={profile}
+      departmentName={activeDeptName}
+      pageTitle={pageTitle}
+      pageSubtitle={pageSubtitle}
+      headerAction={headerAction}
+    >
+      {children}
+    </AppLayoutClient>
   );
 }

@@ -97,7 +97,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
   const showActions = userRole !== 'regional_coordinator' || !isRHStage || rhAvailability === 'unavailable';
 
   async function executeAction(action: ActionType) {
-    if (!action) return;
+    if (!action || loading) return;
     const cfg = ACTION_CONFIG[action];
 
     if (cfg.requiresComment && !comment.trim()) {
@@ -166,10 +166,18 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
         body: JSON.stringify(payload),
       });
       const json = await res.json();
-      if (!res.ok) { setError(json.error ?? 'Action failed.'); return; }
+      if (!res.ok) {
+        if (json.error && json.error.includes('not valid in status')) {
+          setActiveAction(null);
+          window.location.reload();
+          return;
+        }
+        setError(json.error ?? 'Action failed.');
+        return;
+      }
 
       setActiveAction(null);
-      router.refresh();
+      window.location.reload();
     } finally {
       setLoading(false);
     }

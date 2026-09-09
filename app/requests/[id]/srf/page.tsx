@@ -1,5 +1,7 @@
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
+import fs from 'fs';
+import path from 'path';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { sourceRequests } from '@/lib/db/schema';
@@ -75,11 +77,25 @@ export default async function SourceRequestFormPage({
   const assignmentAction = actions.filter((a: any) => a.action === 'assigned').slice(-1)[0];
   const acceptAction = actions.filter((a: any) => a.action === 'processing_started').slice(-1)[0];
 
+  // Load official DXN logo as base64 for offline & print rendering
+  let dxnLogoDataUri = '/dxnLogo.png';
+  try {
+    const logoPath = path.join(process.cwd(), 'public', 'dxnLogo.png');
+    if (fs.existsSync(logoPath)) {
+      const logoBuffer = fs.readFileSync(logoPath);
+      dxnLogoDataUri = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    }
+  } catch (e) {}
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary, #0f172a)', padding: '24px 16px' }}>
       {/* Printable CSS style rules */}
       <style>{`
         @media print {
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           body {
             background: #ffffff !important;
             color: #1e293b !important;
@@ -170,28 +186,141 @@ export default async function SourceRequestFormPage({
           lineHeight: 1.5,
         }}
       >
-        {/* Document Header */}
+        {/* Official DXN Manufacturing Plant Document Header Box */}
         <div
           className="srf-section"
           style={{
-            textAlign: 'center',
-            borderBottom: '2px solid #0f172a',
-            paddingBottom: 14,
-            marginBottom: 20,
+            border: '2px solid #0f172a',
+            borderRadius: 4,
+            overflow: 'hidden',
+            marginBottom: 22,
+            background: '#ffffff',
           }}
         >
-          <h1
+          <div
             style={{
-              fontSize: 22,
+              display: 'flex',
+              alignItems: 'stretch',
+              minHeight: 90,
+            }}
+          >
+            {/* Left: DXN Logo */}
+            <div
+              style={{
+                width: 115,
+                minWidth: 115,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 12px',
+                borderRight: '2px solid #0f172a',
+                background: '#ffffff',
+              }}
+            >
+              <img
+                src={dxnLogoDataUri}
+                alt="DXN Logo"
+                style={{
+                  maxHeight: 76,
+                  maxWidth: '100%',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
+
+            {/* Center: Company Name & Plant Address */}
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '10px 16px',
+                textAlign: 'center',
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: 18,
+                  fontWeight: 900,
+                  color: '#0f172a',
+                  margin: 0,
+                  letterSpacing: '0.02em',
+                  textTransform: 'uppercase',
+                  fontFamily: "'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+                }}
+              >
+                DXN MANUFACTURING (INDIA) PVT. LTD.,
+              </h2>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: '#1e293b',
+                  marginTop: 6,
+                  lineHeight: 1.5,
+                  letterSpacing: '0.01em',
+                  fontFamily: "'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif",
+                }}
+              >
+                <div>
+                  Sy. No: 392 &amp; 206 |Siddipet Industrial Park, Rajagopalpet (V) &amp; Mandapally (V)
+                </div>
+                <div>
+                  | Nangunoor (M) &amp; Siddipet Urban (M) |Siddipet Dist. -Telangana - 502267
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Document Reference Block */}
+            <div
+              style={{
+                width: 195,
+                minWidth: 195,
+                borderLeft: '2px solid #0f172a',
+                padding: '10px 14px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                background: '#f8fafc',
+                fontSize: 11,
+                lineHeight: 1.55,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6 }}>
+                <span style={{ fontWeight: 700, color: '#64748b' }}>SRF NO:</span>
+                <span style={{ fontWeight: 800, color: '#0284c7', fontFamily: 'monospace' }}>{srfNo}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, marginTop: 3 }}>
+                <span style={{ fontWeight: 700, color: '#64748b' }}>DOC DATE:</span>
+                <span style={{ fontWeight: 700, color: '#0f172a' }}>
+                  {srfDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, marginTop: 3 }}>
+                <span style={{ fontWeight: 700, color: '#64748b' }}>SOURCE ID:</span>
+                <span style={{ fontWeight: 700, color: '#0f172a', fontFamily: 'monospace' }}>{req.id}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Form Title Banner */}
+          <div
+            style={{
+              borderTop: '2px solid #0f172a',
+              background: '#0f172a',
+              color: '#ffffff',
+              textAlign: 'center',
+              padding: '7px 12px',
+              fontSize: 14,
               fontWeight: 800,
-              color: '#0f172a',
-              margin: 0,
-              letterSpacing: '0.04em',
+              letterSpacing: '0.08em',
               textTransform: 'uppercase',
             }}
           >
             SOURCE REQUEST FORM (SRF)
-          </h1>
+          </div>
         </div>
 
         {/* SRF Numbers & Meta Grid */}

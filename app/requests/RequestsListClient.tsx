@@ -6,12 +6,14 @@ import Link from 'next/link';
 import StatusBadge from '@/components/requests/StatusBadge';
 import type { SourceRequest } from '@/lib/types';
 import { STATUS_CONFIG } from '@/lib/workflow';
+import { useOpenedRequests } from '@/lib/useOpenedRequests';
 
 interface RequestsListClientProps {
   userRole: string;
 }
 
 export default function RequestsListClient({ userRole }: RequestsListClientProps) {
+  const { isOpened, markOpened, mounted } = useOpenedRequests();
   const [requests, setRequests] = useState<SourceRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -46,21 +48,21 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
     <>
       {/* Filters */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ flex: 1, minWidth: 220, position: 'relative' }}>
+        <div style={{ flex: '1 1 240px', minWidth: 200, position: 'relative' }}>
           <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
           <input
             className="form-input"
-            style={{ paddingLeft: 42 }}
+            style={{ paddingLeft: 42, width: '100%' }}
             placeholder="Search by SRC ID (e.g. SRC-2026-0001)…"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-        <div style={{ position: 'relative' }}>
+        <div style={{ flex: '1 1 200px', minWidth: 170, position: 'relative' }}>
           <Filter size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
           <select
             className="form-input form-select"
-            style={{ paddingLeft: 36, minWidth: 200 }}
+            style={{ paddingLeft: 36, width: '100%' }}
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
           >
@@ -68,14 +70,16 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
             {statusOptions.map(s => <option key={s} value={s}>{STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]?.label || s}</option>)}
           </select>
         </div>
-        <button onClick={fetchRequests} className="btn btn-ghost btn-sm" title="Refresh">
-          <RefreshCw size={15} />
-        </button>
-        {canCreateRequest && (
-          <Link href="/requests/new" className="btn btn-primary btn-sm">
-            <FilePlus size={15} /> New Request
-          </Link>
-        )}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+          <button onClick={fetchRequests} className="btn btn-ghost btn-sm" title="Refresh">
+            <RefreshCw size={15} />
+          </button>
+          {canCreateRequest && (
+            <Link href="/requests/new" className="btn btn-primary btn-sm">
+              <FilePlus size={15} /> New Request
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Content */}
@@ -99,76 +103,104 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }} className="stagger">
-          {requests.map((req) => (
-            <Link
-              key={req.id}
-              href={`/requests/${req.id}`}
-              prefetch={false}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 16,
-                padding: '16px 20px',
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border)',
-                borderRadius: 12,
-                textDecoration: 'none',
-                transition: 'all 0.15s',
-              }}
-              className="animate-fade-in"
-            >
-              <span className="src-id" style={{ flexShrink: 0 }}>{req.id}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {req.description}
-                </p>
-                <div style={{ display: 'flex', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
-                  {req.priority && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        padding: '1px 6px',
-                        borderRadius: 6,
-                        background:
-                          ['URGENT', 'Urgent'].includes(req.priority)
-                            ? 'rgba(239,68,68,0.12)'
-                            : ['HIGH', 'High'].includes(req.priority)
-                            ? 'rgba(245,158,11,0.12)'
-                            : ['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority)
-                            ? 'rgba(16,185,129,0.12)'
-                            : 'rgba(59,130,246,0.12)',
-                        color:
-                          ['URGENT', 'Urgent'].includes(req.priority)
-                            ? 'var(--danger)'
-                            : ['HIGH', 'High'].includes(req.priority)
-                            ? 'var(--warning)'
-                            : ['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority)
-                            ? 'var(--success)'
-                            : 'var(--info)',
-                      }}
-                    >
-                      {['URGENT', 'Urgent'].includes(req.priority) && '🔴 '}
-                      {['HIGH', 'High'].includes(req.priority) && '🟠 '}
-                      {['IMPORTANT', 'Important', 'MEDIUM', 'Medium'].includes(req.priority) && '🔵 '}
-                      {['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority) && '🟢 '}
-                      {req.priority}
+          {requests.map((req) => {
+            const isUnopened = mounted && !isOpened(req.id);
+
+            return (
+              <Link
+                key={req.id}
+                href={`/requests/${req.id}`}
+                prefetch={false}
+                onClick={() => markOpened(req.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 16,
+                  padding: '16px 20px',
+                  background: isUnopened ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-card)',
+                  border: isUnopened ? '1.5px solid rgba(99, 102, 241, 0.35)' : '1px solid var(--border)',
+                  borderLeft: isUnopened ? '4.5px solid #6366f1' : '1px solid var(--border)',
+                  boxShadow: isUnopened ? '0 4px 16px rgba(99, 102, 241, 0.10)' : 'none',
+                  borderRadius: 12,
+                  textDecoration: 'none',
+                  transition: 'all 0.18s ease',
+                  flexWrap: 'wrap',
+                }}
+                className="animate-fade-in"
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: '1 1 240px', minWidth: 0 }}>
+                  {isUnopened && (
+                    <span className="badge-new" title="New request not yet opened">
+                      <span className="badge-new-dot" />
+                      NEW
                     </span>
                   )}
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    {(req as any).department?.name}
-                  </span>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    by {(req as any).requester_name || (req as any).requester?.full_name}
-                  </span>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    {new Date(req.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  <span className="src-id" style={{ flexShrink: 0 }}>{req.id}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{
+                      fontSize: 14,
+                      fontWeight: isUnopened ? 750 : 600,
+                      color: isUnopened ? '#0f172a' : 'var(--text-primary)',
+                      margin: 0,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      letterSpacing: isUnopened ? '-0.015em' : 'normal',
+                    }}>
+                      {req.description}
+                    </p>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {req.priority && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                          borderRadius: 6,
+                          background:
+                            ['URGENT', 'Urgent'].includes(req.priority)
+                              ? 'rgba(239,68,68,0.12)'
+                              : ['HIGH', 'High'].includes(req.priority)
+                              ? 'rgba(245,158,11,0.12)'
+                              : ['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority)
+                              ? 'rgba(16,185,129,0.12)'
+                              : 'rgba(59,130,246,0.12)',
+                          color:
+                            ['URGENT', 'Urgent'].includes(req.priority)
+                              ? 'var(--danger)'
+                              : ['HIGH', 'High'].includes(req.priority)
+                              ? 'var(--warning)'
+                              : ['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority)
+                              ? 'var(--success)'
+                              : 'var(--info)',
+                        }}
+                      >
+                        {['URGENT', 'Urgent'].includes(req.priority) && '🔴 '}
+                        {['HIGH', 'High'].includes(req.priority) && '🟠 '}
+                        {['IMPORTANT', 'Important', 'MEDIUM', 'Medium'].includes(req.priority) && '🔵 '}
+                        {['NORMAL', 'Normal', 'LOW', 'Low'].includes(req.priority) && '🟢 '}
+                        {req.priority}
+                      </span>
+                    )}
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      {(req as any).department?.name}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      by {(req as any).requester_name || (req as any).requester?.full_name}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                      {new Date(req.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <StatusBadge status={req.status} />
-              <ArrowRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, marginLeft: 'auto' }}>
+                <StatusBadge status={req.status} />
+                <ArrowRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+              </div>
             </Link>
-          ))}
-        </div>
+          );
+        })}
+      </div>
       )}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </>

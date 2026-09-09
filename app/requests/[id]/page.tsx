@@ -11,6 +11,7 @@ import { ArrowLeft, Download, Paperclip, User, Building2, Calendar, Clock, Check
 import Link from 'next/link';
 import type { SourceRequest } from '@/lib/types';
 import EditRequestButton from '@/components/requests/EditRequestButton';
+import MarkAsOpened from '@/components/requests/MarkAsOpened';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import { sourceRequests, profiles, departments } from '@/lib/db/schema';
@@ -126,13 +127,14 @@ export default async function RequestDetailPage({
 
   return (
     <AppShell pageTitle={req.id} pageSubtitle={`Source Request · ${req.department?.name}`}>
+      <MarkAsOpened requestId={req.id} userId={profile.id} />
       <div style={{ maxWidth: 1320, margin: '0 auto', paddingBottom: 40 }}>
         <Link href="/requests" className="btn btn-ghost btn-sm" style={{ marginBottom: 20, display: 'inline-flex' }}>
           <ArrowLeft size={16} style={{ marginRight: 4 }} /> Back to Requests
         </Link>
 
         {/* Top-level two-column grid: Content | Workflow History */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 24, alignItems: 'start' }}>
+        <div className="request-detail-grid">
 
           {/* LEFT COLUMN — All main content */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
