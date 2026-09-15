@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { sourceRequests, workflowActions, profiles, notifications } from '@/lib/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import type { WorkflowActionPayload, WorkflowStatus, Role, WorkflowTrigger } from '@/lib/types';
+import { notifyUsersByRole, notifyUser, notifyCrossDeptHods, notifyHodsForNewRequest } from '@/lib/notifications';
 
 const TRANSITIONS: Record<string, {
   allowedRoles: Role[];
@@ -129,6 +130,11 @@ export async function POST(
               status: 'Pending' as const,
             }))
           );
+          await notifyCrossDeptHods({
+            requestId: id,
+            departmentIds: department_ids,
+            description: srcRequest.description,
+          });
           nextStatus = 'Under Required Review';
           nextRole = 'hod';
         } else {
@@ -488,6 +494,57 @@ export async function POST(
       action: ACTION_MAP[action as WorkflowTrigger],
       comment: finalComment,
     });
+
+    // Dispatch workflow notifications to next assignees / stakeholders
+    try {
+      if (action === 'return') {
+        if (nextRole === 'user' || nextStatus === 'Returned to Requester') {
+          await notifyUser({
+            userId: srcRequest.requester_id,
+            requestId: id,
+            title: `Request Returned: ${id}`,
+            message: `Your request was returned by ${user.name || 'reviewer'}.${comment ? ` Reason: ${comment}` : ''}`,
+          });
+        } else if (nextRole === 'hod' || nextStatus === 'Returned to HOD') {
+          if (srcRequest.requester_department_id) {
+            await notifyHodsForNewRequest({
+              requestId: id,
+              departmentId: srcRequest.requester_department_id,
+              requesterName: user.name,
+              description: `Returned: ${comment || 'Please review and resubmit.'}`,
+              priority: srcRequest.priority,
+            });
+          }
+        } else if (nextRole === 'regional_coordinator' || nextStatus === 'Returned to Regional Coordinator') {
+          await notifyUsersByRole({
+            roles: ['regional_coordinator'],
+            requestId: id,
+            title: `Request Returned: ${id}`,
+            message: `Request ${id} was returned to Regional Coordinator by ${user.name || 'reviewer'}.${comment ? ` Reason: ${comment}` : ''}`,
+            excludeUserId: user.id,
+          });
+        }
+      } else if (action === 'reject') {
+        await notifyUser({
+          userId: srcRequest.requester_id,
+          requestId: id,
+          title: `Request Rejected: ${id}`,
+          message: `Request ${id} was rejected by ${user.name || 'reviewer'}.${comment ? ` Reason: ${comment}` : ''}`,
+        });
+      } else if (action === 'approve' || action === 'resubmit') {
+        if (nextRole && ['regional_coordinator', 'final_head', 'procurement_manager', 'section_manager'].includes(nextRole)) {
+          await notifyUsersByRole({
+            roles: [nextRole],
+            requestId: id,
+            title: `Action Required: ${id}`,
+            message: `Request ${id} has moved to "${nextStatus}". Please review.`,
+            excludeUserId: user.id,
+          });
+        }
+      }
+    } catch (notifErr) {
+      console.error('Error dispatching action notification:', notifErr);
+    }
 
     return Response.json({ success: true, new_status: nextStatus });
   } catch (err) {

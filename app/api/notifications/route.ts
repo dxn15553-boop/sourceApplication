@@ -21,6 +21,7 @@ export async function GET() {
             srf_date: true,
             status: true,
             description: true,
+            priority: true,
           },
         },
       },

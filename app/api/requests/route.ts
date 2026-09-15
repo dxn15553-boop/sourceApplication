@@ -4,6 +4,7 @@ import { sourceRequests, profiles, departments, requestCounter, workflowActions 
 import { eq, desc, ilike, and, or, sql, inArray } from 'drizzle-orm';
 import { cookies } from 'next/headers';
 import type { CreateRequestPayload } from '@/lib/types';
+import { notifyHodsForNewRequest, notifyCrossDeptHods } from '@/lib/notifications';
 
 export async function GET(request: Request) {
   try {
@@ -189,6 +190,27 @@ export async function POST(request: Request) {
       action: 'submitted',
       comment: null,
     });
+
+    // Send immediate notification to receiver (Home HOD)
+    await notifyHodsForNewRequest({
+      requestId: srcId,
+      departmentId: primaryDeptId,
+      requesterName: newRequest.requester_name,
+      description: newRequest.description,
+      priority: newRequest.priority,
+    });
+
+    // If HOD selected cross-department reviews, notify cross-dept HODs as well
+    if (user.role === 'hod' && body.department_ids && body.department_ids.length > 0) {
+      const crossDeptIds = body.department_ids.filter(id => id && id !== userDeptId);
+      if (crossDeptIds.length > 0) {
+        await notifyCrossDeptHods({
+          requestId: srcId,
+          departmentIds: crossDeptIds,
+          description: newRequest.description,
+        });
+      }
+    }
 
     return Response.json({ data: newRequest }, { status: 201 });
   } catch (err: any) {

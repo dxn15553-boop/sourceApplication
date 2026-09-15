@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Bell, AlertCircle, FileText, CheckCircle2, ArrowRight, ExternalLink } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Bell, AlertCircle, FileText, CheckCircle2, ArrowRight, Volume2, VolumeX } from 'lucide-react';
 import Link from 'next/link';
+import { playNotificationChime, isSoundEnabled, setSoundEnabled } from '@/lib/sound';
+import NotificationToast, { ToastNotificationData } from '@/components/ui/NotificationToast';
 
 interface Notification {
   id: string;
@@ -17,6 +20,7 @@ interface Notification {
     srf_date?: string | null;
     status?: string;
     description?: string;
+    priority?: string | null;
   };
 }
 
@@ -59,20 +63,80 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 export default function NotificationBell() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
+  const [activeToast, setActiveToast] = useState<ToastNotificationData | null>(null);
+  const [soundEnabled, setSoundEnabledState] = useState(() => isSoundEnabled());
+  const [browserPermission, setBrowserPermission] = useState<NotificationPermission>(() =>
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
+  );
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const knownIdsRef = useRef<Set<string>>(new Set());
+  const isFirstLoadRef = useRef<boolean>(true);
+
+  const requestDesktopPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        const perm = await Notification.requestPermission();
+        setBrowserPermission(perm);
+      } catch (err) {
+        console.warn('Failed to request notification permission:', err);
+      }
+    }
+  };
 
   const fetchNotifications = async (signal?: AbortSignal) => {
     try {
       const res = await fetch('/api/notifications', { signal });
       if (res.ok) {
         const json = await res.json();
-        setNotifications(json.data || []);
+        const incomingList: Notification[] = json.data || [];
+
+        if (isFirstLoadRef.current) {
+          // On initial mount, populate known IDs so we don't alert old items
+          incomingList.forEach(n => knownIdsRef.current.add(n.id));
+          isFirstLoadRef.current = false;
+        } else {
+          // Detect newly arrived unread notifications
+          const newUnreads = incomingList.filter(n => !n.is_read && !knownIdsRef.current.has(n.id));
+
+          if (newUnreads.length > 0) {
+            newUnreads.forEach(n => knownIdsRef.current.add(n.id));
+
+            // 1. Play immediate audio chime
+            playNotificationChime();
+
+            // 2. Trigger floating on-screen alert for the newest notification
+            const latest = newUnreads[0];
+            setActiveToast({
+              id: latest.id,
+              requestId: latest.request_id,
+              title: latest.title,
+              message: latest.message,
+              priority: latest.request?.priority || null,
+              createdAt: latest.created_at,
+            });
+
+            // 3. Browser Desktop Notification (if enabled)
+            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+              try {
+                new Notification(latest.title, {
+                  body: latest.message,
+                  icon: '/favicon.ico',
+                });
+              } catch {
+                // browser notification display blocked or unsupported
+              }
+            }
+          }
+        }
+
+        setNotifications(incomingList);
       }
-    } catch (err: any) {
-      if (err.name === 'AbortError') return;
-      console.warn('Notifications fetch warning:', err.message || err);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      console.warn('Notifications fetch warning:', err instanceof Error ? err.message : err);
     }
   };
 
@@ -80,9 +144,10 @@ export default function NotificationBell() {
     const controller = new AbortController();
     fetchNotifications(controller.signal);
 
+    // Fast polling: check every 8 seconds for immediate alerts
     const interval = setInterval(() => {
       fetchNotifications();
-    }, 45000);
+    }, 8000);
 
     return () => {
       controller.abort();
@@ -240,23 +305,96 @@ export default function NotificationBell() {
                 </span>
               )}
             </div>
-            {unreadCount > 0 && (
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {/* Sound toggle button */}
               <button
-                onClick={markAllAsRead}
+                type="button"
+                onClick={() => {
+                  const nextState = !soundEnabled;
+                  setSoundEnabled(nextState);
+                  setSoundEnabledState(nextState);
+                  if (nextState) {
+                    playNotificationChime(true);
+                  }
+                }}
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: 'var(--accent, #6366f1)',
-                  fontSize: 11.5,
+                  color: soundEnabled ? 'var(--accent, #6366f1)' : 'var(--text-muted, #94a3b8)',
                   cursor: 'pointer',
+                  padding: '4px 6px',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontSize: 11,
                   fontWeight: 600,
-                  padding: '2px 6px',
+                  transition: 'background 0.15s',
+                }}
+                title={soundEnabled ? 'Mute sound alerts' : 'Unmute sound alerts (preview sound)'}
+                aria-label={soundEnabled ? 'Mute sound alerts' : 'Unmute sound alerts'}
+              >
+                {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+                <span>{soundEnabled ? 'Sound On' : 'Muted'}</span>
+              </button>
+
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--accent, #6366f1)',
+                    fontSize: 11.5,
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    padding: '2px 6px',
+                  }}
+                >
+                  Mark all read
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Optional browser desktop notification permission prompt */}
+          {browserPermission === 'default' && (
+            <div
+              style={{
+                padding: '8px 16px',
+                background: 'rgba(99, 102, 241, 0.09)',
+                borderBottom: '1px solid var(--border, rgba(255,255,255,0.06))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                <Bell size={13} style={{ color: '#818cf8', flexShrink: 0 }} />
+                <span style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+                  Enable background desktop alerts?
+                </span>
+              </div>
+              <button
+                onClick={requestDesktopPermission}
+                style={{
+                  background: 'var(--accent, #6366f1)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  flexShrink: 0,
                 }}
               >
-                Mark all as read
+                Enable
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* List of notifications */}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -318,8 +456,6 @@ export default function NotificationBell() {
                         n.title.toLowerCase().includes('srf') ||
                         n.title.toLowerCase().includes('assignment') ||
                         Boolean(n.request?.srf_number);
-
-                      const srfNumber = n.request?.srf_number || (n.title.match(/SRF-\d{4}-\d{4}/) ? n.title.match(/SRF-\d{4}-\d{4}/)![0] : null);
 
                       return (
                         <div
@@ -451,6 +587,17 @@ export default function NotificationBell() {
           </div>
         </div>
       )}
+      {/* Real-time floating alert toast */}
+      <NotificationToast
+        key={activeToast?.id || 'idle'}
+        notification={activeToast}
+        onDismiss={() => setActiveToast(null)}
+        onOpen={(id, reqId) => {
+          markOneAsRead(id);
+          setActiveToast(null);
+          router.push(`/requests/${reqId}`);
+        }}
+      />
     </div>
   );
 }
