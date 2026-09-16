@@ -85,7 +85,7 @@ export default function VendorEvaluationPanel({ requestId }: VendorEvaluationPan
 
       <form onSubmit={handleSubmit}>
         {/* Vendor Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: 16, marginBottom: 24 }}>
           {/* L1 */}
           <div style={{ background: 'var(--bg-base)', padding: 16, borderRadius: 8, border: '1px solid var(--border)' }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: 'var(--text-primary)' }}>L1 (Lowest)</h3>
@@ -133,7 +133,7 @@ export default function VendorEvaluationPanel({ requestId }: VendorEvaluationPan
               Selected Vendor *
             </label>
             <select 
-              className="input" 
+              className="input form-select" 
               value={selectedVendor} 
               onChange={e => setSelectedVendor(e.target.value as any)}
               style={{ fontWeight: 600 }}

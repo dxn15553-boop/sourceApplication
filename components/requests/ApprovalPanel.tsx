@@ -244,12 +244,14 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               border: '1px solid var(--border)',
               borderRadius: '8px',
               maxWidth: '420px',
-              marginBottom: 4
+              marginBottom: 4,
+              flexWrap: 'wrap',
+              gap: 8,
             }}>
               <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)' }}>
                 None / N/A (No additional user departments needed)
               </span>
-              <div style={{ display: 'flex', gap: 2, background: 'rgba(255, 255, 255, 0.05)', padding: 2, borderRadius: 6, border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', gap: 2, background: 'rgba(255, 255, 255, 0.05)', padding: 2, borderRadius: 6, border: '1px solid var(--border)', flexShrink: 0 }}>
                 <button
                   type="button"
                   disabled={loading}
@@ -291,7 +293,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
             {/* Department Checklist */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 200px), 1fr))',
               gap: '12px',
               background: 'rgba(255, 255, 255, 0.03)',
               border: '1px solid var(--border)',

@@ -113,23 +113,15 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
                 prefetch={false}
                 onClick={() => markOpened(req.id)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 16,
-                  padding: '16px 20px',
                   background: isUnopened ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-card)',
                   border: isUnopened ? '1.5px solid rgba(99, 102, 241, 0.35)' : '1px solid var(--border)',
                   borderLeft: isUnopened ? '4.5px solid #6366f1' : '1px solid var(--border)',
                   boxShadow: isUnopened ? '0 4px 16px rgba(99, 102, 241, 0.10)' : 'none',
-                  borderRadius: 12,
-                  textDecoration: 'none',
-                  transition: 'all 0.18s ease',
-                  flexWrap: 'wrap',
-                  width: '100%',
-                  maxWidth: '100%',
-                  boxSizing: 'border-box',
+                  position: 'relative',
                 }}
-                className="animate-fade-in"
+                className="request-card-row animate-fade-in"
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: '1 1 240px', minWidth: 0 }}>
+                <div className="request-card-main" style={{ display: 'flex', alignItems: 'center', gap: 12, flex: '1 1 240px', minWidth: 0 }}>
                   {isUnopened && (
                     <span className="badge-new" title="New request not yet opened">
                       <span className="badge-new-dot" />
@@ -150,7 +142,7 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
                     }}>
                       {req.description}
                     </p>
-                  <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 4, flexWrap: 'wrap', alignItems: 'center' }}>
                     {req.priority && (
                       <span
                         style={{
@@ -196,7 +188,7 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, marginLeft: 'auto' }}>
+              <div className="request-card-actions" style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, marginLeft: 'auto' }}>
                 <StatusBadge status={req.status} />
                 <ArrowRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
               </div>

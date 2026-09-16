@@ -144,10 +144,10 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
         </button>
       </div>
 
-      <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '24px' }}>
+      <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '20px' }}>
         {employeeList.map((emp) => (
           <div key={emp.departmentName} className="card" style={{
-            display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px'
+            display: 'flex', flexDirection: 'column', gap: '20px', padding: 'clamp(16px, 3.5vw, 24px)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>

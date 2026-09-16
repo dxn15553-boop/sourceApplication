@@ -66,7 +66,7 @@ export default function HandlerAcknowledgmentPanel({ request }: HandlerAcknowled
               }}
             >
               <CheckCircle2 size={13} />
-              Step: Nominated Handler Acknowledgment
+              Step: Assigned Handler Acknowledgment
             </span>
             <span
               style={{
@@ -86,7 +86,7 @@ export default function HandlerAcknowledgmentPanel({ request }: HandlerAcknowled
             Action Required: Review SRF & Acknowledge Procurement Assignment
           </h3>
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-            You have been nominated as the Procurement Handler for this approved source request. Please review the official <strong>Source Request Form (SRF)</strong> and acknowledge to proceed to Vendor Evaluation.
+            You have been assigned as the Procurement Handler for this approved source request. Please review the official <strong>Source Request Form (SRF)</strong> and acknowledge to proceed to Vendor Evaluation.
           </p>
         </div>
       </div>

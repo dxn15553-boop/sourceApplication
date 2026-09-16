@@ -163,7 +163,7 @@ export default async function RequestDetailPage({
             )}
 
             {/* Header Card */}
-            <div className="card" style={{ padding: '28px 32px' }}>
+            <div className="card" style={{ padding: 'clamp(18px, 3.5vw, 28px)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -206,7 +206,7 @@ export default async function RequestDetailPage({
                       </span>
                     )}
                   </div>
-                  <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>
+                  <h1 style={{ fontSize: 'clamp(18px, 4vw, 22px)', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>
                     Source Request Details
                   </h1>
                   <p style={{ fontSize: 13.5, color: 'var(--text-muted)', margin: 0 }}>
@@ -234,7 +234,7 @@ export default async function RequestDetailPage({
               <div style={{ width: '100%', height: 1, background: 'var(--border)', margin: '20px 0 16px' }} />
 
               {/* Metadata Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 14 }}>
                 <MetaItem icon={<User size={15} />} label="Requester" value={`${((req as any).requester_name || req.requester?.full_name) ?? '—'}${req.requester_designation ? ` (${req.requester_designation})` : ''}`} />
                 <MetaItem icon={<Building2 size={15} />} label="Target Department" value={req.department?.name ?? '—'} />
                 <MetaItem icon={<Calendar size={15} />} label="Date of Request" value={new Date(req.request_date || req.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' })} />
@@ -566,7 +566,7 @@ export default async function RequestDetailPage({
           </div>
 
           {/* RIGHT COLUMN — Workflow History */}
-          <div className="card" style={{ position: 'sticky', top: 80, padding: '24px', maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
+          <div className="card request-detail-workflow" style={{ padding: 'clamp(18px, 3vw, 24px)' }}>
             <h2 style={{ fontSize: 15, fontWeight: 700, margin: '0 0 20px', paddingBottom: 14, borderBottom: '1px solid var(--border)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Clock size={16} style={{ color: 'var(--accent)' }} />
               Workflow History

@@ -135,6 +135,17 @@ export default async function SourceRequestFormPage({
             color: inherit !important;
           }
         }
+        @media screen and (max-width: 768px) {
+          .srf-document-container {
+            padding: 20px 14px !important;
+            border-radius: 8px !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+          .srf-section {
+            min-width: 580px;
+          }
+        }
       `}</style>
 
       {/* Screen-only top action bar */}
@@ -207,12 +218,12 @@ export default async function SourceRequestFormPage({
             {/* Left: DXN Logo */}
             <div
               style={{
-                width: 115,
-                minWidth: 115,
+                width: 120,
+                minWidth: 120,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '8px 12px',
+                padding: '10px 16px',
                 borderRight: '2px solid #0f172a',
                 background: '#ffffff',
               }}
@@ -236,17 +247,17 @@ export default async function SourceRequestFormPage({
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
-                padding: '10px 16px',
+                padding: '12px 20px',
                 textAlign: 'center',
               }}
             >
               <h2
                 style={{
-                  fontSize: 18,
+                  fontSize: 19,
                   fontWeight: 900,
                   color: '#0f172a',
                   margin: 0,
-                  letterSpacing: '0.02em',
+                  letterSpacing: '0.03em',
                   textTransform: 'uppercase',
                   fontFamily: "'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif",
                 }}
@@ -255,9 +266,9 @@ export default async function SourceRequestFormPage({
               </h2>
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: 11.5,
                   fontWeight: 600,
-                  color: '#1e293b',
+                  color: '#334155',
                   marginTop: 6,
                   lineHeight: 1.5,
                   letterSpacing: '0.01em',
@@ -270,37 +281,6 @@ export default async function SourceRequestFormPage({
                 <div>
                   | Nangunoor (M) &amp; Siddipet Urban (M) |Siddipet Dist. -Telangana - 502267
                 </div>
-              </div>
-            </div>
-
-            {/* Right: Document Reference Block */}
-            <div
-              style={{
-                width: 195,
-                minWidth: 195,
-                borderLeft: '2px solid #0f172a',
-                padding: '10px 14px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                background: '#f8fafc',
-                fontSize: 11,
-                lineHeight: 1.55,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6 }}>
-                <span style={{ fontWeight: 700, color: '#64748b' }}>SRF NO:</span>
-                <span style={{ fontWeight: 800, color: '#0284c7', fontFamily: 'monospace' }}>{srfNo}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, marginTop: 3 }}>
-                <span style={{ fontWeight: 700, color: '#64748b' }}>DOC DATE:</span>
-                <span style={{ fontWeight: 700, color: '#0f172a' }}>
-                  {srfDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, marginTop: 3 }}>
-                <span style={{ fontWeight: 700, color: '#64748b' }}>SOURCE ID:</span>
-                <span style={{ fontWeight: 700, color: '#0f172a', fontFamily: 'monospace' }}>{req.id}</span>
               </div>
             </div>
           </div>
@@ -323,7 +303,7 @@ export default async function SourceRequestFormPage({
           </div>
         </div>
 
-        {/* SRF Numbers & Meta Grid */}
+        {/* Document Reference Details Bar */}
         <div
           className="srf-section"
           style={{
@@ -332,28 +312,28 @@ export default async function SourceRequestFormPage({
             gap: 12,
             background: '#f8fafc',
             border: '1px solid #cbd5e1',
-            borderRadius: 8,
-            padding: '14px 18px',
-            marginBottom: 24,
+            borderRadius: 6,
+            padding: '12px 18px',
+            marginBottom: 22,
           }}
         >
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>SRF Number</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#0284c7', marginTop: 2 }}>{srfNo}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>SRF Number</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#0284c7', marginTop: 2, fontFamily: 'monospace' }}>{srfNo}</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>SRF Issue Date</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Source Req ID</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginTop: 2, fontFamily: 'monospace' }}>{req.id}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>SRF Date</div>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginTop: 2 }}>
               {srfDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Source Req ID</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginTop: 2 }}>{req.id}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Workflow Status</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginTop: 2 }}>{req.status}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Workflow Status</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#0284c7', marginTop: 2 }}>{req.status}</div>
           </div>
         </div>
 
@@ -539,7 +519,7 @@ export default async function SourceRequestFormPage({
               gap: 16,
             }}
           >
-            {/* Nomination Box */}
+            {/* Handler Assignment Box */}
             <div
               style={{
                 border: '1px solid #cbd5e1',
@@ -549,16 +529,16 @@ export default async function SourceRequestFormPage({
               }}
             >
               <div style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', marginBottom: 8 }}>
-                Section Manager Nomination
+                Section Manager Assignment
               </div>
               <div style={{ fontSize: 12, color: '#475569', marginBottom: 4 }}>
-                <strong>Nominated Handler:</strong>{' '}
+                <strong>Assigned Handler:</strong>{' '}
                 <span style={{ color: '#0f172a', fontWeight: 700 }}>
-                  {req.assigned_employee?.full_name || 'Pending Nomination'}
+                  {req.assigned_employee?.full_name || 'Pending Assignment'}
                 </span>
               </div>
               <div style={{ fontSize: 12, color: '#475569', marginBottom: 4 }}>
-                <strong>Nominated On:</strong>{' '}
+                <strong>Assigned On:</strong>{' '}
                 {assignmentAction
                   ? new Date(assignmentAction.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                   : req.srf_date
@@ -566,7 +546,7 @@ export default async function SourceRequestFormPage({
                   : '—'}
               </div>
               <div style={{ fontSize: 12, color: '#475569' }}>
-                <strong>Nominated By:</strong>{' '}
+                <strong>Assigned By:</strong>{' '}
                 {assignmentAction?.actor?.full_name || 'Section Manager Procurement'}
               </div>
             </div>
@@ -603,7 +583,7 @@ export default async function SourceRequestFormPage({
               <div style={{ fontSize: 11, color: '#64748b' }}>
                 {req.handler_accepted_at
                   ? 'Procurement Handler acknowledged SRF and initiated Vendor Evaluation.'
-                  : 'Nominated Handler will review specifications and acknowledge to start procurement.'}
+                  : 'Assigned Handler will review specifications and acknowledge to start procurement.'}
               </div>
             </div>
           </div>
@@ -727,16 +707,16 @@ export default async function SourceRequestFormPage({
 
               {/* 7. Section Manager Assignment */}
               <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>7. Section Manager Review &amp; Nomination</td>
+                <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>7. Section Manager Review &amp; Assignment</td>
                 <td style={{ padding: '7px 10px' }}>{assignmentAction?.actor?.full_name || 'Section Manager Procurement'}</td>
                 <td style={{ padding: '7px 10px', color: assignmentAction ? '#0284c7' : '#64748b', fontWeight: 700 }}>
-                  {assignmentAction ? 'Nominated & SRF Issued' : 'Pending'}
+                  {assignmentAction ? 'Assigned & SRF Issued' : 'Pending'}
                 </td>
                 <td style={{ padding: '7px 10px', color: '#64748b' }}>
                   {assignmentAction?.created_at ? new Date(assignmentAction.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : req.srf_date ? new Date(req.srf_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                 </td>
                 <td style={{ padding: '7px 10px', color: '#475569' }}>
-                  {assignmentAction?.comment || (req.assigned_employee ? `Nominated handler: ${req.assigned_employee.full_name}` : '—')}
+                  {assignmentAction?.comment || (req.assigned_employee ? `Assigned handler: ${req.assigned_employee.full_name}` : '—')}
                 </td>
               </tr>
 

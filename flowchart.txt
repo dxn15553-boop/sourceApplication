@@ -10,7 +10,7 @@ Here is my breakdown of how the workflow operates, divided into five main phases
 5. **Purchase Manager:** The Purchase Manager accepts the request into the procurement pipeline.
 
 ### Phase 2: Assignment & Sourcing (Steps 6–8)
-6. **Nomination:** The Section Manager (Indirect Procurement) accepts the source and assigns it to a specific Procurement Handler.
+6. **Handler Assignment:** The Section Manager (Indirect Procurement) accepts the source and assigns it to a specific Procurement Handler.
 7. **Acceptance:** The Handler receives an automated notification and accepts the task.
 8. **Vendor Evaluation:** The Handler conducts market surveys/RFQs and enters pricing for L1 (lowest bidder), L2, and L3 vendors. They select a vendor and must provide a reason if they don't choose the cheapest (L1) option.
 

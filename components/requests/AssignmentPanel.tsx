@@ -48,7 +48,7 @@ export default function AssignmentPanel({ request, availableEmployees }: Assignm
           Section Manager Procurement Reviews the Source Request
         </p>
         <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>
-          Nominate the Procurement Handler. The system will automatically generate the official SRF document and notify the handler.
+          Assign the Procurement Handler. The system will automatically generate the official SRF document and notify the handler.
         </p>
       </div>
 
@@ -61,7 +61,7 @@ export default function AssignmentPanel({ request, availableEmployees }: Assignm
 
       <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
         <div className="form-group" style={{ flex: 1, minWidth: 220, marginBottom: 0 }}>
-          <label className="form-label">Nominate the Handler</label>
+          <label className="form-label">Assign Handler</label>
           <select
             className="form-input form-select"
             value={selectedId}
@@ -81,7 +81,7 @@ export default function AssignmentPanel({ request, availableEmployees }: Assignm
           onClick={handleAssign}
           disabled={loading || !selectedId}
         >
-          {loading ? 'Nominating & Generating SRF…' : <><UserCheck size={15} /> Reviewed & Nominate Handler</>}
+          {loading ? 'Assigning & Generating SRF…' : <><UserCheck size={15} /> Reviewed & Assign Handler</>}
         </button>
       </div>
     </div>

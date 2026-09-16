@@ -304,13 +304,13 @@ export default function LoginClient({ departments }: { departments?: { id: strin
           </form>
 
           {/* Trust badges */}
-          <div className="login-trust-badges" style={{ marginTop: 28, display: 'flex', gap: 10 }}>
+          <div className="login-trust-badges" style={{ marginTop: 28, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[
               { icon: <ShieldCheck size={12} />, label: 'Secure login' },
               { icon: <CheckCircle2 size={12} />, label: 'SSL encrypted' },
               { icon: <Zap size={12} />, label: 'Fast & reliable' },
             ].map(b => (
-              <div key={b.label} style={{ flex: 1, minWidth: 'fit-content', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 }}>
+              <div key={b.label} style={{ flex: '1 1 100px', minWidth: 'fit-content', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10 }}>
                 <span style={{ color: '#818cf8', display: 'flex', flexShrink: 0 }}>{b.icon}</span>
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 500, whiteSpace: 'nowrap' }}>{b.label}</span>
               </div>
@@ -346,13 +346,13 @@ export default function LoginClient({ departments }: { departments?: { id: strin
           to   { opacity: 1; transform: translateY(0); }
         }
         input::placeholder { color: rgba(255,255,255,0.2) !important; }
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
           .login-left-panel { display: none !important; }
           .login-right-panel {
             padding: 32px 16px !important;
           }
           .login-card {
-            padding: 32px 22px !important;
+            padding: 36px 24px !important;
             border-radius: 20px !important;
           }
           .login-mobile-brand {
@@ -365,7 +365,7 @@ export default function LoginClient({ departments }: { departments?: { id: strin
         }
         @media (max-width: 480px) {
           .login-right-panel {
-            padding: 24px 12px !important;
+            padding: 20px 12px !important;
           }
           .login-card {
             padding: 24px 16px !important;

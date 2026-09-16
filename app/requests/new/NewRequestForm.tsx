@@ -134,7 +134,7 @@ export default function NewRequestForm({
 
           {/* Permission Required From field is now managed by HODs in the approval panel */}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 16 }}>
             <div className="form-group">
               <label className="form-label" htmlFor="requesterName">Requester Name <span style={{ color: 'var(--danger)' }}>*</span></label>
               <input
@@ -163,7 +163,7 @@ export default function NewRequestForm({
           </div>
 
           {/* Date of Request, Expected Date, and Priority */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: 16 }}>
             <div className="form-group">
               <label className="form-label" htmlFor="requestDate">Date of Request <span style={{ color: 'var(--danger)' }}>*</span></label>
               <input

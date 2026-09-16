@@ -472,14 +472,14 @@ export async function POST(
       });
       const srfNum = updatePayload.srf_number || srcRequest.id.replace('SRC-', 'SRF-');
       if (emp) {
-        finalComment = `Nominated Handler: ${emp.full_name} · SRF Generated (${srfNum})`;
+        finalComment = `Assigned Handler: ${emp.full_name} · SRF Generated (${srfNum})`;
 
         try {
           await db.insert(notifications).values({
             user_id: emp.id,
             request_id: id,
             title: `Sourcing Assignment & SRF PDF: ${srfNum}`,
-            message: `Section Manager has nominated you as Procurement Handler for ${srfNum}. Please review and download your official SRF PDF to acknowledge.`,
+            message: `Section Manager has assigned you as Procurement Handler for ${srfNum}. Please review and download your official SRF PDF to acknowledge.`,
             is_read: false,
           });
         } catch (notifErr) {

@@ -536,7 +536,7 @@ export default function RequestDescriptionInput({
               </div>
 
               {/* Row: Make & Model as Separate Fields */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: 12 }}>
                 <div>
                   <label
                     style={{
@@ -583,7 +583,7 @@ export default function RequestDescriptionInput({
               </div>
 
               {/* Row: Quantity and Unit */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
                 <div>
                   <label
                     style={{

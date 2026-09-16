@@ -35,26 +35,15 @@ export default function PendingRequestsList({ pendingRequests, userId = 'default
             href={`/requests/${req.id}`}
             onClick={() => markOpened(req.id)}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              padding: '14px 18px',
               background: isUnopened ? 'rgba(99, 102, 241, 0.05)' : 'var(--bg-base)',
               border: isUnopened ? '1.5px solid rgba(99, 102, 241, 0.35)' : '1px solid var(--border)',
               borderLeft: isUnopened ? '4.5px solid #6366f1' : '1px solid var(--border)',
               boxShadow: isUnopened ? '0 4px 16px rgba(99, 102, 241, 0.10)' : 'none',
-              borderRadius: 10,
-              textDecoration: 'none',
-              transition: 'all 0.18s ease',
-              flexWrap: 'wrap',
               position: 'relative',
-              width: '100%',
-              maxWidth: '100%',
-              boxSizing: 'border-box',
             }}
-            className="animate-fade-in"
+            className="request-card-row animate-fade-in"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 240px', minWidth: 0 }}>
+            <div className="request-card-main" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 240px', minWidth: 0 }}>
               {/* Unopened NEW badge */}
               {isUnopened && (
                 <span className="badge-new" title="New request not yet opened">
@@ -142,7 +131,7 @@ export default function PendingRequestsList({ pendingRequests, userId = 'default
             </div>
 
             {/* Right section: SRF download, Status badge, and arrow */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, marginLeft: 'auto' }}>
+            <div className="request-card-actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, marginLeft: 'auto' }}>
               {req.srf_number && (
                 <span
                   onClick={(e) => {

@@ -166,10 +166,10 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
 
       {/* Section 1: Workflow Managers */}
       <h2 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Workflow Managers (Global)</h2>
-      <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+      <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '20px', marginBottom: '32px' }}>
         {managerList.map((m: ManagerEntry) => (
           <div key={m.role} className="card" style={{
-            display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px'
+            display: 'flex', flexDirection: 'column', gap: '20px', padding: 'clamp(16px, 3.5vw, 24px)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -241,10 +241,10 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
 
       {/* Section 2: Department HODs */}
       <h2 style={{ fontSize: 16, fontWeight: 700, margin: '24px 0 16px 0', color: 'var(--text-primary)' }}>Department Heads (HODs)</h2>
-      <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '24px' }}>
+      <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '20px' }}>
         {hodList.map((h) => (
           <div key={h.departmentName} className="card" style={{
-            display: 'flex', flexDirection: 'column', gap: '20px', padding: '24px'
+            display: 'flex', flexDirection: 'column', gap: '20px', padding: 'clamp(16px, 3.5vw, 24px)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
