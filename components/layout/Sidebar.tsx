@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import type { Profile } from '@/lib/types';
-import { ROLE_LABELS } from '@/lib/workflow';
+import { ROLE_LABELS, getHodOrFpicLabel } from '@/lib/workflow';
 
 interface NavItem {
   href: string;
@@ -23,7 +23,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/requests/new',   label: 'New Request',     icon: <FilePlus size={18} />,   roles: ['user', 'employee'] },
   { href: '/search',         label: 'Search',          icon: <Search size={18} /> },
   { href: '/admin/users',           label: 'Manage Users',    icon: <Users size={18} />,      roles: ['admin'] },
-  { href: '/admin/hod-logins',     label: 'HOD & Manager Logins', icon: <Users size={18} />,      roles: ['admin'] },
+  { href: '/admin/hod-logins',     label: 'HOD / FPIC & Manager Logins', icon: <Users size={18} />,      roles: ['admin'] },
   { href: '/admin/employee-logins', label: 'Employee Logins', icon: <Users size={18} />,      roles: ['admin'] },
 ];
 
@@ -114,7 +114,9 @@ export default function Sidebar({ profile, departmentName, isOpen, onClose }: Si
             )}
           </div>
         </div>
-        <span className="role-badge" style={{ marginBottom: 10, display: 'inline-flex' }}>{ROLE_LABELS[profile.role]}</span>
+        <span className="role-badge" style={{ marginBottom: 10, display: 'inline-flex' }}>
+          {profile.role === 'hod' ? getHodOrFpicLabel(departmentName, true) : ROLE_LABELS[profile.role]}
+        </span>
         <button
           onClick={handleSignOut}
           style={{

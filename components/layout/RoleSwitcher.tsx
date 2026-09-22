@@ -14,7 +14,7 @@ import {
   Layers 
 } from 'lucide-react';
 import type { Role } from '@/lib/types';
-import { ROLE_LABELS } from '@/lib/workflow';
+import { ROLE_LABELS, isFpicDepartment } from '@/lib/workflow';
 
 interface PersonaOption {
   email: string;
@@ -40,10 +40,11 @@ const PERSONAS: { category: string; icon: any; items: PersonaOption[] }[] = [
     category: 'HODs & FPIC Approvers (Step 2-4)',
     icon: Building2,
     items: [
-      { email: 'hod@dxn.com', name: 'Head of Department (HOD)', role: 'hod', badge: 'FPIC (All Depts)', color: '#6366f1' },
-      { email: 'ithod@gmail.com', name: 'HOD (IT Dept)', role: 'hod', department: 'IT', badge: 'IT FPIC', color: '#3b82f6' },
+      { email: 'hod@dxn.com', name: 'Head of Department (HOD)', role: 'hod', badge: 'HOD (All Depts)', color: '#6366f1' },
+      { email: 'ithod@gmail.com', name: 'HOD (IT Dept)', role: 'hod', department: 'IT', badge: 'IT HOD', color: '#3b82f6' },
       { email: 'ehs@gmail.com', name: 'HOD (EHS Dept)', role: 'hod', department: 'EHS', badge: 'EHS Review', color: '#10b981' },
-      { email: 'agro@gmail.com', name: 'HOD (Agro Food)', role: 'hod', department: 'Agro Food', badge: 'Agro FPIC', color: '#f59e0b' },
+      { email: 'agro@gmail.com', name: 'FPIC (Agro Food)', role: 'hod', department: 'Agro Food', badge: 'Agro FPIC', color: '#f59e0b' },
+      { email: 'kombucha@gmail.com', name: 'FPIC (Kombucha)', role: 'hod', department: 'Kombucha', badge: 'Kombucha FPIC', color: '#84cc16' },
     ],
   },
   {
@@ -119,7 +120,13 @@ export default function RoleSwitcher({ currentEmail, currentName, currentRole }:
     }
   }
 
-  const activeRoleLabel = currentRole ? ROLE_LABELS[currentRole] || currentRole : 'User';
+  const currentPersona = PERSONAS.flatMap(g => g.items).find(p => p.email.toLowerCase() === currentEmail?.toLowerCase());
+  const isCurrentFpic = currentRole === 'hod' && (currentPersona?.department ? isFpicDepartment(currentPersona.department) : false);
+  const activeRoleLabel = isCurrentFpic
+    ? 'FPIC'
+    : currentRole
+    ? ROLE_LABELS[currentRole] || currentRole
+    : 'User';
 
   return (
     <div style={{ position: 'relative' }} ref={dropdownRef}>

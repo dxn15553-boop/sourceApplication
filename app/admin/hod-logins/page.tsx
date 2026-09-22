@@ -6,7 +6,7 @@ import AppShell from '@/components/layout/AppShell';
 import { inArray } from 'drizzle-orm';
 import { profiles } from '@/lib/db/schema';
 
-export const metadata = { title: 'Manage HOD & Manager Logins' };
+export const metadata = { title: 'Manage HOD / FPIC & Manager Logins' };
 
 export default async function AdminHodPage() {
   const session = await auth();
@@ -79,7 +79,7 @@ export default async function AdminHodPage() {
   });
 
   return (
-    <AppShell pageTitle="Manage HOD & Manager Logins" pageSubtitle="Create and manage Head of Department and Workflow Manager accounts">
+    <AppShell pageTitle="Manage HOD / FPIC & Manager Logins" pageSubtitle="Create and manage Head of Department (HOD), FPIC, and Workflow Manager accounts">
       <AdminHodClient hodList={hodList} managerList={managerList} />
     </AppShell>
   );

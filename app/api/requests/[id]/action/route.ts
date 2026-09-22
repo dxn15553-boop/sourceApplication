@@ -14,9 +14,10 @@ const TRANSITIONS: Record<string, {
 }> = {
   'return:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD', 'Pending Home HOD Confirmation'], nextStatus: 'Returned to Requester', nextRole: 'user', requiresComment: true },
   'cancel:hod': { allowedRoles: ['hod'], allowedStatuses: ['Submitted', 'Returned to HOD', 'Under Required Review', 'Target Dept Approved', 'Pending Home HOD Confirmation'], nextStatus: 'Cancelled', nextRole: null, requiresComment: true },
-  'approve:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved'], nextStatus: 'Final Head Review', nextRole: 'final_head', requiresComment: false },
-  'reject:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved'], nextStatus: 'HOD Rejected', nextRole: null, requiresComment: true },
-  'return:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator'], nextStatus: 'Returned to HOD', nextRole: 'hod', requiresComment: true },
+  'cancel:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator', 'Under Required Review', 'Target Dept Approved'], nextStatus: 'Cancelled', nextRole: null, requiresComment: true },
+  'approve:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator', 'Target Dept Approved'], nextStatus: 'Final Head Review', nextRole: 'final_head', requiresComment: false },
+  'reject:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator', 'Target Dept Approved'], nextStatus: 'HOD Rejected', nextRole: null, requiresComment: true },
+  'return:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator', 'Target Dept Approved'], nextStatus: 'Returned to HOD', nextRole: 'hod', requiresComment: true },
   'resubmit:regional_coordinator': { allowedRoles: ['regional_coordinator'], allowedStatuses: ['Returned to Regional Coordinator'], nextStatus: 'Regional Coordinator Review', nextRole: 'regional_coordinator', requiresComment: false },
   'approve:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['Final Head Review', 'Returned to Regional Head'], nextStatus: 'Final Head Approved', nextRole: 'procurement_manager', requiresComment: false },
   'reject:final_head': { allowedRoles: ['final_head'], allowedStatuses: ['Final Head Review', 'Returned to Regional Head'], nextStatus: 'Final Head Rejected', nextRole: null, requiresComment: true },
@@ -83,83 +84,12 @@ export async function POST(
     // Dynamic HOD Approval Logic
     if (user.role === 'hod' && action === 'approve') {
       const isHomeHod = user.departmentIds?.includes(srcRequest.requester_department_id);
-      const isTargetHod = user.departmentIds?.includes(srcRequest.department_id);
       
-      if (!isHomeHod && !isTargetHod) {
-        return Response.json({ error: 'You can only review requests for your department' }, { status: 403 });
+      if (!isHomeHod) {
+        return Response.json({ error: 'Only the Home HOD / FPIC can review and accept requests for this department' }, { status: 403 });
       }
       
       if (srcRequest.status === 'Submitted' || srcRequest.status === 'Returned to HOD') {
-        if (!isHomeHod) return Response.json({ error: 'Only the Home HOD can approve at this stage' }, { status: 403 });
-        
-        if (department_ids && department_ids.length > 0) {
-          const { profileDepartments, profiles, departments, requiredReviews } = await import('@/lib/db/schema');
-
-          // Query departments and their HOD profiles to check logins
-          const deptsWithHod = await db.select({
-            deptId: departments.id,
-            deptName: departments.name,
-            hodId: profiles.id,
-          })
-          .from(departments)
-          .leftJoin(profileDepartments, eq(profileDepartments.department_id, departments.id))
-          .leftJoin(profiles, and(eq(profiles.id, profileDepartments.profile_id), eq(profiles.role, 'hod')))
-          .where(inArray(departments.id, department_ids));
-
-          // Find departments that do not have an HOD profile configured
-          const missingHods: string[] = [];
-          for (const deptId of department_ids) {
-            const hasHod = deptsWithHod.some(d => d.deptId === deptId && d.hodId !== null);
-            if (!hasHod) {
-              const deptName = deptsWithHod.find(d => d.deptId === deptId)?.deptName || deptId;
-              missingHods.push(deptName);
-            }
-          }
-
-          if (missingHods.length > 0) {
-            const names = missingHods.join(', ');
-            return Response.json({ 
-              error: `Request cannot be sent because ${names} does not have login credentials configured. Please create the department login first.` 
-            }, { status: 400 });
-          }
-
-          await db.insert(requiredReviews).values(
-            department_ids.map((deptId: string) => ({
-              request_id: id,
-              department_id: deptId,
-              status: 'Pending' as const,
-            }))
-          );
-          await notifyCrossDeptHods({
-            requestId: id,
-            departmentIds: department_ids,
-            description: srcRequest.description,
-          });
-          nextStatus = 'Under Required Review';
-          nextRole = 'hod';
-        } else {
-          if (srcRequest.department_id === srcRequest.requester_department_id) {
-            nextStatus = 'Regional Coordinator Review';
-            nextRole = 'regional_coordinator';
-          } else {
-            nextStatus = 'Under Required Review';
-            nextRole = 'hod';
-          }
-        }
-      } else if (srcRequest.status === 'Under Required Review') {
-        if (!isTargetHod) return Response.json({ error: 'Only the Target HOD can approve at this stage' }, { status: 403 });
-        
-        nextStatus = 'Pending Home HOD Confirmation';
-        nextRole = 'hod';
-        
-        // Mark required review as approved
-        const { requiredReviews } = await import('@/lib/db/schema');
-        await db.update(requiredReviews)
-          .set({ status: 'Approved', reviewer_id: user.id, reviewed_at: new Date() })
-          .where(and(eq(requiredReviews.request_id, id), eq(requiredReviews.department_id, srcRequest.department_id)));
-          
-      } else if (srcRequest.status === 'Pending Home HOD Confirmation' || srcRequest.status === 'Target Dept Approved') {
-        if (!isHomeHod) return Response.json({ error: 'Only the Home HOD can approve at this stage' }, { status: 403 });
         nextStatus = 'Regional Coordinator Review';
         nextRole = 'regional_coordinator';
       } else {
@@ -167,6 +97,66 @@ export async function POST(
       }
       
       transition = { allowedRoles: ['hod'], allowedStatuses: [], nextStatus, nextRole, requiresComment: false };
+    }
+
+    // Dynamic Regional Coordinator Approval Logic
+    if (user.role === 'regional_coordinator' && action === 'approve' && !isCoordinatorActingAsFinalHead) {
+      const allowedCoordinatorStatuses = ['Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator', 'Target Dept Approved'];
+      if (!allowedCoordinatorStatuses.includes(srcRequest.status)) {
+        return Response.json({ error: `Action 'approve' not valid in status '${srcRequest.status}'` }, { status: 400 });
+      }
+
+      if (department_ids && department_ids.length > 0) {
+        const { profileDepartments, profiles, departments, requiredReviews } = await import('@/lib/db/schema');
+
+        // Query departments and their HOD profiles to check logins
+        const deptsWithHod = await db.select({
+          deptId: departments.id,
+          deptName: departments.name,
+          hodId: profiles.id,
+        })
+        .from(departments)
+        .leftJoin(profileDepartments, eq(profileDepartments.department_id, departments.id))
+        .leftJoin(profiles, and(eq(profiles.id, profileDepartments.profile_id), eq(profiles.role, 'hod')))
+        .where(inArray(departments.id, department_ids));
+
+        // Find departments that do not have an HOD profile configured
+        const missingHods: string[] = [];
+        for (const deptId of department_ids) {
+          const hasHod = deptsWithHod.some(d => d.deptId === deptId && d.hodId !== null);
+          if (!hasHod) {
+            const deptName = deptsWithHod.find(d => d.deptId === deptId)?.deptName || deptId;
+            missingHods.push(deptName);
+          }
+        }
+
+        if (missingHods.length > 0) {
+          const names = missingHods.join(', ');
+          return Response.json({ 
+            error: `Request cannot be sent because ${names} does not have login credentials configured. Please create the department login first.` 
+          }, { status: 400 });
+        }
+
+        await db.insert(requiredReviews).values(
+          department_ids.map((deptId: string) => ({
+            request_id: id,
+            department_id: deptId,
+            status: 'Pending' as const,
+          }))
+        );
+        await notifyCrossDeptHods({
+          requestId: id,
+          departmentIds: department_ids,
+          description: srcRequest.description,
+        });
+        nextStatus = 'Under Required Review';
+        nextRole = 'hod';
+      } else {
+        nextStatus = 'Final Head Review';
+        nextRole = 'final_head';
+      }
+
+      transition = { allowedRoles: ['regional_coordinator'], allowedStatuses: [], nextStatus, nextRole, requiresComment: false };
     }
 
     // Requester Resubmission Logic Override
@@ -180,10 +170,11 @@ export async function POST(
     }
 
     if (!transition) return Response.json({ error: 'Action not permitted for your role' }, { status: 403 });
-    if (action !== 'approve' || user.role !== 'hod') {
+    const isDynamicApprove = action === 'approve' && (user.role === 'hod' || (user.role === 'regional_coordinator' && !isCoordinatorActingAsFinalHead));
+    if (!isDynamicApprove) {
       const allowed = [...transition.allowedStatuses];
       if (user.role === 'regional_coordinator' && rh_availability === 'unavailable') {
-        allowed.push('Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator');
+        allowed.push('Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator', 'Target Dept Approved');
       }
       if (!allowed.includes(srcRequest.status)) {
         if (srcRequest.status === transition.nextStatus) {
@@ -210,27 +201,6 @@ export async function POST(
       return Response.json({ error: 'An employee must be selected for assignment' }, { status: 400 });
     }
 
-    // Add required review automatically on step 1 approval IF target dept is different and not already inserted
-    if (user.role === 'hod' && action === 'approve' && (srcRequest.status === 'Submitted' || srcRequest.status === 'Returned to HOD')) {
-      if (srcRequest.department_id !== srcRequest.requester_department_id) {
-        const { requiredReviews } = await import('@/lib/db/schema');
-        const existing = await db.query.requiredReviews.findFirst({
-          where: and(
-            eq(requiredReviews.request_id, id),
-            eq(requiredReviews.department_id, srcRequest.department_id),
-            eq(requiredReviews.status, 'Pending')
-          )
-        });
-        const inPayload = department_ids && department_ids.includes(srcRequest.department_id);
-        if (!existing && !inPayload) {
-          await db.insert(requiredReviews).values({
-            request_id: id,
-            department_id: srcRequest.department_id, // Target department
-            status: 'Pending',
-          });
-        }
-      }
-    }
 
     if (action === 'return' && return_to) {
       if (return_to === 'user') {

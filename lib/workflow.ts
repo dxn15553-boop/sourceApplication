@@ -18,14 +18,23 @@ export const WORKFLOW_TRANSITIONS: WorkflowTransition[] = [
   { from: 'Regional Coordinator Review', action: 'approve', to: 'Final Head Review',   next_assignee_role: 'final_head',           requires_comment: false },
   { from: 'Regional Coordinator Review', action: 'reject',  to: 'HOD Rejected',         next_assignee_role: null,                   requires_comment: true  },
   { from: 'Regional Coordinator Review', action: 'return',  to: 'Returned to HOD',      next_assignee_role: 'hod',                  requires_comment: true  },
+  { from: 'Regional Coordinator Review', action: 'cancel',  to: 'Cancelled',            next_assignee_role: null,                   requires_comment: true  },
 
   { from: 'HOD Approved',               action: 'approve',  to: 'Final Head Review',   next_assignee_role: 'final_head',           requires_comment: false },
   { from: 'HOD Approved',               action: 'reject',   to: 'HOD Rejected',         next_assignee_role: null,                   requires_comment: true  },
   { from: 'HOD Approved',               action: 'return',   to: 'Returned to HOD',      next_assignee_role: 'hod',                  requires_comment: true  },
+  { from: 'HOD Approved',               action: 'cancel',   to: 'Cancelled',            next_assignee_role: null,                   requires_comment: true  },
 
-  // Returned to Regional Coordinator -> Coordinator resubmits
+  // Regional Coordinator with User Departments
+  { from: 'Target Dept Approved',       action: 'approve',  to: 'Final Head Review',   next_assignee_role: 'final_head',           requires_comment: false },
+  { from: 'Target Dept Approved',       action: 'return',   to: 'Returned to HOD',      next_assignee_role: 'hod',                  requires_comment: true  },
+  { from: 'Target Dept Approved',       action: 'cancel',   to: 'Cancelled',            next_assignee_role: null,                   requires_comment: true  },
+
+  // Returned to Regional Coordinator -> Coordinator resubmits, approves, returns, or cancels
   { from: 'Returned to Regional Coordinator', action: 'resubmit', to: 'Regional Coordinator Review', next_assignee_role: 'regional_coordinator', requires_comment: false },
+  { from: 'Returned to Regional Coordinator', action: 'approve',  to: 'Final Head Review',           next_assignee_role: 'final_head',           requires_comment: false },
   { from: 'Returned to Regional Coordinator', action: 'return',   to: 'Returned to HOD',              next_assignee_role: 'hod',                  requires_comment: true },
+  { from: 'Returned to Regional Coordinator', action: 'cancel',   to: 'Cancelled',                    next_assignee_role: null,                   requires_comment: true },
 
   // Final Head review
   { from: 'Final Head Review',    action: 'approve',  to: 'Final Head Approved',     next_assignee_role: 'procurement_manager',  requires_comment: false },
@@ -97,11 +106,11 @@ export function getAvailableActions(
       break;
 
     case 'regional_coordinator':
-      if (status === 'Regional Coordinator Review' || status === 'HOD Approved' || status === 'Final Head Review') {
-        actions.push('approve', 'reject', 'return');
+      if (status === 'Regional Coordinator Review' || status === 'HOD Approved' || status === 'Final Head Review' || status === 'Target Dept Approved') {
+        actions.push('approve', 'reject', 'return', 'cancel');
       }
       if (status === 'Returned to Regional Coordinator' || status === 'Returned to Regional Head') {
-        actions.push('resubmit', 'return');
+        actions.push('approve', 'resubmit', 'return', 'cancel');
       }
       break;
 
@@ -218,6 +227,26 @@ export const ROLE_LABELS: Record<Role, string> = {
   admin:               'System Admin',
   regional_coordinator: 'Regional Coordinator',
 };
+
+// ============================================================
+// Department Head / FPIC designation helpers
+// In DXN, production plants like Agro Food and Kombucha use FPIC
+// (Factory Person In Charge) instead of HOD.
+// ============================================================
+
+export function isFpicDepartment(departmentName?: string | null): boolean {
+  if (!departmentName) return false;
+  const lower = departmentName.toLowerCase().trim();
+  return lower === 'agro food' || lower === 'kombucha' || lower.includes('agro') || lower.includes('kombucha');
+}
+
+export function getHodOrFpicLabel(departmentName?: string | null, full: boolean = false): string {
+  if (isFpicDepartment(departmentName)) {
+    return full ? 'Factory Person In Charge (FPIC)' : 'FPIC';
+  }
+  return full ? 'Head of Department (HOD)' : 'HOD';
+}
+
 
 // ============================================================
 // Workflow stage labels for the timeline

@@ -37,7 +37,47 @@ async function main() {
     finalHeadActions.includes('resubmit') && finalHeadActions.includes('return'),
     `Expected final_head to have 'resubmit' and 'return' in Returned to Regional Head, got: ${finalHeadActions.join(', ')}`
   );
-  console.log('✓ Test 2 Passed: Regional Head available actions in Returned to Regional Head verified.');
+  // Test 3: Verify Regional Coordinator available actions in Regional Coordinator Review
+  const coordReviewActions = getAvailableActions(
+    'Regional Coordinator Review',
+    'regional_coordinator',
+    false,
+    false,
+    false
+  );
+  assert(
+    coordReviewActions.includes('approve') && coordReviewActions.includes('return') && coordReviewActions.includes('cancel'),
+    `Expected regional_coordinator to have approve, return, cancel in Regional Coordinator Review, got: ${coordReviewActions.join(', ')}`
+  );
+  console.log('✓ Test 3 Passed: Regional Coordinator available actions in Regional Coordinator Review verified.');
+
+  // Test 4: Verify Regional Coordinator available actions in Target Dept Approved
+  const coordTargetApprovedActions = getAvailableActions(
+    'Target Dept Approved',
+    'regional_coordinator',
+    false,
+    false,
+    false
+  );
+  assert(
+    coordTargetApprovedActions.includes('approve') && coordTargetApprovedActions.includes('return') && coordTargetApprovedActions.includes('cancel'),
+    `Expected regional_coordinator to have approve, return, cancel in Target Dept Approved, got: ${coordTargetApprovedActions.join(', ')}`
+  );
+  console.log('✓ Test 4 Passed: Regional Coordinator available actions in Target Dept Approved verified.');
+
+  // Test 5: Verify Regional Coordinator available actions in Returned to Regional Coordinator
+  const coordReturnedActions = getAvailableActions(
+    'Returned to Regional Coordinator',
+    'regional_coordinator',
+    false,
+    false,
+    false
+  );
+  assert(
+    coordReturnedActions.includes('approve') && coordReturnedActions.includes('resubmit') && coordReturnedActions.includes('return') && coordReturnedActions.includes('cancel'),
+    `Expected regional_coordinator to have approve, resubmit, return, cancel in Returned to Regional Coordinator, got: ${coordReturnedActions.join(', ')}`
+  );
+  console.log('✓ Test 5 Passed: Regional Coordinator available actions in Returned to Regional Coordinator verified.');
 
   console.log('All workflow config tests passed successfully!');
 }

@@ -77,7 +77,9 @@ export default function WorkflowTimeline({ entries }: WorkflowTimelineProps) {
                     </span>
                     {(entry as any).actor?.role && (
                       <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                        · {ROLE_LABELS[(entry as any).actor.role as import('@/lib/types').Role] ?? (entry as any).actor.role}
+                        · {(entry as any).actor.role === 'hod' && ((entry as any).actor?.full_name?.toLowerCase().includes('agro') || (entry as any).actor?.full_name?.toLowerCase().includes('kombucha') || (entry as any).actor?.full_name?.includes('FPIC'))
+                          ? 'FPIC'
+                          : ROLE_LABELS[(entry as any).actor.role as import('@/lib/types').Role] ?? (entry as any).actor.role}
                       </span>
                     )}
                   </div>

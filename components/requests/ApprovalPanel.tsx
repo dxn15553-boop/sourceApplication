@@ -6,6 +6,7 @@ import Modal from '@/components/ui/Modal';
 import Textarea from '@/components/ui/Textarea';
 import { CheckCircle2, XCircle, RotateCcw, AlertCircle, Send, Ban } from 'lucide-react';
 import type { SourceRequest } from '@/lib/types';
+import { getHodOrFpicLabel } from '@/lib/workflow';
 
 interface ApprovalPanelProps {
   request: SourceRequest;
@@ -22,26 +23,28 @@ const ACTION_CONFIG = {
   cancel:  { label: 'Cancel Request', icon: <Ban size={15} />,          btnClass: 'btn-danger',  title: 'Cancel Source Request',        requiresComment: true  },
 };
 
-const RETURN_OPTIONS: Record<string, { label: string, value: string }[]> = {
-  procurement_manager: [
-    { label: 'Regional Head (1 step back)', value: 'final_head' },
-    { label: 'Regional Coordinator (2 steps back)', value: 'regional_coordinator' },
-    { label: 'Head of Department (3 steps back)', value: 'hod' },
-    { label: 'Requester (Start over)', value: 'user' },
-  ],
-  final_head: [
-    { label: 'Regional Coordinator (1 step back)', value: 'regional_coordinator' },
-    { label: 'Head of Department (2 steps back)', value: 'hod' },
-    { label: 'Requester (Start over)', value: 'user' },
-  ],
-  regional_coordinator: [
-    { label: 'Head of Department (1 step back)', value: 'hod' },
-    { label: 'Requester (Start over)', value: 'user' },
-  ],
-  hod: [
-    { label: 'Requester', value: 'user' }
-  ]
-};
+function getReturnOptions(headLabel: string): Record<string, { label: string, value: string }[]> {
+  return {
+    procurement_manager: [
+      { label: 'Regional Head (1 step back)', value: 'final_head' },
+      { label: 'Regional Coordinator (2 steps back)', value: 'regional_coordinator' },
+      { label: `${headLabel} (3 steps back)`, value: 'hod' },
+      { label: 'Requester (Start over)', value: 'user' },
+    ],
+    final_head: [
+      { label: 'Regional Coordinator (1 step back)', value: 'regional_coordinator' },
+      { label: `${headLabel} (2 steps back)`, value: 'hod' },
+      { label: 'Requester (Start over)', value: 'user' },
+    ],
+    regional_coordinator: [
+      { label: `${headLabel} (1 step back)`, value: 'hod' },
+      { label: 'Requester (Start over)', value: 'user' },
+    ],
+    hod: [
+      { label: 'Requester', value: 'user' }
+    ]
+  };
+}
 
 export default function ApprovalPanel({ request, userRole, allDepartments }: ApprovalPanelProps) {
   const router = useRouter();
@@ -66,8 +69,9 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
   const [deptValidationError, setDeptValidationError] = useState<string | null>(null);
   const [rhAvailability, setRhAvailability] = useState<'available' | 'unavailable'>('available');
 
-  const isInitialHodApproval = (request.status === 'Submitted' || request.status === 'Returned to HOD') && userRole === 'hod';
-  const showSendLabel = isInitialHodApproval && !noneSelected;
+  const isCoordinatorReview = userRole === 'regional_coordinator' && 
+    ['Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator', 'Target Dept Approved'].includes(request.status);
+  const showSendLabel = isCoordinatorReview && !noneSelected;
 
   const isCoordinatorActingAsFinalHead = userRole === 'regional_coordinator' && rhAvailability === 'unavailable';
   const isRegionalHead = userRole === 'final_head' || isCoordinatorActingAsFinalHead;
@@ -78,6 +82,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     if (act === 'approve') {
       if (showSendLabel) return 'Send to User Departments';
       if (isRegionalHead) return 'Approve';
+      if (userRole === 'regional_coordinator') return 'Approve';
       return 'Accept';
     }
     return ACTION_CONFIG[act].label;
@@ -87,7 +92,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     if (!act) return '';
     if (act === 'approve') {
       if (showSendLabel) return 'Send to User Departments';
-      if (isRegionalHead) return 'Confirm Approval';
+      if (isRegionalHead || userRole === 'regional_coordinator') return 'Confirm Approval';
       return 'Confirm Acceptance';
     }
     return ACTION_CONFIG[act].title;
@@ -95,6 +100,11 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
 
   const isRHStage = request.status === 'Final Head Review' || request.status === 'Returned to Regional Head';
   const showActions = userRole !== 'regional_coordinator' || !isRHStage || rhAvailability === 'unavailable';
+
+  const deptName = request.department?.name || (request as any).requester_department?.name;
+  const headLabel = getHodOrFpicLabel(deptName, false);
+  const headFullLabel = getHodOrFpicLabel(deptName, true);
+  const returnOptions = getReturnOptions(headFullLabel);
 
   async function executeAction(action: ActionType) {
     if (!action || loading) return;
@@ -108,44 +118,41 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
 
 
     if (activeAction === 'return') {
-      const options = RETURN_OPTIONS[returnRole] || [];
+      const options = returnOptions[returnRole] || [];
       if (options.length > 0 && !returnTo) {
         setReturnToError('Please select who to return the request to.');
         return;
       }
     }
 
-    if (activeAction === 'approve' && userRole === 'hod') {
-      const isInitialHodApproval = request.status === 'Submitted' || request.status === 'Returned to HOD';
-      if (isInitialHodApproval) {
-        if (selectedDepts.length === 0 && !noneSelected) {
-          setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
-          return;
+    if (activeAction === 'approve' && userRole === 'regional_coordinator' && isCoordinatorReview) {
+      if (selectedDepts.length === 0 && !noneSelected) {
+        setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
+        return;
+      }
+
+      // Find the latest review status for each department
+      const latestReviews: Record<string, any> = {};
+      ((request as any).required_reviews || []).forEach((r: any) => {
+        const existing = latestReviews[r.department_id];
+        if (!existing || new Date(r.created_at || 0) > new Date(existing.created_at || 0)) {
+          latestReviews[r.department_id] = r;
         }
+      });
 
-        // Find the latest review status for each department
-        const latestReviews: Record<string, any> = {};
-        ((request as any).required_reviews || []).forEach((r: any) => {
-          const existing = latestReviews[r.department_id];
-          if (!existing || new Date(r.created_at || 0) > new Date(existing.created_at || 0)) {
-            latestReviews[r.department_id] = r;
-          }
-        });
+      const rejectedDepts = Object.values(latestReviews).filter((r: any) => r.status === 'Returned' || r.status === 'Rejected');
+      const rejectedDeptIds = rejectedDepts.map((r: any) => r.department_id);
 
-        const rejectedDepts = Object.values(latestReviews).filter((r: any) => r.status === 'Returned' || r.status === 'Rejected');
-        const rejectedDeptIds = rejectedDepts.map((r: any) => r.department_id);
-
-        // Verify if HOD has selected "Yes" for all previously returned departments
-        const missingApprovals = rejectedDeptIds.filter(id => !selectedDepts.includes(id));
-        if (missingApprovals.length > 0) {
-          const missingNames = missingApprovals.map(id => {
-            const dept = allDepartments?.find(d => d.id === id);
-            return dept ? dept.name : 'Unknown';
-          }).join(', ');
-          
-          setDeptValidationError(`Cannot forward. You must select 'Yes' for the department(s) that previously returned the request: ${missingNames}.`);
-          return;
-        }
+      // Verify if coordinator has selected "Yes" for all previously returned departments
+      const missingApprovals = rejectedDeptIds.filter(id => !selectedDepts.includes(id));
+      if (missingApprovals.length > 0) {
+        const missingNames = missingApprovals.map(id => {
+          const dept = allDepartments?.find(d => d.id === id);
+          return dept ? dept.name : 'Unknown';
+        }).join(', ');
+        
+        setDeptValidationError(`Cannot forward. You must select 'Yes' for the department(s) that previously returned the request: ${missingNames}.`);
+        return;
       }
     }
 
@@ -153,10 +160,8 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     setError(null);
     try {
       const payload: any = { action, comment: comment.trim() || undefined, return_to: returnTo || undefined };
-      if (userRole === 'hod') {
-        payload.department_ids = noneSelected ? [] : selectedDepts;
-      }
       if (userRole === 'regional_coordinator') {
+        payload.department_ids = noneSelected ? [] : selectedDepts;
         payload.rh_availability = rhAvailability;
       }
 
@@ -218,17 +223,41 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
             <RotateCcw size={16} style={{ color: '#fbbf24', marginTop: 2, flexShrink: 0 }} />
             <div>
               <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fbbf24' }}>
-                Request Returned to HOD
+                Request Returned to {headLabel}
               </p>
               <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                A User Department has returned this request. If the return reason indicates that this request is no longer required, you can click <strong>Cancel Request</strong> below to cancel it. Otherwise, you can adjust the departments and send it forward again or return it to the requester.
+                This request was returned. Please review the return remarks. You can accept and forward it again, return it to the requester, or cancel the request.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Notice if request was returned to Regional Coordinator */}
+        {request.status === 'Returned to Regional Coordinator' && userRole === 'regional_coordinator' && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: '12px 16px',
+            background: 'rgba(245, 158, 11, 0.08)',
+            border: '1px solid rgba(245, 158, 11, 0.25)',
+            borderRadius: 8,
+            marginBottom: 16
+          }}>
+            <RotateCcw size={16} style={{ color: '#fbbf24', marginTop: 2, flexShrink: 0 }} />
+            <div>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#fbbf24' }}>
+                Request Returned to Regional Coordinator
+              </p>
+              <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                A User Department has returned this request. If the return reason indicates that this request is no longer required, you can click <strong>Cancel Request</strong> below to cancel it. Otherwise, you can adjust the departments and send it forward again or return it to the {headLabel}.
               </p>
             </div>
           </div>
         )}
 
         {/* User Department checklist (Yes/No buttons) */}
-        {userRole === 'hod' && (request.status === 'Submitted' || request.status === 'Returned to HOD') && allDepartments && (
+        {userRole === 'regional_coordinator' && isCoordinatorReview && allDepartments && (
           <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>
               User Department <span style={{ color: 'var(--danger)' }}>*</span>
@@ -375,7 +404,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               </p>
             )}
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, marginBottom: 0 }}>
-              HOD of each selected User Department (Yes) must approve this request before it can proceed to the Regional Coordinator.
+              HOD / FPIC of each selected User Department (Yes) must approve this request before it can proceed to the Regional Head.
             </p>
           </div>
         )}
@@ -422,8 +451,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {showActions && (
             <button className="btn btn-success btn-sm" onClick={() => {
-              const isInitial = request.status === 'Submitted' || request.status === 'Returned to HOD';
-              if (isInitial && userRole === 'hod' && selectedDepts.length === 0 && !noneSelected) {
+              if (isCoordinatorReview && selectedDepts.length === 0 && !noneSelected) {
                 setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
                 return;
               }
@@ -433,7 +461,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
             }}>
               {showSendLabel ? (
                 <><Send size={15} /> Send to User Departments</>
-              ) : isRegionalHead ? (
+              ) : isRegionalHead || userRole === 'regional_coordinator' ? (
                 <><CheckCircle2 size={15} /> Approve</>
               ) : (
                 <><CheckCircle2 size={15} /> Accept</>
@@ -450,7 +478,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               <RotateCcw size={15} /> Return for Correction
             </button>
           )}
-          {userRole === 'hod' && showActions && (
+          {(userRole === 'hod' || userRole === 'regional_coordinator') && showActions && (
             <button 
               className="btn btn-danger btn-sm" 
               onClick={() => { setActiveAction('cancel'); setComment(''); setCommentError(''); }}
@@ -480,7 +508,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
 
 
 
-          {activeAction === 'return' && RETURN_OPTIONS[returnRole] && RETURN_OPTIONS[returnRole].length > 0 && (
+          {activeAction === 'return' && returnOptions[returnRole] && returnOptions[returnRole].length > 0 && (
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label" htmlFor="returnTo">Return To <span style={{ color: 'var(--danger)' }}>*</span></label>
               <select 
@@ -494,7 +522,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                 required
               >
                 <option value="">— Select Recipient —</option>
-                {RETURN_OPTIONS[returnRole].map((opt) => (
+                {returnOptions[returnRole]?.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
@@ -530,7 +558,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
                 {showSendLabel
                   ? 'Sending this request for review will notify the selected departments to review.'
-                  : isRegionalHead
+                  : isRegionalHead || userRole === 'regional_coordinator'
                   ? 'Approving this request will move it to the next stage automatically.'
                   : 'Accepting this request will move it to the next stage automatically.'}
               </p>
@@ -539,7 +567,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                 <Textarea
                   id="approval-comment"
                   label="Comments / Remarks (Optional)"
-                  placeholder={isRegionalHead ? "Add any comments or notes for this approval (optional)…" : "Add any comments or notes for this acceptance (optional)…"}
+                  placeholder={isRegionalHead || userRole === 'regional_coordinator' ? "Add any comments or notes for this approval (optional)…" : "Add any comments or notes for this acceptance (optional)…"}
                   value={comment}
                   onChange={e => setComment(e.target.value)}
                   rows={3}

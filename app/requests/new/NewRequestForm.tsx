@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import RequestDescriptionInput from '@/components/requests/RequestDescriptionInput';
 import FileUpload from '@/components/ui/FileUpload';
 import { FilePlus, Send, AlertCircle, CheckCircle } from 'lucide-react';
+import { isFpicDepartment, getHodOrFpicLabel } from '@/lib/workflow';
 
 export default function NewRequestForm({
   departmentId,
@@ -104,7 +105,7 @@ export default function NewRequestForm({
           </div>
           <div>
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Source Request Form</p>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Your request will receive a unique ID and be routed to your HOD automatically.</p>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Your request will receive a unique ID and be routed to your {getHodOrFpicLabel(departmentName, false)} automatically.</p>
           </div>
         </div>
       </div>
@@ -126,7 +127,7 @@ export default function NewRequestForm({
       <form onSubmit={handleSubmit}>
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ padding: '12px 16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
-            ℹ️ Please enter your full name. Your request will be routed to the <strong>{departmentName}</strong> department's HOD.
+            ℹ️ Please enter your full name. Your request will be routed to the <strong>{departmentName}</strong>{isFpicDepartment(departmentName) ? "'s FPIC." : " department's HOD."}
           </div>
           <div className="form-group" style={{ display: 'none' }}>
             <input type="hidden" id="departmentId" value={departmentId} />
@@ -282,7 +283,7 @@ export default function NewRequestForm({
             <p style={{ fontSize: 13, fontWeight: 600, color: '#60a5fa', margin: '0 0 6px' }}>After submission, this request will:</p>
             <ol style={{ margin: 0, paddingLeft: 20, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 2 }}>
               <li>Receive a unique <strong style={{ color: 'var(--text-primary)' }}>SRC-YYYY-XXXX</strong> ID</li>
-              <li>Be automatically routed to your <strong style={{ color: 'var(--text-primary)' }}>HOD</strong></li>
+              <li>Be automatically routed to your <strong style={{ color: 'var(--text-primary)' }}>{getHodOrFpicLabel(departmentName, false)}</strong></li>
               <li>Move through the full approval chain</li>
               <li>Provide full status visibility at every stage</li>
             </ol>

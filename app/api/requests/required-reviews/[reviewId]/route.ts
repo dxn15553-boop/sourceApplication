@@ -62,12 +62,12 @@ export async function POST(
       comment: `${review.department.name} User Department Review ${reviewActionText}${remarks ? ': ' + remarks : ''}${attachment_name ? ' (Attachment: ' + attachment_name + ')' : ''}`,
     });
 
-    // If returned (or rejected), return to Home HOD
+    // If returned (or rejected), return to Regional Coordinator
     if (action === 'Returned' || action === 'Rejected') {
       await db.update(sourceRequests)
         .set({ 
-          status: 'Returned to HOD', // Return to Home HOD
-          current_assignee_role: 'hod',
+          status: 'Returned to Regional Coordinator',
+          current_assignee_role: 'regional_coordinator',
           updated_at: new Date()
         })
         .where(eq(sourceRequests.id, review.request_id));
@@ -78,6 +78,18 @@ export async function POST(
         action: 'returned',
         comment: `Request returned by ${review.department.name} User Department${remarks ? ': ' + remarks : ''}`,
       });
+
+      try {
+        const { notifyUsersByRole } = await import('@/lib/notifications');
+        await notifyUsersByRole({
+          roles: ['regional_coordinator'],
+          requestId: review.request_id,
+          title: `Review Returned by ${review.department.name}`,
+          message: `${review.department.name} User Department returned request #${review.request_id.slice(0, 8)}${remarks ? ': ' + remarks : ''}`,
+        });
+      } catch (e) {
+        console.error('Error notifying regional coordinator:', e);
+      }
     } else {
       // Check if all reviews are now approved (only considering the latest review per department)
       const allReviews = await db.query.requiredReviews.findMany({
@@ -100,11 +112,23 @@ export async function POST(
       if (allApproved) {
         await db.update(sourceRequests)
           .set({ 
-            status: 'Pending Home HOD Confirmation',
-            current_assignee_role: 'hod',
+            status: 'Target Dept Approved',
+            current_assignee_role: 'regional_coordinator',
             updated_at: new Date()
           })
           .where(eq(sourceRequests.id, review.request_id));
+
+        try {
+          const { notifyUsersByRole } = await import('@/lib/notifications');
+          await notifyUsersByRole({
+            roles: ['regional_coordinator'],
+            requestId: review.request_id,
+            title: 'All User Department Reviews Approved',
+            message: `All required reviews for request #${review.request_id.slice(0, 8)} have been approved. Ready for forwarding to Regional Head.`,
+          });
+        } catch (e) {
+          console.error('Error notifying regional coordinator:', e);
+        }
       }
     }
 

@@ -17,6 +17,7 @@ import { db } from '@/lib/db';
 import { sourceRequests, profiles, departments } from '@/lib/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { getProcurementEmployees } from '@/lib/procurement';
+import { getHodOrFpicLabel } from '@/lib/workflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,8 +79,8 @@ export default async function RequestDetailPage({
   const allReviewsApproved = req.status === 'Under Required Review' && (req.required_reviews || []).every((r: any) => r.status === 'Approved');
 
   const canApprove =
-    (profile.role === 'hod' && isHomeHod && (req.status === 'Submitted' || req.status === 'Target Dept Approved' || req.status === 'Pending Home HOD Confirmation' || req.status === 'Returned to HOD')) ||
-    (profile.role === 'regional_coordinator' && (req.status === 'Regional Coordinator Review' || req.status === 'HOD Approved')) ||
+    (profile.role === 'hod' && isHomeHod && (req.status === 'Submitted' || req.status === 'Returned to HOD')) ||
+    (profile.role === 'regional_coordinator' && (req.status === 'Regional Coordinator Review' || req.status === 'HOD Approved' || req.status === 'Target Dept Approved' || req.status === 'Returned to Regional Coordinator')) ||
     ((profile.role === 'final_head' || profile.role === 'regional_coordinator') && (req.status === 'Final Head Review' || req.status === 'Returned to Regional Head')) ||
     (profile.role === 'procurement_manager' && req.status === 'Final Head Approved');
 
@@ -100,7 +101,7 @@ export default async function RequestDetailPage({
     
   const canHodResubmit = false; // HOD uses ApprovalPanel
   const canFinalHeadResubmit = false; // Regional Head uses ApprovalPanel
-  const canCoordinatorResubmit = profile.role === 'regional_coordinator' && req.status === 'Returned to Regional Coordinator';
+  const canCoordinatorResubmit = false; // Coordinator uses ApprovalPanel
 
   // Cloudinary returns a secure_url which we stored in attachment_path
   let attachmentUrl: string | null = req.attachment_path ?? null;
@@ -336,7 +337,7 @@ export default async function RequestDetailPage({
             {req.hod_remarks && (
               <div className="card" style={{ padding: '20px 24px', background: 'rgba(16, 185, 129, 0.03)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
                 <h2 style={{ fontSize: 14.5, fontWeight: 700, margin: '0 0 8px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <CheckCircle size={16} style={{ color: 'var(--success)' }} /> HOD Acceptance Remarks
+                  <CheckCircle size={16} style={{ color: 'var(--success)' }} /> {getHodOrFpicLabel(req.department?.name, false)} Acceptance Remarks
                 </h2>
                 <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>
                   {req.hod_remarks}

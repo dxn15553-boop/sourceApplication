@@ -5,6 +5,7 @@ import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import { Building2, Plus, Trash2, AlertCircle, CheckCircle, KeyRound, User, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { isFpicDepartment, getHodOrFpicLabel } from '@/lib/workflow';
 
 interface HodEntry {
   departmentName: string;
@@ -94,7 +95,8 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
       const json = await res.json();
       if (!res.ok) { setError(json.error ?? 'Failed to create login.'); return; }
       
-      setSuccess(`HOD for "${departmentName}" created successfully.`);
+      const headLabel = getHodOrFpicLabel(finalDeptName, false);
+      setSuccess(`${headLabel} for "${finalDeptName}" created successfully.`);
       resetForm();
       setTimeout(() => { 
         setSuccess(null); 
@@ -239,10 +241,15 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
         ))}
       </div>
 
-      {/* Section 2: Department HODs */}
-      <h2 style={{ fontSize: 16, fontWeight: 700, margin: '24px 0 16px 0', color: 'var(--text-primary)' }}>Department Heads (HODs)</h2>
+      {/* Section 2: Department HODs & FPIC */}
+      <h2 style={{ fontSize: 16, fontWeight: 700, margin: '24px 0 16px 0', color: 'var(--text-primary)' }}>Department Heads (HODs &amp; FPIC)</h2>
       <div className="stagger" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: '20px' }}>
-        {hodList.map((h) => (
+        {hodList.map((h) => {
+          const isFpic = isFpicDepartment(h.departmentName);
+          const headFullLabel = getHodOrFpicLabel(h.departmentName, true);
+          const headShortLabel = getHodOrFpicLabel(h.departmentName, false);
+
+          return (
           <div key={h.departmentName} className="card" style={{
             display: 'flex', flexDirection: 'column', gap: '20px', padding: 'clamp(16px, 3.5vw, 24px)'
           }}>
@@ -250,10 +257,10 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                 <div className="animate-fade-in" style={{
                   width: '40px', height: '40px', borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  background: isFpic ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #10b981, #059669)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '16px', fontWeight: 700, color: '#fff', flexShrink: 0,
-                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+                  boxShadow: isFpic ? '0 4px 12px rgba(245, 158, 11, 0.2)' : '0 4px 12px rgba(16, 185, 129, 0.2)'
                 }}>
                   <User size={20} />
                 </div>
@@ -261,8 +268,8 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
                   <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
                     {h.departmentName}
                   </span>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase' }}>
-                    Head of Department
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: isFpic ? '#d97706' : 'var(--success)', textTransform: 'uppercase' }}>
+                    {headFullLabel}
                   </span>
                 </div>
               </div>
@@ -272,7 +279,7 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
                     <KeyRound size={14} />
                   </button>
                   <div style={{ width: '1px', height: '14px', background: 'var(--border)', alignSelf: 'center' }}></div>
-                  <button className="btn-ghost" style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', color: 'var(--danger)' }} title="Delete HOD" onClick={() => handleDelete(h.hodId!, h.departmentName)}>
+                  <button className="btn-ghost" style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', color: 'var(--danger)' }} title={`Delete ${headShortLabel}`} onClick={() => handleDelete(h.hodId!, h.departmentName)}>
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -311,7 +318,8 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
               </div>
             </div>
           </div>
-        ))}
+        );
+      })}
       </div>
 
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Add Login Credential">
@@ -348,7 +356,7 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
                     outline: 'none', transition: 'border-color 0.2s'
                   }}
                 >
-                  <option value="hod">Head of Department (HOD)</option>
+                  <option value="hod">Head of Department (HOD / FPIC)</option>
                   <option value="regional_coordinator">Regional Coordinator</option>
                   <option value="final_head">Regional Head</option>
                   <option value="procurement_manager">Procurement Manager</option>

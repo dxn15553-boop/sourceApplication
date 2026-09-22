@@ -8,6 +8,7 @@ import { sourceRequests } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { ArrowLeft, CheckCircle2, ShieldCheck, Clock, FileText, Download, Building2, User, Calendar, Paperclip } from 'lucide-react';
 import PrintButton from '@/components/requests/PrintButton';
+import { isFpicDepartment } from '@/lib/workflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -653,18 +654,26 @@ export default async function SourceRequestFormPage({
                 </tr>
               ))}
 
-              {/* 3. HOD */}
-              <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>3. HOD Acceptance</td>
-                <td style={{ padding: '7px 10px' }}>{hodAction?.actor?.full_name || 'Head of Department'}</td>
-                <td style={{ padding: '7px 10px', color: hodAction ? '#16a34a' : '#64748b', fontWeight: 700 }}>
-                  {hodAction ? 'Accepted' : 'Pending / Not Recorded'}
-                </td>
-                <td style={{ padding: '7px 10px', color: '#64748b' }}>
-                  {hodAction?.created_at ? new Date(hodAction.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
-                </td>
-                <td style={{ padding: '7px 10px', color: '#475569' }}>{req.hod_remarks || hodAction?.comment || '—'}</td>
-              </tr>
+              {/* 3. HOD / FPIC */}
+              {(() => {
+                const isFpic = isFpicDepartment(req.department?.name);
+                const tierTitle = isFpic ? '3. FPIC Acceptance' : '3. HOD Acceptance';
+                const defaultSigner = isFpic ? 'FPIC' : 'Head of Department';
+
+                return (
+                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>{tierTitle}</td>
+                    <td style={{ padding: '7px 10px' }}>{hodAction?.actor?.full_name || defaultSigner}</td>
+                    <td style={{ padding: '7px 10px', color: hodAction ? '#16a34a' : '#64748b', fontWeight: 700 }}>
+                      {hodAction ? 'Accepted' : 'Pending / Not Recorded'}
+                    </td>
+                    <td style={{ padding: '7px 10px', color: '#64748b' }}>
+                      {hodAction?.created_at ? new Date(hodAction.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                    </td>
+                    <td style={{ padding: '7px 10px', color: '#475569' }}>{req.hod_remarks || hodAction?.comment || '—'}</td>
+                  </tr>
+                );
+              })()}
 
               {/* 4. Regional Coordinator */}
               {regCoordAction && (
