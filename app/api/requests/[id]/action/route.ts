@@ -75,6 +75,21 @@ export async function POST(
       return Response.json({ error: "You must select 'Regional Head Not Available' to approve or reject on behalf of the Regional Head." }, { status: 400 });
     }
 
+    // Guard: Prevent forward approval or completion if there are any pending required reviews
+    const { requiredReviews } = await import('@/lib/db/schema');
+    const pendingReviews = await db.query.requiredReviews.findMany({
+      where: and(
+        eq(requiredReviews.request_id, id),
+        eq(requiredReviews.status, 'Pending')
+      )
+    });
+
+    if (action === 'approve' && pendingReviews.length > 0) {
+      return Response.json({
+        error: 'Cannot forward request: Awaiting required review/approval from selected User Department(s).'
+      }, { status: 400 });
+    }
+
     const roleForTransition = isCoordinatorActingAsFinalHead ? 'final_head' : user.role;
     const transitionKey = `${action}:${roleForTransition}`;
     let transition = TRANSITIONS[transitionKey];
@@ -106,8 +121,17 @@ export async function POST(
         return Response.json({ error: `Action 'approve' not valid in status '${srcRequest.status}'` }, { status: 400 });
       }
 
+      const isInitialOrReturned = srcRequest.status === 'Regional Coordinator Review' || srcRequest.status === 'HOD Approved' || srcRequest.status === 'Returned to Regional Coordinator';
+      
+      // If at initial review or returned, must either specify department_ids or explicit none_selected
+      if (isInitialOrReturned && (!department_ids || department_ids.length === 0) && !body.none_selected) {
+        return Response.json({
+          error: "Please select User Department(s) or select 'None / N/A' if no department review is required."
+        }, { status: 400 });
+      }
+
       if (department_ids && department_ids.length > 0) {
-        const { profileDepartments, profiles, departments, requiredReviews } = await import('@/lib/db/schema');
+        const { profileDepartments, profiles, departments } = await import('@/lib/db/schema');
 
         // Query departments and their HOD profiles to check logins
         const deptsWithHod = await db.select({
@@ -133,7 +157,7 @@ export async function POST(
         if (missingHods.length > 0) {
           const names = missingHods.join(', ');
           return Response.json({ 
-            error: `Request cannot be sent because ${names} does not have login credentials configured. Please create the department login first.` 
+            error: `No login found for the selected department(s): ${names}. Please create the department login first.` 
           }, { status: 400 });
         }
 

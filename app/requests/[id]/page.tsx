@@ -14,8 +14,8 @@ import EditRequestButton from '@/components/requests/EditRequestButton';
 import MarkAsOpened from '@/components/requests/MarkAsOpened';
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
-import { sourceRequests, profiles, departments } from '@/lib/db/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { sourceRequests, profiles, departments, profileDepartments } from '@/lib/db/schema';
+import { eq, inArray, and } from 'drizzle-orm';
 import { getProcurementEmployees } from '@/lib/procurement';
 import { getHodOrFpicLabel } from '@/lib/workflow';
 
@@ -23,7 +23,7 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return { title: `Request ${id}` };
+  return { title: `${id} · Source Request` };
 }
 
 export default async function RequestDetailPage({
@@ -37,7 +37,24 @@ export default async function RequestDetailPage({
   const user = session.user as any;
   const profile = { id: user.id, role: user.role, departmentIds: user.departmentIds || [], full_name: user.name };
 
-  const allDepartments = await db.select().from(departments).orderBy(departments.name);
+  const allDepartmentsRaw = await db.select().from(departments).orderBy(departments.name);
+  const hodProfiles = await db.select({
+    departmentId: profileDepartments.department_id,
+    hodName: profiles.full_name,
+    hodEmail: profiles.email,
+  })
+  .from(profileDepartments)
+  .innerJoin(profiles, and(eq(profiles.id, profileDepartments.profile_id), eq(profiles.role, 'hod')));
+
+  const allDepartments = allDepartmentsRaw.map(d => {
+    const hod = hodProfiles.find(h => h.departmentId === d.id);
+    return {
+      ...d,
+      hasHod: !!hod,
+      hodName: hod?.hodName ?? null,
+      hodEmail: hod?.hodEmail ?? null,
+    };
+  });
 
   const reqData = await db.query.sourceRequests.findFirst({
     where: eq(sourceRequests.id, id),

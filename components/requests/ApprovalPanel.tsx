@@ -11,7 +11,13 @@ import { getHodOrFpicLabel } from '@/lib/workflow';
 interface ApprovalPanelProps {
   request: SourceRequest;
   userRole: string;
-  allDepartments?: { id: string; name: string }[];
+  allDepartments?: {
+    id: string;
+    name: string;
+    hasHod?: boolean;
+    hodName?: string | null;
+    hodEmail?: string | null;
+  }[];
 }
 
 type ActionType = 'approve' | 'reject' | 'return' | 'cancel' | null;
@@ -62,18 +68,20 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     const uniqueIds = Array.from(new Set(reviews.map((r: any) => r.department_id))) as string[];
     return uniqueIds;
   });
-  const [noneSelected, setNoneSelected] = useState(() => {
-    const reviews = (request as any).required_reviews || [];
-    return reviews.length === 0;
-  });
+  const [noneSelected, setNoneSelected] = useState(false);
   const [deptValidationError, setDeptValidationError] = useState<string | null>(null);
   const [rhAvailability, setRhAvailability] = useState<'available' | 'unavailable'>('available');
 
+  const selectedDepartmentsWithNoHod = (allDepartments || []).filter(
+    d => selectedDepts.includes(d.id) && d.hasHod === false
+  );
+
+  const isRHStage = request.status === 'Final Head Review' || request.status === 'Returned to Regional Head';
   const isCoordinatorReview = userRole === 'regional_coordinator' && 
     ['Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator', 'Target Dept Approved'].includes(request.status);
-  const showSendLabel = isCoordinatorReview && !noneSelected;
+  const showSendLabel = isCoordinatorReview && !noneSelected && selectedDepts.length > 0;
 
-  const isCoordinatorActingAsFinalHead = userRole === 'regional_coordinator' && rhAvailability === 'unavailable';
+  const isCoordinatorActingAsFinalHead = userRole === 'regional_coordinator' && isRHStage && rhAvailability === 'unavailable';
   const isRegionalHead = userRole === 'final_head' || isCoordinatorActingAsFinalHead;
   const returnRole = isCoordinatorActingAsFinalHead ? 'final_head' : userRole;
 
@@ -81,8 +89,9 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     if (!act) return '';
     if (act === 'approve') {
       if (showSendLabel) return 'Send to User Departments';
+      if (isRHStage) return 'Approve on Behalf of Regional Head';
       if (isRegionalHead) return 'Approve';
-      if (userRole === 'regional_coordinator') return 'Approve';
+      if (userRole === 'regional_coordinator') return 'Accept & Forward to Regional Head';
       return 'Accept';
     }
     return ACTION_CONFIG[act].label;
@@ -92,13 +101,13 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     if (!act) return '';
     if (act === 'approve') {
       if (showSendLabel) return 'Send to User Departments';
+      if (isRHStage) return 'Confirm Approval on Behalf of Regional Head';
       if (isRegionalHead || userRole === 'regional_coordinator') return 'Confirm Approval';
       return 'Confirm Acceptance';
     }
     return ACTION_CONFIG[act].title;
   };
 
-  const isRHStage = request.status === 'Final Head Review' || request.status === 'Returned to Regional Head';
   const showActions = userRole !== 'regional_coordinator' || !isRHStage || rhAvailability === 'unavailable';
 
   const deptName = request.department?.name || (request as any).requester_department?.name;
@@ -127,7 +136,15 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
 
     if (activeAction === 'approve' && userRole === 'regional_coordinator' && isCoordinatorReview) {
       if (selectedDepts.length === 0 && !noneSelected) {
-        setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
+        setDeptValidationError("Please select User Department(s) or select 'None / N/A' if no department review is required.");
+        return;
+      }
+
+      if (!noneSelected && selectedDepartmentsWithNoHod.length > 0) {
+        const names = selectedDepartmentsWithNoHod.map(d => d.name).join(', ');
+        const warning = `No login found for the selected department(s): ${names}. The request cannot be sent. Please create the department login first.`;
+        setDeptValidationError(warning);
+        setError(warning);
         return;
       }
 
@@ -159,10 +176,17 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     setLoading(true);
     setError(null);
     try {
-      const payload: any = { action, comment: comment.trim() || undefined, return_to: returnTo || undefined };
+      const payload: any = { 
+        action, 
+        comment: comment.trim() || undefined, 
+        return_to: returnTo || undefined 
+      };
       if (userRole === 'regional_coordinator') {
         payload.department_ids = noneSelected ? [] : selectedDepts;
-        payload.rh_availability = rhAvailability;
+        payload.none_selected = noneSelected;
+        if (isRHStage) {
+          payload.rh_availability = rhAvailability;
+        }
       }
 
       const res = await fetch(`/api/requests/${request.id}/action`, {
@@ -336,6 +360,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                 .filter(d => ['IT', 'Maintenance', 'QA', 'EHS', 'Admin', 'IWH', 'QC', 'Engineering', 'Legal', 'Others'].includes(d.name) && d.id !== request.department_id)
                 .map(dept => {
                   const isYes = !noneSelected && selectedDepts.includes(dept.id);
+                  const hasLogin = dept.hasHod !== false;
                   return (
                     <div 
                       key={dept.id} 
@@ -345,14 +370,23 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                         justifyContent: 'space-between',
                         padding: '10px 14px',
                         borderRadius: 8,
-                        border: '1px solid var(--border)',
-                        background: isYes ? 'var(--accent-glow)' : 'var(--bg-card)',
+                        border: `1px solid ${!hasLogin && isYes ? 'rgba(239,68,68,0.5)' : 'var(--border)'}`,
+                        background: isYes 
+                          ? (!hasLogin ? 'rgba(239,68,68,0.08)' : 'var(--accent-glow)') 
+                          : 'var(--bg-card)',
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      <span style={{ fontSize: 13.5, fontWeight: 600, color: isYes ? 'var(--accent-hover)' : 'var(--text-primary)' }}>
-                        {dept.name}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <span style={{ fontSize: 13.5, fontWeight: 600, color: isYes ? (hasLogin ? 'var(--accent-hover)' : '#f87171') : 'var(--text-primary)' }}>
+                          {dept.name}
+                        </span>
+                        {!hasLogin && (
+                          <span style={{ fontSize: 10.5, fontWeight: 600, color: '#f87171' }}>
+                            No login configured
+                          </span>
+                        )}
+                      </div>
                       <div style={{ display: 'flex', gap: 2, background: 'rgba(255, 255, 255, 0.05)', padding: 2, borderRadius: 6, border: '1px solid var(--border)' }}>
                         <button
                           type="button"
@@ -366,10 +400,10 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                           }}
                           style={{
                             padding: '3px 10px', fontSize: 11, fontWeight: 700, borderRadius: 4, cursor: 'pointer', border: 'none',
-                            background: isYes ? 'var(--success)' : 'transparent',
+                            background: isYes ? (hasLogin ? 'var(--success)' : 'var(--danger)') : 'transparent',
                             color: isYes ? '#fff' : 'var(--text-muted)',
                             transition: 'all 0.15s ease',
-                            boxShadow: isYes ? '0 1px 4px rgba(16,185,129,0.3)' : 'none'
+                            boxShadow: isYes ? (hasLogin ? '0 1px 4px rgba(16,185,129,0.3)' : '0 1px 4px rgba(239,68,68,0.3)') : 'none'
                           }}
                         >
                           Yes
@@ -385,10 +419,9 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                           }}
                           style={{
                             padding: '3px 10px', fontSize: 11, fontWeight: 700, borderRadius: 4, cursor: 'pointer', border: 'none',
-                            background: !isYes ? 'var(--danger)' : 'transparent',
-                            color: !isYes ? '#fff' : 'var(--text-muted)',
+                            background: !isYes ? 'rgba(255,255,255,0.08)' : 'transparent',
+                            color: !isYes ? 'var(--text-secondary)' : 'var(--text-muted)',
                             transition: 'all 0.15s ease',
-                            boxShadow: !isYes ? '0 1px 4px rgba(239,68,68,0.3)' : 'none'
                           }}
                         >
                           No
@@ -398,6 +431,23 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                   );
                 })}
             </div>
+            {selectedDepartmentsWithNoHod.length > 0 && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 14px',
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: 8,
+                marginTop: 4
+              }}>
+                <AlertCircle size={16} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+                <p style={{ margin: 0, fontSize: 13, color: '#fca5a5', fontWeight: 600 }}>
+                  ⚠️ No login found for the selected department(s): {selectedDepartmentsWithNoHod.map(d => d.name).join(', ')}. The request cannot be sent. Please create the department login first.
+                </p>
+              </div>
+            )}
             {deptValidationError && (
               <p style={{ fontSize: 13, color: 'var(--danger)', margin: '4px 0 0', fontWeight: 500 }}>
                 ⚠️ {deptValidationError}
@@ -409,7 +459,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           </div>
         )}
 
-        {userRole === 'regional_coordinator' && (
+        {userRole === 'regional_coordinator' && isRHStage && (
           <div style={{ 
             marginBottom: 20, 
             padding: '14px 16px', 
@@ -440,28 +490,43 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                   checked={rhAvailability === 'unavailable'} 
                   onChange={() => setRhAvailability('unavailable')} 
                 />
-                <span style={{ fontWeight: rhAvailability === 'unavailable' ? 700 : 500 }}>
+                <span style={{ fontWeight: rhAvailability === 'unavailable' ? 700 : 500, color: rhAvailability === 'unavailable' ? '#fbbf24' : 'var(--text-secondary)' }}>
                   Regional Head Not Available – Approving on Behalf of Regional Head
                 </span>
               </label>
             </div>
+            {rhAvailability === 'available' && (
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '10px 0 0' }}>
+                ℹ️ The request is currently awaiting review by the Regional Head. If the Regional Head is unavailable, select the option above to take action on their behalf.
+              </p>
+            )}
           </div>
         )}
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {showActions && (
             <button className="btn btn-success btn-sm" onClick={() => {
-              if (isCoordinatorReview && selectedDepts.length === 0 && !noneSelected) {
-                setDeptValidationError('You must select at least one department, or set "None / N/A" to Yes.');
-                return;
+              if (isCoordinatorReview) {
+                if (selectedDepts.length === 0 && !noneSelected) {
+                  setDeptValidationError("Please select User Department(s) or select 'None / N/A' if no department review is required.");
+                  return;
+                }
+                if (!noneSelected && selectedDepartmentsWithNoHod.length > 0) {
+                  const names = selectedDepartmentsWithNoHod.map(d => d.name).join(', ');
+                  setDeptValidationError(`No login found for the selected department(s): ${names}. The request cannot be sent. Please create the department login first.`);
+                  return;
+                }
               }
               setActiveAction('approve');
               setComment('');
               setCommentError('');
+              setError(null);
             }}>
               {showSendLabel ? (
                 <><Send size={15} /> Send to User Departments</>
-              ) : isRegionalHead || userRole === 'regional_coordinator' ? (
+              ) : isRHStage ? (
+                <><CheckCircle2 size={15} /> Approve on Behalf of Regional Head</>
+              ) : isRegionalHead ? (
                 <><CheckCircle2 size={15} /> Approve</>
               ) : (
                 <><CheckCircle2 size={15} /> Accept</>
@@ -469,19 +534,19 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
             </button>
           )}
           {(userRole === 'procurement_manager' || userRole === 'final_head' || (userRole === 'regional_coordinator' && showActions)) && (
-            <button className="btn btn-danger btn-sm" onClick={() => { setActiveAction('reject'); setComment(''); setCommentError(''); }}>
+            <button className="btn btn-danger btn-sm" onClick={() => { setActiveAction('reject'); setComment(''); setCommentError(''); setError(null); }}>
               <XCircle size={15} /> Reject
             </button>
           )}
           {showActions && (
-            <button className="btn btn-warning btn-sm" onClick={() => { setActiveAction('return'); setComment(''); setCommentError(''); }}>
+            <button className="btn btn-warning btn-sm" onClick={() => { setActiveAction('return'); setComment(''); setCommentError(''); setError(null); }}>
               <RotateCcw size={15} /> Return for Correction
             </button>
           )}
           {(userRole === 'hod' || userRole === 'regional_coordinator') && showActions && (
             <button 
               className="btn btn-danger btn-sm" 
-              onClick={() => { setActiveAction('cancel'); setComment(''); setCommentError(''); }}
+              onClick={() => { setActiveAction('cancel'); setComment(''); setCommentError(''); setError(null); }}
             >
               <Ban size={15} /> Cancel Request
             </button>
@@ -496,12 +561,19 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           setActiveAction(null); 
           setError(null); 
           setSelectedDepts([]);
-          setNoneSelected(!((request as any).required_reviews && (request as any).required_reviews.length > 0));
+          setNoneSelected(false);
           setDeptValidationError(null);
         }}
         title={activeAction ? getActionTitleText(activeAction) : ''}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {error && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 14px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: 8 }}>
+              <AlertCircle size={15} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+              <p style={{ fontSize: 13, color: '#fca5a5', margin: 0, fontWeight: 500 }}>{error}</p>
+            </div>
+          )}
+
           <div style={{ padding: '12px 16px', background: 'var(--bg-base)', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
             Request: <strong style={{ color: 'var(--text-primary)' }}>{request.id}</strong>
           </div>
