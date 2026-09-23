@@ -33,15 +33,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const user = userProfiles[0];
         if (!user) return null;
 
-        const isQuickSwitch = credentials.password === '__QUICK_SWITCH__';
-        if (!isQuickSwitch) {
-          // Compare trimmed password first, and fallback to untrimmed if password was saved with spaces
-          let passwordsMatch = await bcrypt.compare(cleanPassword, user.password_hash);
-          if (!passwordsMatch && cleanPassword !== rawPassword) {
-            passwordsMatch = await bcrypt.compare(rawPassword, user.password_hash);
-          }
-          if (!passwordsMatch) return null;
+        // Compare trimmed password first, and fallback to untrimmed if password was saved with spaces
+        let passwordsMatch = await bcrypt.compare(cleanPassword, user.password_hash);
+        if (!passwordsMatch && cleanPassword !== rawPassword) {
+          passwordsMatch = await bcrypt.compare(rawPassword, user.password_hash);
         }
+        if (!passwordsMatch) return null;
 
         const depts = await db.select().from(profileDepartments).where(eq(profileDepartments.profile_id, user.id));
         const departmentIds = depts.map(d => d.department_id);

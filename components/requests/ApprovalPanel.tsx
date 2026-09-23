@@ -91,8 +91,8 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     if (act === 'approve') {
       if (showSendLabel) return 'Send to User Departments';
       if (isTargetDeptApproved) return 'Forward to Regional Head';
-      if (isRHStage) return 'Approve on Behalf of Regional Head';
-      if (isRegionalHead) return 'Approve';
+      if (isCoordinatorActingAsFinalHead) return 'Approve on Behalf of Regional Head';
+      if (userRole === 'final_head') return 'Approve';
       if (userRole === 'regional_coordinator') return 'Accept & Forward to Regional Head';
       return 'Accept';
     }
@@ -104,8 +104,9 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     if (act === 'approve') {
       if (showSendLabel) return 'Send to User Departments';
       if (isTargetDeptApproved) return 'Forward to Regional Head';
-      if (isRHStage) return 'Confirm Approval on Behalf of Regional Head';
-      if (isRegionalHead || userRole === 'regional_coordinator') return 'Confirm Approval';
+      if (isCoordinatorActingAsFinalHead) return 'Confirm Approval on Behalf of Regional Head';
+      if (userRole === 'final_head') return 'Confirm Approval';
+      if (userRole === 'regional_coordinator') return 'Confirm Acceptance & Forward';
       return 'Confirm Acceptance';
     }
     return ACTION_CONFIG[act].title;
@@ -555,9 +556,9 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                 <><Send size={15} /> Send to User Departments</>
               ) : isTargetDeptApproved ? (
                 <><Send size={15} /> Forward to Regional Head</>
-              ) : isRHStage ? (
+              ) : isCoordinatorActingAsFinalHead ? (
                 <><CheckCircle2 size={15} /> Approve on Behalf of Regional Head</>
-              ) : isRegionalHead ? (
+              ) : userRole === 'final_head' ? (
                 <><CheckCircle2 size={15} /> Approve</>
               ) : userRole === 'regional_coordinator' ? (
                 <><CheckCircle2 size={15} /> Accept & Forward to Regional Head</>
@@ -665,7 +666,11 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                   ? 'Sending this request for review will notify the selected departments to review.'
                   : isTargetDeptApproved
                   ? 'Forwarding this request will submit it to the Regional Head for final review.'
-                  : isRegionalHead || userRole === 'regional_coordinator'
+                  : isCoordinatorActingAsFinalHead
+                  ? 'Approving this request on behalf of the Regional Head will move it to the Procurement stage.'
+                  : userRole === 'final_head'
+                  ? 'Approving this request will move it to the Procurement Manager for review.'
+                  : userRole === 'regional_coordinator'
                   ? 'Approving this request will move it to the next stage automatically.'
                   : 'Accepting this request will move it to the next stage automatically.'}
               </p>

@@ -47,14 +47,17 @@ export default async function AppShell({
   const activeDeptCookie = cookieStore.get('active_department_id');
   const activeDepartmentId = activeDeptCookie?.value || (user.departmentIds?.[0] ?? '');
 
+  const isRegionalOrAdminRole = ['final_head', 'regional_coordinator', 'admin', 'procurement_manager', 'section_manager'].includes(user.role);
+
   let activeDeptName = '';
-  if (departmentsData.length > 0) {
+  if (!isRegionalOrAdminRole && departmentsData.length > 0) {
     const active = departmentsData.find(d => d.id === activeDepartmentId) || departmentsData[0];
     activeDeptName = active?.name || '';
   }
 
   const profile: Profile = {
     id: user.id,
+    email: user.email,
     full_name: user.name,
     role: user.role,
     departmentIds: user.departmentIds || [],
