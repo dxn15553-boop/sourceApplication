@@ -9,7 +9,7 @@ import ReviewPanel from '@/components/requests/ReviewPanel';
 import HandlerAcknowledgmentPanel from '@/components/requests/HandlerAcknowledgmentPanel';
 import { ArrowLeft, Download, Paperclip, User, Building2, Calendar, Clock, CheckCircle, AlertTriangle, XCircle, Truck, ShieldCheck, Package, Ban, FileText } from 'lucide-react';
 import Link from 'next/link';
-import type { SourceRequest, Role } from '@/lib/types';
+import type { SourceRequest } from '@/lib/types';
 import EditRequestButton from '@/components/requests/EditRequestButton';
 import MarkAsOpened from '@/components/requests/MarkAsOpened';
 import { auth } from '@/auth';
@@ -17,7 +17,7 @@ import { db } from '@/lib/db';
 import { sourceRequests, profiles, departments, profileDepartments } from '@/lib/db/schema';
 import { eq, inArray, and } from 'drizzle-orm';
 import { getProcurementEmployees } from '@/lib/procurement';
-import { getHodOrFpicLabel, ROLE_LABELS, STATUS_CONFIG } from '@/lib/workflow';
+import { getHodOrFpicLabel } from '@/lib/workflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -581,66 +581,6 @@ export default async function RequestDetailPage({
             {canAssign && <AssignmentPanel request={req} availableEmployees={allEmployees} />}
             {canAccept && <HandlerAcknowledgmentPanel request={req} />}
             {canResubmit && <ResubmitPanel request={req} />}
-
-            {/* Next Workflow Step Info Card (shown when no action is pending for the viewing user) */}
-            {!pendingReviewForUser && !canApprove && !canAssign && !canAccept && !canResubmit && !['Completed', 'Closed', 'Cancelled', 'HOD Rejected', 'Final Head Rejected', 'Procurement Rejected'].includes(req.status) && (
-              <div className="card animate-fade-in" style={{
-                padding: '18px 22px',
-                background: 'rgba(59, 130, 246, 0.05)',
-                border: '1px solid rgba(59, 130, 246, 0.2)',
-                borderRadius: 12,
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 14,
-                marginTop: 8,
-              }}>
-                <div style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 10,
-                  background: 'rgba(59, 130, 246, 0.12)',
-                  color: '#60a5fa',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  marginTop: 2
-                }}>
-                  <Clock size={19} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Current Workflow Stage
-                    </span>
-                    <span style={{
-                      padding: '2px 8px',
-                      borderRadius: 6,
-                      fontSize: 11,
-                      fontWeight: 700,
-                      background: 'rgba(59, 130, 246, 0.15)',
-                      color: '#60a5fa',
-                      border: '1px solid rgba(59, 130, 246, 0.3)',
-                    }}>
-                      Awaiting: {ROLE_LABELS[req.current_assignee_role as Role] || 'Regional Coordinator'}
-                    </span>
-                  </div>
-                  <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.5 }}>
-                    {req.status === 'Target Dept Approved'
-                      ? 'Both user departments (Admin & Maintenance) have completed their reviews. The request is now with the Regional Coordinator to forward to the Regional Head for final approval.'
-                      : req.status === 'Under Required Review'
-                      ? 'This request is currently under review by the selected User Department(s). Once all reviews are submitted, it will return to the Regional Coordinator.'
-                      : req.status === 'Final Head Review'
-                      ? 'This request has been forwarded to the Regional Head of Factories (RHoF) for final review and approval.'
-                      : req.status === 'Regional Coordinator Review'
-                      ? 'This request is currently with the Regional Coordinator for review and department selection.'
-                      : req.status === 'Submitted'
-                      ? 'This request has been submitted and is awaiting initial review by the Head of Department (HOD) / FPIC.'
-                      : `This request is currently in "${STATUS_CONFIG[req.status as keyof typeof STATUS_CONFIG]?.label || req.status}" stage awaiting action by ${ROLE_LABELS[req.current_assignee_role as Role] || 'the assigned approver'}.`}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* RIGHT COLUMN — Workflow History */}
