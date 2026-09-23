@@ -88,7 +88,8 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           departmentName: finalDeptName, 
-          email, password, 
+          email: email.trim().toLowerCase(), 
+          password: password.trim(), 
           role 
         }),
       });
@@ -111,7 +112,8 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
   async function handleResetSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!newPassword || newPassword.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    const cleanNewPass = newPassword.trim();
+    if (!cleanNewPass || cleanNewPass.length < 8) { setError('Password must be at least 8 characters.'); return; }
 
     setSaving(true);
     try {
@@ -120,7 +122,7 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           profileId: resetTargetId, 
-          newPassword 
+          newPassword: cleanNewPass 
         }),
       });
       const json = await res.json();

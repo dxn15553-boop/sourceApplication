@@ -123,59 +123,65 @@ export async function POST(
 
       const isInitialOrReturned = srcRequest.status === 'Regional Coordinator Review' || srcRequest.status === 'HOD Approved' || srcRequest.status === 'Returned to Regional Coordinator';
       
-      // If at initial review or returned, must either specify department_ids or explicit none_selected
-      if (isInitialOrReturned && (!department_ids || department_ids.length === 0) && !body.none_selected) {
-        return Response.json({
-          error: "Please select User Department(s) or select 'None / N/A' if no department review is required."
-        }, { status: 400 });
-      }
-
-      if (department_ids && department_ids.length > 0) {
-        const { profileDepartments, profiles, departments } = await import('@/lib/db/schema');
-
-        // Query departments and their HOD profiles to check logins
-        const deptsWithHod = await db.select({
-          deptId: departments.id,
-          deptName: departments.name,
-          hodId: profiles.id,
-        })
-        .from(departments)
-        .leftJoin(profileDepartments, eq(profileDepartments.department_id, departments.id))
-        .leftJoin(profiles, and(eq(profiles.id, profileDepartments.profile_id), eq(profiles.role, 'hod')))
-        .where(inArray(departments.id, department_ids));
-
-        // Find departments that do not have an HOD profile configured
-        const missingHods: string[] = [];
-        for (const deptId of department_ids) {
-          const hasHod = deptsWithHod.some(d => d.deptId === deptId && d.hodId !== null);
-          if (!hasHod) {
-            const deptName = deptsWithHod.find(d => d.deptId === deptId)?.deptName || deptId;
-            missingHods.push(deptName);
-          }
-        }
-
-        if (missingHods.length > 0) {
-          const names = missingHods.join(', ');
-          return Response.json({ 
-            error: `No login found for the selected department(s): ${names}. Please create the department login first.` 
+      if (isInitialOrReturned) {
+        // If at initial review or returned, must either specify department_ids or explicit none_selected
+        if ((!department_ids || department_ids.length === 0) && !body.none_selected) {
+          return Response.json({
+            error: "Please select User Department(s) or select 'None / N/A' if no department review is required."
           }, { status: 400 });
         }
 
-        await db.insert(requiredReviews).values(
-          department_ids.map((deptId: string) => ({
-            request_id: id,
-            department_id: deptId,
-            status: 'Pending' as const,
-          }))
-        );
-        await notifyCrossDeptHods({
-          requestId: id,
-          departmentIds: department_ids,
-          description: srcRequest.description,
-        });
-        nextStatus = 'Under Required Review';
-        nextRole = 'hod';
+        if (department_ids && department_ids.length > 0) {
+          const { profileDepartments, profiles, departments } = await import('@/lib/db/schema');
+
+          // Query departments and their HOD profiles to check logins
+          const deptsWithHod = await db.select({
+            deptId: departments.id,
+            deptName: departments.name,
+            hodId: profiles.id,
+          })
+          .from(departments)
+          .leftJoin(profileDepartments, eq(profileDepartments.department_id, departments.id))
+          .leftJoin(profiles, and(eq(profiles.id, profileDepartments.profile_id), eq(profiles.role, 'hod')))
+          .where(inArray(departments.id, department_ids));
+
+          // Find departments that do not have an HOD profile configured
+          const missingHods: string[] = [];
+          for (const deptId of department_ids) {
+            const hasHod = deptsWithHod.some(d => d.deptId === deptId && d.hodId !== null);
+            if (!hasHod) {
+              const deptName = deptsWithHod.find(d => d.deptId === deptId)?.deptName || deptId;
+              missingHods.push(deptName);
+            }
+          }
+
+          if (missingHods.length > 0) {
+            const names = missingHods.join(', ');
+            return Response.json({ 
+              error: `No login found for the selected department(s): ${names}. Please create the department login first.` 
+            }, { status: 400 });
+          }
+
+          await db.insert(requiredReviews).values(
+            department_ids.map((deptId: string) => ({
+              request_id: id,
+              department_id: deptId,
+              status: 'Pending' as const,
+            }))
+          );
+          await notifyCrossDeptHods({
+            requestId: id,
+            departmentIds: department_ids,
+            description: srcRequest.description,
+          });
+          nextStatus = 'Under Required Review';
+          nextRole = 'hod';
+        } else {
+          nextStatus = 'Final Head Review';
+          nextRole = 'final_head';
+        }
       } else {
+        // Status is 'Target Dept Approved' - all user department reviews are approved!
         nextStatus = 'Final Head Review';
         nextRole = 'final_head';
       }

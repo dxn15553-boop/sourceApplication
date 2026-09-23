@@ -18,7 +18,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        let loginEmail = credentials.email as string;
+        let loginEmail = (credentials.email as string).trim();
+        const rawPassword = credentials.password as string;
+        const cleanPassword = rawPassword.trim();
         let isRequester = false;
 
         // If the login ID starts with "SR", treat it as a Source Requester ID
@@ -33,7 +35,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const isQuickSwitch = credentials.password === '__QUICK_SWITCH__';
         if (!isQuickSwitch) {
-          const passwordsMatch = await bcrypt.compare(credentials.password as string, user.password_hash);
+          // Compare trimmed password first, and fallback to untrimmed if password was saved with spaces
+          let passwordsMatch = await bcrypt.compare(cleanPassword, user.password_hash);
+          if (!passwordsMatch && cleanPassword !== rawPassword) {
+            passwordsMatch = await bcrypt.compare(rawPassword, user.password_hash);
+          }
           if (!passwordsMatch) return null;
         }
 
@@ -42,8 +48,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         return {
           id: user.id,
-          email: isRequester ? (credentials.email as string) : user.email,
-          name: isRequester ? (credentials.email as string) : user.full_name,
+          email: isRequester ? loginEmail : user.email,
+          name: isRequester ? (credentials.email as string).trim() : user.full_name,
           role: user.role,
           departmentIds: departmentIds,
         } as any;

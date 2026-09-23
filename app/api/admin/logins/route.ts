@@ -30,7 +30,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid role.' }, { status: 400 });
     }
 
-    const password_hash = await bcrypt.hash(password, 10);
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+    const password_hash = await bcrypt.hash(cleanPassword, 10);
 
     if (deptRequiredRoles.includes(role)) {
       // 1. Find or create the department
@@ -49,9 +51,9 @@ export async function POST(request: Request) {
       const fullName = role === 'hod' ? `${headLabel} (${departmentName.trim()})` : `Employee (${departmentName.trim()})`;
 
       const [newProfile] = await db.insert(profiles).values({
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         password_hash,
-        plaintext_password: password,
+        plaintext_password: cleanPassword,
         full_name: fullName,
         role: role,
       }).returning();
@@ -72,9 +74,9 @@ export async function POST(request: Request) {
       const fullName = roleLabels[role] || 'Manager';
 
       await db.insert(profiles).values({
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         password_hash,
-        plaintext_password: password,
+        plaintext_password: cleanPassword,
         full_name: fullName,
         role: role,
       });

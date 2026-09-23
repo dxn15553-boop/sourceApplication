@@ -17,8 +17,10 @@ export default function LoginClient({ departments }: { departments?: { id: strin
     e.preventDefault();
     setError(null);
     setLoading(true);
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
     try {
-      const res = await signIn('credentials', { redirect: false, email, password });
+      const res = await signIn('credentials', { redirect: false, email: cleanEmail, password: cleanPassword });
       if (res?.error) { 
         setError('Incorrect Email or Password. Please try again.'); 
         return; 
@@ -218,6 +220,9 @@ export default function LoginClient({ departments }: { departments?: { id: strin
                 <input
                   id="email"
                   type="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   style={{
                     width: '100%', boxSizing: 'border-box', padding: '13px 14px 13px 42px',
                     borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
@@ -244,6 +249,9 @@ export default function LoginClient({ departments }: { departments?: { id: strin
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   style={{
                     width: '100%', boxSizing: 'border-box', padding: '13px 46px 13px 42px',
                     borderRadius: 12, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',

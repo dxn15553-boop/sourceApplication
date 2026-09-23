@@ -28,6 +28,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={id}
             type={inputType}
+            autoCapitalize={isPassword ? 'none' : props.autoCapitalize}
+            autoCorrect={isPassword ? 'off' : props.autoCorrect}
+            spellCheck={isPassword ? false : props.spellCheck}
             className={`form-input ${error ? 'border-red-500' : ''} ${className}`}
             style={isPassword ? { paddingRight: '2.5rem' } : undefined}
             {...props}

@@ -14,14 +14,15 @@ export async function POST(request: Request) {
     }
 
     const { profileId, newPassword } = await request.json();
-    if (!profileId || !newPassword || typeof newPassword !== 'string' || newPassword.length < 8) {
+    const cleanPassword = typeof newPassword === 'string' ? newPassword.trim() : '';
+    if (!profileId || !cleanPassword || cleanPassword.length < 8) {
       return NextResponse.json({ error: 'Valid profile ID and password (min 8 chars) are required.' }, { status: 400 });
     }
 
-    const password_hash = await bcrypt.hash(newPassword, 10);
+    const password_hash = await bcrypt.hash(cleanPassword, 10);
     
     await db.update(profiles)
-      .set({ password_hash, plaintext_password: newPassword })
+      .set({ password_hash, plaintext_password: cleanPassword })
       .where(eq(profiles.id, profileId));
 
     return NextResponse.json({ success: true }, { status: 200 });

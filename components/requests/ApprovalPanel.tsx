@@ -77,9 +77,10 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
   );
 
   const isRHStage = request.status === 'Final Head Review' || request.status === 'Returned to Regional Head';
-  const isCoordinatorReview = userRole === 'regional_coordinator' && 
-    ['Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator', 'Target Dept Approved'].includes(request.status);
-  const showSendLabel = isCoordinatorReview && !noneSelected && selectedDepts.length > 0;
+  const isInitialDeptSelection = userRole === 'regional_coordinator' && 
+    ['Regional Coordinator Review', 'HOD Approved', 'Returned to Regional Coordinator'].includes(request.status);
+  const isTargetDeptApproved = userRole === 'regional_coordinator' && request.status === 'Target Dept Approved';
+  const showSendLabel = isInitialDeptSelection && !noneSelected && selectedDepts.length > 0;
 
   const isCoordinatorActingAsFinalHead = userRole === 'regional_coordinator' && isRHStage && rhAvailability === 'unavailable';
   const isRegionalHead = userRole === 'final_head' || isCoordinatorActingAsFinalHead;
@@ -89,6 +90,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     if (!act) return '';
     if (act === 'approve') {
       if (showSendLabel) return 'Send to User Departments';
+      if (isTargetDeptApproved) return 'Forward to Regional Head';
       if (isRHStage) return 'Approve on Behalf of Regional Head';
       if (isRegionalHead) return 'Approve';
       if (userRole === 'regional_coordinator') return 'Accept & Forward to Regional Head';
@@ -101,6 +103,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     if (!act) return '';
     if (act === 'approve') {
       if (showSendLabel) return 'Send to User Departments';
+      if (isTargetDeptApproved) return 'Forward to Regional Head';
       if (isRHStage) return 'Confirm Approval on Behalf of Regional Head';
       if (isRegionalHead || userRole === 'regional_coordinator') return 'Confirm Approval';
       return 'Confirm Acceptance';
@@ -134,7 +137,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
       }
     }
 
-    if (activeAction === 'approve' && userRole === 'regional_coordinator' && isCoordinatorReview) {
+    if (activeAction === 'approve' && isInitialDeptSelection) {
       if (selectedDepts.length === 0 && !noneSelected) {
         setDeptValidationError("Please select User Department(s) or select 'None / N/A' if no department review is required.");
         return;
@@ -182,8 +185,10 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
         return_to: returnTo || undefined 
       };
       if (userRole === 'regional_coordinator') {
-        payload.department_ids = noneSelected ? [] : selectedDepts;
-        payload.none_selected = noneSelected;
+        if (isInitialDeptSelection) {
+          payload.department_ids = noneSelected ? [] : selectedDepts;
+          payload.none_selected = noneSelected;
+        }
         if (isRHStage) {
           payload.rh_availability = rhAvailability;
         }
@@ -280,8 +285,32 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
           </div>
         )}
 
-        {/* User Department checklist (Yes/No buttons) */}
-        {userRole === 'regional_coordinator' && isCoordinatorReview && allDepartments && (
+        {/* Notice if all User Department reviews are completed and approved */}
+        {isTargetDeptApproved && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: '14px 16px',
+            background: 'rgba(16, 185, 129, 0.08)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            borderRadius: 8,
+            marginBottom: 20
+          }}>
+            <CheckCircle2 size={18} style={{ color: '#10b981', marginTop: 2, flexShrink: 0 }} />
+            <div>
+              <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: '#10b981' }}>
+                User Department Reviews Completed
+              </p>
+              <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                All required User Department reviews have been completed and approved. Click <strong>Forward to Regional Head</strong> below to send this request for final review.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* User Department checklist (Yes/No buttons) - only shown during initial selection or when returned */}
+        {isInitialDeptSelection && allDepartments && (
           <div style={{ marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>
               User Department <span style={{ color: 'var(--danger)' }}>*</span>
@@ -506,7 +535,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {showActions && (
             <button className="btn btn-success btn-sm" onClick={() => {
-              if (isCoordinatorReview) {
+              if (isInitialDeptSelection) {
                 if (selectedDepts.length === 0 && !noneSelected) {
                   setDeptValidationError("Please select User Department(s) or select 'None / N/A' if no department review is required.");
                   return;
@@ -524,10 +553,14 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
             }}>
               {showSendLabel ? (
                 <><Send size={15} /> Send to User Departments</>
+              ) : isTargetDeptApproved ? (
+                <><Send size={15} /> Forward to Regional Head</>
               ) : isRHStage ? (
                 <><CheckCircle2 size={15} /> Approve on Behalf of Regional Head</>
               ) : isRegionalHead ? (
                 <><CheckCircle2 size={15} /> Approve</>
+              ) : userRole === 'regional_coordinator' ? (
+                <><CheckCircle2 size={15} /> Accept & Forward to Regional Head</>
               ) : (
                 <><CheckCircle2 size={15} /> Accept</>
               )}
@@ -630,6 +663,8 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
                 {showSendLabel
                   ? 'Sending this request for review will notify the selected departments to review.'
+                  : isTargetDeptApproved
+                  ? 'Forwarding this request will submit it to the Regional Head for final review.'
                   : isRegionalHead || userRole === 'regional_coordinator'
                   ? 'Approving this request will move it to the next stage automatically.'
                   : 'Accepting this request will move it to the next stage automatically.'}
