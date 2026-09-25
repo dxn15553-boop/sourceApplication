@@ -17,7 +17,6 @@ import { db } from '@/lib/db';
 import { sourceRequests, profiles, departments, profileDepartments } from '@/lib/db/schema';
 import { eq, inArray, and } from 'drizzle-orm';
 import { getProcurementEmployees } from '@/lib/procurement';
-import { getHodOrFpicLabel } from '@/lib/workflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -354,7 +353,7 @@ export default async function RequestDetailPage({
             {req.hod_remarks && (
               <div className="card" style={{ padding: '20px 24px', background: 'rgba(16, 185, 129, 0.03)', borderColor: 'rgba(16, 185, 129, 0.2)' }}>
                 <h2 style={{ fontSize: 14.5, fontWeight: 700, margin: '0 0 8px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <CheckCircle size={16} style={{ color: 'var(--success)' }} /> {getHodOrFpicLabel(req.department?.name, false)} Acceptance Remarks
+                  <CheckCircle size={16} style={{ color: 'var(--success)' }} /> HOD Acceptance Remarks
                 </h2>
                 <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>
                   {req.hod_remarks}

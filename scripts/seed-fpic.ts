@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as schema from '../lib/db/schema';
@@ -86,7 +88,7 @@ async function main() {
     }
   }
 
-  console.log('FPIC seeding and updates completed successfully!');
+  console.log('HOD seeding and updates completed successfully!');
 }
 
 main().catch(console.error);

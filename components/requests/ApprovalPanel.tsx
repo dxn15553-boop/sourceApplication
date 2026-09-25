@@ -6,7 +6,6 @@ import Modal from '@/components/ui/Modal';
 import Textarea from '@/components/ui/Textarea';
 import { CheckCircle2, XCircle, RotateCcw, AlertCircle, Send, Ban } from 'lucide-react';
 import type { SourceRequest } from '@/lib/types';
-import { getHodOrFpicLabel } from '@/lib/workflow';
 
 interface ApprovalPanelProps {
   request: SourceRequest;
@@ -115,8 +114,8 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
   const showActions = userRole !== 'regional_coordinator' || !isRHStage || rhAvailability === 'unavailable';
 
   const deptName = request.department?.name || (request as any).requester_department?.name;
-  const headLabel = getHodOrFpicLabel(deptName, false);
-  const headFullLabel = getHodOrFpicLabel(deptName, true);
+  const headLabel = 'HOD';
+  const headFullLabel = 'Head of Department (HOD)';
   const returnOptions = getReturnOptions(headFullLabel);
 
   async function executeAction(action: ActionType) {

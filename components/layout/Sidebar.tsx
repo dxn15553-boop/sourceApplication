@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import type { Profile } from '@/lib/types';
-import { ROLE_LABELS, getHodOrFpicLabel } from '@/lib/workflow';
+import { ROLE_LABELS } from '@/lib/workflow';
 
 interface NavItem {
   href: string;
@@ -115,7 +115,7 @@ export default function Sidebar({ profile, departmentName, isOpen, onClose }: Si
           </div>
         </div>
         <span className="role-badge" style={{ marginBottom: 10, display: 'inline-flex' }}>
-          {profile.role === 'hod' ? getHodOrFpicLabel(departmentName, true) : ROLE_LABELS[profile.role]}
+          {ROLE_LABELS[profile.role]}
         </span>
         <button
           onClick={handleSignOut}

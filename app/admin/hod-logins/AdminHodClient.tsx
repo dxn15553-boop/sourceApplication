@@ -5,7 +5,6 @@ import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import { Building2, Plus, Trash2, AlertCircle, CheckCircle, KeyRound, User, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { isFpicDepartment, getHodOrFpicLabel } from '@/lib/workflow';
 
 interface HodEntry {
   departmentName: string;
@@ -96,7 +95,7 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
       const json = await res.json();
       if (!res.ok) { setError(json.error ?? 'Failed to create login.'); return; }
       
-      const headLabel = getHodOrFpicLabel(finalDeptName, false);
+      const headLabel = 'HOD';
       setSuccess(`${headLabel} for "${finalDeptName}" created successfully.`);
       resetForm();
       setTimeout(() => { 
