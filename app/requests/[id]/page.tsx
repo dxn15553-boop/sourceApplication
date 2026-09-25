@@ -36,14 +36,40 @@ export default async function RequestDetailPage({
   const user = session.user as any;
   const profile = { id: user.id, role: user.role, departmentIds: user.departmentIds || [], full_name: user.name };
 
-  const allDepartmentsRaw = await db.select().from(departments).orderBy(departments.name);
-  const hodProfiles = await db.select({
-    departmentId: profileDepartments.department_id,
-    hodName: profiles.full_name,
-    hodEmail: profiles.email,
-  })
-  .from(profileDepartments)
-  .innerJoin(profiles, and(eq(profiles.id, profileDepartments.profile_id), eq(profiles.role, 'hod')));
+  const [allDepartmentsRaw, hodProfiles, reqData] = await Promise.all([
+    db.select().from(departments).orderBy(departments.name),
+    db.select({
+      departmentId: profileDepartments.department_id,
+      hodName: profiles.full_name,
+      hodEmail: profiles.email,
+    })
+    .from(profileDepartments)
+    .innerJoin(profiles, and(eq(profiles.id, profileDepartments.profile_id), eq(profiles.role, 'hod'))),
+    db.query.sourceRequests.findFirst({
+      where: eq(sourceRequests.id, id),
+      with: {
+        requester: { columns: { id: true, full_name: true, role: true } },
+        department: { columns: { id: true, name: true } },
+        assigned_employee: { columns: { id: true, full_name: true, role: true } },
+        workflow_actions: {
+          columns: { id: true, action: true, comment: true, created_at: true },
+          with: { 
+            actor: { columns: { id: true, full_name: true, role: true } }
+          },
+          orderBy: (actions: any, { asc }: any) => [asc(actions.created_at)],
+        },
+        required_reviews: {
+          columns: { id: true, department_id: true, status: true, remarks: true, created_at: true, attachment_path: true, attachment_name: true },
+          with: {
+            department: { columns: { name: true } },
+            reviewer: { columns: { full_name: true } }
+          }
+        }
+      }
+    }),
+  ]);
+
+  if (!reqData) notFound();
 
   const allDepartments = allDepartmentsRaw.map(d => {
     const hod = hodProfiles.find(h => h.departmentId === d.id);
@@ -54,31 +80,6 @@ export default async function RequestDetailPage({
       hodEmail: hod?.hodEmail ?? null,
     };
   });
-
-  const reqData = await db.query.sourceRequests.findFirst({
-    where: eq(sourceRequests.id, id),
-    with: {
-      requester: { columns: { id: true, full_name: true, role: true } },
-      department: { columns: { id: true, name: true } },
-      assigned_employee: { columns: { id: true, full_name: true, role: true } },
-      workflow_actions: {
-        columns: { id: true, action: true, comment: true, created_at: true },
-        with: { 
-          actor: { columns: { id: true, full_name: true, role: true } }
-        },
-        orderBy: (actions: any, { asc }: any) => [asc(actions.created_at)],
-      },
-      required_reviews: {
-        columns: { id: true, department_id: true, status: true, remarks: true, created_at: true, attachment_path: true, attachment_name: true },
-        with: {
-          department: { columns: { name: true } },
-          reviewer: { columns: { full_name: true } }
-        }
-      }
-    }
-  });
-
-  if (!reqData) notFound();
 
   const req = reqData as unknown as SourceRequest & {
     requester: { id: string; full_name: string; role: string };

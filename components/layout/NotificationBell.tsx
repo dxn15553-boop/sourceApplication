@@ -144,14 +144,32 @@ export default function NotificationBell() {
     const controller = new AbortController();
     fetchNotifications(controller.signal);
 
-    // Fast polling: check every 8 seconds for immediate alerts
+    // Smart polling: check every 25 seconds only when the browser tab is actively visible
     const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        return; // Don't hammer the database when tab is minimized or in the background
+      }
       fetchNotifications();
-    }, 8000);
+    }, 25000);
+
+    // When the user focuses back on the tab, refresh notifications immediately
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        fetchNotifications();
+      }
+    };
+    const handleFocus = () => {
+      fetchNotifications();
+    };
+
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
 
     return () => {
       controller.abort();
       clearInterval(interval);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
     };
   }, []);
 

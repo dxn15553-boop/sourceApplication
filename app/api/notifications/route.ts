@@ -26,6 +26,7 @@ export async function GET() {
         },
       },
       orderBy: [desc(notifications.created_at)],
+      limit: 30,
     });
 
     return Response.json({ data });
