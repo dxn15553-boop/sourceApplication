@@ -484,7 +484,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
               </p>
             )}
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, marginBottom: 0 }}>
-              HOD / FPIC of each selected User Department (Yes) must approve this request before it can proceed to the Regional Head.
+              HOD of each selected User Department (Yes) must approve this request before it can proceed to the Regional Head.
             </p>
           </div>
         )}

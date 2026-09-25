@@ -4,7 +4,7 @@ Here is my breakdown of how the workflow operates, divided into five main phases
 
 ### Phase 1: Creation & Multi-Tier Approvals (Steps 1–5)
 1. **Creation:** A user creates a "Source" request with a description and attachments. The system generates an automatic Source Number.
-2. **FPIC Review:** The Creator's Head (First Point Internal Check) reviews and approves or returns the request.
+2. **HOD Review:** The Creator's Head of Department reviews and approves or returns the request.
 3. **Cross-Functional Reviews:** This is a complex parallel step. The Creator selects applicable departments (EHS, Admin, QA, Legal, etc.) to review the request. The system creates individual tasks for each, and all must approve before it moves forward.
 4. **RHoF Approval:** The Regional Head of Factories gives their executive approval.
 5. **Purchase Manager:** The Purchase Manager accepts the request into the procurement pipeline.

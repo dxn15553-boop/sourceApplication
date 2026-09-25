@@ -229,21 +229,15 @@ export const ROLE_LABELS: Record<Role, string> = {
 };
 
 // ============================================================
-// Department Head / FPIC designation helpers
-// In DXN, production plants like Agro Food and Kombucha use FPIC
-// (Factory Person In Charge) instead of HOD.
+// Department Head designation helpers
+// Standardized to HOD (Head of Department) for all departments.
 // ============================================================
 
 export function isFpicDepartment(departmentName?: string | null): boolean {
-  if (!departmentName) return false;
-  const lower = departmentName.toLowerCase().trim();
-  return lower === 'agro food' || lower === 'kombucha' || lower.includes('agro') || lower.includes('kombucha');
+  return false;
 }
 
 export function getHodOrFpicLabel(departmentName?: string | null, full: boolean = false): string {
-  if (isFpicDepartment(departmentName)) {
-    return full ? 'Factory Person In Charge (FPIC)' : 'FPIC';
-  }
   return full ? 'Head of Department (HOD)' : 'HOD';
 }
 

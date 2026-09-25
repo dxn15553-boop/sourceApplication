@@ -4,7 +4,6 @@ import { departments, profiles, profileDepartments } from '@/lib/db/schema';
 import { auth } from '@/auth';
 import bcrypt from 'bcryptjs';
 import { eq, ilike } from 'drizzle-orm';
-import { isFpicDepartment } from '@/lib/workflow';
 
 export async function POST(request: Request) {
   try {
@@ -47,8 +46,7 @@ export async function POST(request: Request) {
       }
 
       // 2. Create profile
-      const headLabel = isFpicDepartment(departmentName.trim()) ? 'FPIC' : 'HOD';
-      const fullName = role === 'hod' ? `${headLabel} (${departmentName.trim()})` : `Employee (${departmentName.trim()})`;
+      const fullName = role === 'hod' ? `HOD (${departmentName.trim()})` : `Employee (${departmentName.trim()})`;
 
       const [newProfile] = await db.insert(profiles).values({
         email: cleanEmail,

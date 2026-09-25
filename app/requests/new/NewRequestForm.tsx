@@ -127,7 +127,7 @@ export default function NewRequestForm({
       <form onSubmit={handleSubmit}>
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div style={{ padding: '12px 16px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, color: 'var(--text-secondary)' }}>
-            ℹ️ Please enter your full name. Your request will be routed to the <strong>{departmentName}</strong>{isFpicDepartment(departmentName) ? "'s FPIC." : " department's HOD."}
+            ℹ️ Please enter your full name. Your request will be routed to the <strong>{departmentName}</strong> department's HOD.
           </div>
           <div className="form-group" style={{ display: 'none' }}>
             <input type="hidden" id="departmentId" value={departmentId} />

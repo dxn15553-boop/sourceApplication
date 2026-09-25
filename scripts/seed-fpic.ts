@@ -8,7 +8,7 @@ const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql, { schema });
 
 async function main() {
-  console.log('Seeding / updating FPIC departments and profiles...');
+  console.log('Seeding / updating HOD departments and profiles...');
 
   // 1. Ensure Kombucha department exists
   let kombuchaDept = await db.query.departments.findFirst({
@@ -31,16 +31,16 @@ async function main() {
   });
   console.log(`Agro Food department ID: ${agroDept?.id}`);
 
-  // 3. Update agro@gmail.com full_name to 'FPIC (Agro Food)'
+  // 3. Update agro@gmail.com full_name to 'HOD (Agro Food)'
   const agroProfile = await db.query.profiles.findFirst({
     where: eq(schema.profiles.email, 'agro@gmail.com')
   });
 
   if (agroProfile) {
     await db.update(schema.profiles)
-      .set({ full_name: 'FPIC (Agro Food)' })
+      .set({ full_name: 'HOD (Agro Food)' })
       .where(eq(schema.profiles.id, agroProfile.id));
-    console.log(`Updated agro@gmail.com name to "FPIC (Agro Food)"`);
+    console.log(`Updated agro@gmail.com name to "HOD (Agro Food)"`);
   }
 
   // 4. Ensure kombucha@gmail.com profile exists
@@ -54,16 +54,16 @@ async function main() {
       email: 'kombucha@gmail.com',
       password_hash: passwordHash,
       plaintext_password: 'admin123',
-      full_name: 'FPIC (Kombucha)',
+      full_name: 'HOD (Kombucha)',
       role: 'hod',
     }).returning();
     kombuchaProfile = insertedProfile;
-    console.log(`Created profile for kombucha@gmail.com (FPIC Kombucha)`);
+    console.log(`Created profile for kombucha@gmail.com (HOD Kombucha)`);
   } else {
     await db.update(schema.profiles)
-      .set({ full_name: 'FPIC (Kombucha)' })
+      .set({ full_name: 'HOD (Kombucha)' })
       .where(eq(schema.profiles.id, kombuchaProfile.id));
-    console.log(`Updated kombucha@gmail.com name to "FPIC (Kombucha)"`);
+    console.log(`Updated kombucha@gmail.com name to "HOD (Kombucha)"`);
   }
 
   // 5. Link kombucha profile to kombucha department

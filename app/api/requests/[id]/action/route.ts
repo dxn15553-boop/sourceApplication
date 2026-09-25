@@ -101,7 +101,7 @@ export async function POST(
       const isHomeHod = user.departmentIds?.includes(srcRequest.requester_department_id);
       
       if (!isHomeHod) {
-        return Response.json({ error: 'Only the Home HOD / FPIC can review and accept requests for this department' }, { status: 403 });
+        return Response.json({ error: 'Only the Home HOD can review and accept requests for this department' }, { status: 403 });
       }
       
       if (srcRequest.status === 'Submitted' || srcRequest.status === 'Returned to HOD') {
