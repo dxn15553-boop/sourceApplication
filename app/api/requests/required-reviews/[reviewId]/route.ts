@@ -85,7 +85,7 @@ export async function POST(
           roles: ['regional_coordinator'],
           requestId: review.request_id,
           title: `Review Returned by ${review.department.name}`,
-          message: `${review.department.name} User Department returned request #${review.request_id.slice(0, 8)}${remarks ? ': ' + remarks : ''}`,
+          message: `${review.department.name} User Department returned request #${review.request_id}${remarks ? ': ' + remarks : ''}`,
         });
       } catch (e) {
         console.error('Error notifying regional coordinator:', e);
@@ -124,7 +124,7 @@ export async function POST(
             roles: ['regional_coordinator'],
             requestId: review.request_id,
             title: 'All User Department Reviews Approved',
-            message: `All required reviews for request #${review.request_id.slice(0, 8)} have been approved. Ready for forwarding to Regional Head.`,
+            message: `All required reviews for request #${review.request_id} have been approved. Ready for forwarding to Regional Head.`,
           });
         } catch (e) {
           console.error('Error notifying regional coordinator:', e);

@@ -145,6 +145,7 @@ export interface SourceRequest {
   created_at: string;
   updated_at: string;
   workflow_actions?: AuditEntry[];
+  required_reviews?: any[];
 }
 
 export interface AttachmentItem {

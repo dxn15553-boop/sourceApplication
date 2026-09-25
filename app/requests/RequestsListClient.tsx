@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Search, FilePlus, ArrowRight, Filter, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import StatusBadge from '@/components/requests/StatusBadge';
+import UserDepartmentReviewsSummary from '@/components/requests/UserDepartmentReviewsSummary';
 import type { SourceRequest } from '@/lib/types';
 import { STATUS_CONFIG } from '@/lib/workflow';
 import { useOpenedRequests } from '@/lib/useOpenedRequests';
@@ -121,14 +122,14 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
                 }}
                 className="request-card-row animate-fade-in"
               >
-                <div className="request-card-main" style={{ display: 'flex', alignItems: 'center', gap: 12, flex: '1 1 240px', minWidth: 0 }}>
+                <div className="request-card-main" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: '1 1 240px', minWidth: 0 }}>
                   {isUnopened && (
-                    <span className="badge-new" title="New request not yet opened">
+                    <span className="badge-new" style={{ marginTop: 2 }} title="New request not yet opened">
                       <span className="badge-new-dot" />
                       NEW
                     </span>
                   )}
-                  <span className="src-id" style={{ flexShrink: 0 }}>{req.id}</span>
+                  <span className="src-id" style={{ flexShrink: 0, marginTop: 1 }}>{req.id}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{
                       fontSize: 14,
@@ -185,10 +186,13 @@ export default function RequestsListClient({ userRole }: RequestsListClientProps
                       {new Date(req.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
+
+                  {/* User Department Review Results */}
+                  <UserDepartmentReviewsSummary reviews={(req as any).required_reviews} />
                 </div>
               </div>
 
-              <div className="request-card-actions" style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, marginLeft: 'auto' }}>
+              <div className="request-card-actions" style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, marginLeft: 'auto', alignSelf: 'flex-start', paddingTop: 2 }}>
                 <StatusBadge status={req.status} />
                 <ArrowRight size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
               </div>

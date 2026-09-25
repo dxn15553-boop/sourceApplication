@@ -60,7 +60,13 @@ export async function GET(request: Request) {
       with: {
         requester: { columns: { id: true, full_name: true, role: true } },
         department: { columns: { id: true, name: true } },
-        assigned_employee: { columns: { id: true, full_name: true } }
+        assigned_employee: { columns: { id: true, full_name: true } },
+        required_reviews: {
+          with: {
+            department: { columns: { id: true, name: true } },
+            reviewer: { columns: { id: true, full_name: true } },
+          },
+        },
       },
       orderBy: [desc(sourceRequests.created_at)],
     });

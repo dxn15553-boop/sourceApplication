@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FileText, ArrowRight, CheckCircle2 } from 'lucide-react';
 import StatusBadge from '@/components/requests/StatusBadge';
+import UserDepartmentReviewsSummary from '@/components/requests/UserDepartmentReviewsSummary';
 import { useOpenedRequests } from '@/lib/useOpenedRequests';
 
 interface PendingRequestsListProps {
@@ -43,17 +44,17 @@ export default function PendingRequestsList({ pendingRequests, userId = 'default
             }}
             className="request-card-row animate-fade-in"
           >
-            <div className="request-card-main" style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '1 1 240px', minWidth: 0 }}>
+            <div className="request-card-main" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flex: '1 1 240px', minWidth: 0 }}>
               {/* Unopened NEW badge */}
               {isUnopened && (
-                <span className="badge-new" title="New request not yet opened">
+                <span className="badge-new" style={{ marginTop: 2 }} title="New request not yet opened">
                   <span className="badge-new-dot" />
                   NEW
                 </span>
               )}
 
               {/* SRC ID */}
-              <span className="src-id" style={{ flexShrink: 0 }}>
+              <span className="src-id" style={{ flexShrink: 0, marginTop: 1 }}>
                 {req.id}
               </span>
 
@@ -127,11 +128,14 @@ export default function PendingRequestsList({ pendingRequests, userId = 'default
                     })}
                   </span>
                 </p>
+
+                {/* User Department Review Results */}
+                <UserDepartmentReviewsSummary reviews={req.required_reviews} />
               </div>
             </div>
 
             {/* Right section: SRF download, Status badge, and arrow */}
-            <div className="request-card-actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, marginLeft: 'auto' }}>
+            <div className="request-card-actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, marginLeft: 'auto', alignSelf: 'flex-start', paddingTop: 2 }}>
               {req.srf_number && (
                 <span
                   onClick={(e) => {

@@ -99,21 +99,32 @@ export default async function DashboardPage() {
     with: {
       department: { columns: { id: true, name: true } },
       requester: { columns: { id: true, full_name: true } },
+      required_reviews: {
+        with: {
+          department: { columns: { id: true, name: true } },
+          reviewer: { columns: { id: true, full_name: true } },
+        },
+      },
     },
     orderBy: [desc(sourceRequests.created_at)],
-    limit: 5,
+    limit: 10,
   });
 
-  // Stats query
+  // Stats & Recent Requests query based on user's visibility
   const statsConditions = [];
   if (user.role === 'user') {
     if (activeDepartmentId) statsConditions.push(eq(sourceRequests.department_id, activeDepartmentId));
     else statsConditions.push(eq(sourceRequests.id, 'none'));
-  }
-
-  if (user.role === 'hod') {
+  } else if (user.role === 'hod') {
     if (activeDepartmentId) statsConditions.push(eq(sourceRequests.department_id, activeDepartmentId));
     else statsConditions.push(eq(sourceRequests.id, 'none'));
+  } else if (user.role === 'employee') {
+    statsConditions.push(
+      or(
+        eq(sourceRequests.assigned_employee_id, user.id),
+        eq(sourceRequests.requester_id, user.id)
+      )
+    );
   }
 
   const allRequests = await db.query.sourceRequests.findMany({
@@ -121,17 +132,32 @@ export default async function DashboardPage() {
     columns: { status: true },
   });
 
+  // Recent requests for overview and review visibility
+  const recentRequests = await db.query.sourceRequests.findMany({
+    where: statsConditions.length > 0 ? and(...statsConditions) : undefined,
+    with: {
+      department: { columns: { id: true, name: true } },
+      requester: { columns: { id: true, full_name: true } },
+      required_reviews: {
+        with: {
+          department: { columns: { id: true, name: true } },
+          reviewer: { columns: { id: true, full_name: true } },
+        },
+      },
+    },
+    orderBy: [desc(sourceRequests.created_at)],
+    limit: 5,
+  });
+
   const total = allRequests.length;
   const pending = allRequests.filter((r: any) => !['Completed', 'HOD Rejected', 'Final Head Rejected', 'Procurement Rejected', 'Cancelled'].includes(r.status)).length;
   const completed = allRequests.filter((r: any) => r.status === 'Completed').length;
   const rejected = allRequests.filter((r: any) => r.status.includes('Rejected')).length;
 
-  const greeting = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening';
-
   return (
     <AppShell
       pageTitle="Dashboard"
-      pageSubtitle={`${greeting}, ${user.name.split(' ')[0]}!`}
+      pageSubtitle="Good morning"
       headerAction={
         user.role === 'user' ? (
           <Link href="/requests/new" className="btn btn-primary btn-sm">
@@ -148,19 +174,71 @@ export default async function DashboardPage() {
         <StatCard icon={<AlertCircle size={20} />} value={rejected} label="Rejected" color="#ef4444" />
       </div>
 
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Pending Your Action</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Requests waiting for your review</p>
-          </div>
-          <Link href="/requests" className="btn btn-ghost btn-sm">
-            View All <ChevronRight size={14} />
-          </Link>
-        </div>
+      {/* Pending Your Action Section (if any requests are awaiting user review) */}
+      {pendingRequests.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Pending Your Action</h2>
+                  <span
+                    style={{
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      color: '#d97706',
+                      border: '1px solid rgba(245, 158, 11, 0.3)',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: '2px 8px',
+                      borderRadius: 99,
+                    }}
+                  >
+                    {pendingRequests.length} Waiting
+                  </span>
+                </div>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Requests waiting for your review & approval</p>
+              </div>
+              <Link href="/requests" className="btn btn-ghost btn-sm">
+                View All <ChevronRight size={14} />
+              </Link>
+            </div>
 
-        <PendingRequestsList pendingRequests={pendingRequests} userId={user.id} />
-      </div>
+            <PendingRequestsList pendingRequests={pendingRequests} userId={user.id} />
+          </div>
+
+          {/* Recent Requests overview below pending actions */}
+          {recentRequests.length > 0 && (
+            <div className="card">
+              <div className="card-header">
+                <div>
+                  <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Recent Source Requests</h2>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Latest requests and user department review results</p>
+                </div>
+                <Link href="/requests" className="btn btn-ghost btn-sm">
+                  View All <ChevronRight size={14} />
+                </Link>
+              </div>
+
+              <PendingRequestsList pendingRequests={recentRequests} userId={user.id} />
+            </div>
+          )}
+        </div>
+      ) : (
+        /* If no pending actions, show the recent requests list so users always see their requests & review results */
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>Recent Source Requests</h2>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>Latest requests and user department review results</p>
+            </div>
+            <Link href="/requests" className="btn btn-ghost btn-sm">
+              View All <ChevronRight size={14} />
+            </Link>
+          </div>
+
+          <PendingRequestsList pendingRequests={recentRequests} userId={user.id} />
+        </div>
+      )}
     </AppShell>
   );
 }
