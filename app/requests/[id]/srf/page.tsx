@@ -198,7 +198,8 @@ export default async function SourceRequestFormPage({
       <div
         className="no-print"
         style={{
-          maxWidth: 960,
+          maxWidth: 1120,
+          width: '100%',
           margin: '0 auto 20px auto',
           display: 'flex',
           alignItems: 'center',
@@ -232,7 +233,8 @@ export default async function SourceRequestFormPage({
       <div
         className="srf-document-container"
         style={{
-          maxWidth: 960,
+          maxWidth: 1120,
+          width: '100%',
           margin: '0 auto',
           background: '#ffffff',
           color: '#1e293b',

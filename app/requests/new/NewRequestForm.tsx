@@ -95,7 +95,7 @@ export default function NewRequestForm({
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }}>
+    <div style={{ maxWidth: 1120, width: '100%', margin: '0 auto' }}>
       {/* Info header */}
       <div className="card" style={{ marginBottom: 20, borderColor: 'rgba(59,130,246,0.2)', background: 'rgba(59,130,246,0.05)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
