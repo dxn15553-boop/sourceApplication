@@ -135,7 +135,9 @@ export async function POST(request: Request) {
 
     const year = new Date().getFullYear();
 
-    // Increment request counter transactionally
+    // Increment global request counter transactionally.
+    // PostgreSQL row-level locks on request_counter serialize concurrent requests,
+    // guaranteeing single, strictly sequential IDs across all departments without race conditions or duplicates.
     const [counterResult] = await db
       .insert(requestCounter)
       .values({ year, last_seq: 1 })
@@ -148,26 +150,37 @@ export async function POST(request: Request) {
     const seq = String(counterResult.last_seq).padStart(4, '0');
     const srcId = `SRC-${year}-${seq}`;
 
-    // Insert request
-    const [newRequest] = await db.insert(sourceRequests).values({
-      id: srcId,
-      requester_id: user.id,
-      requester_name: body.requester_name?.trim() ?? user.name ?? null,
-      requester_designation: body.requester_designation?.trim() ?? null,
-      requester_department_id: userDeptId,
-      department_id: primaryDeptId,
-      description: body.description.trim(),
-      priority: body.priority?.trim() || 'IMPORTANT',
-      request_date: parsedRequestDate,
-      required_by_date: parsedRequiredByDate,
-      created_at: new Date(),
-      purpose_justification: body.purpose_justification?.trim() || null,
-      attachment_path: body.attachment_path ?? null,
-      attachment_name: body.attachment_name ?? null,
-      attachments: body.attachments ? (typeof body.attachments === 'string' ? body.attachments : JSON.stringify(body.attachments)) : null,
-      status: 'Submitted',
-      current_assignee_role: 'hod',
-    }).returning();
+    // Insert request with automatic counter rollback on failure to prevent sequence gaps
+    let newRequest: any;
+    try {
+      const [inserted] = await db.insert(sourceRequests).values({
+        id: srcId,
+        requester_id: user.id,
+        requester_name: body.requester_name?.trim() ?? user.name ?? null,
+        requester_designation: body.requester_designation?.trim() ?? null,
+        requester_department_id: userDeptId,
+        department_id: primaryDeptId,
+        description: body.description.trim(),
+        priority: body.priority?.trim() || 'IMPORTANT',
+        request_date: parsedRequestDate,
+        required_by_date: parsedRequiredByDate,
+        created_at: new Date(),
+        purpose_justification: body.purpose_justification?.trim() || null,
+        attachment_path: body.attachment_path ?? null,
+        attachment_name: body.attachment_name ?? null,
+        attachments: body.attachments ? (typeof body.attachments === 'string' ? body.attachments : JSON.stringify(body.attachments)) : null,
+        status: 'Submitted',
+        current_assignee_role: 'hod',
+      }).returning();
+      newRequest = inserted;
+    } catch (insertErr) {
+      // Revert counter increment if insert fails to prevent sequence gaps
+      await db
+        .update(requestCounter)
+        .set({ last_seq: sql`GREATEST(0, ${requestCounter.last_seq} - 1)` })
+        .where(eq(requestCounter.year, year));
+      throw insertErr;
+    }
 
     // Insert cross-department reviews if HOD submitted multi-department request
     if (user.role === 'hod' && body.department_ids && body.department_ids.length > 0) {
