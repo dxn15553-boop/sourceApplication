@@ -696,18 +696,18 @@ export default async function SourceRequestFormPage({
                 </td>
               </tr>
 
-              {/* 2. Head of Department (HOD) Acceptance */}
+              {/* 2. Head of Department (HOD) Review */}
               <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>2. HOD Acceptance</td>
+                <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>2. HOD Review</td>
                 <td style={{ padding: '7px 10px' }}>{homeHodAction?.actor?.full_name || 'Head of Department'}</td>
                 <td style={{ padding: '7px 10px', color: homeHodAction ? '#16a34a' : '#64748b', fontWeight: 700 }}>
-                  {homeHodAction ? 'Accepted' : 'Pending / Not Recorded'}
+                  {homeHodAction ? 'Reviewed' : 'Pending / Not Recorded'}
                 </td>
                 <td style={{ padding: '7px 10px', color: '#64748b' }}>
                   {homeHodAction?.created_at ? new Date(homeHodAction.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                 </td>
                 <td style={{ padding: '7px 10px', color: '#475569' }}>
-                  {req.hod_remarks || homeHodAction?.comment || (homeHodAction ? 'Departmental Review & Acceptance' : '—')}
+                  {req.hod_remarks || homeHodAction?.comment || (homeHodAction ? 'Departmental Review Completed' : '—')}
                 </td>
               </tr>
 
@@ -716,7 +716,7 @@ export default async function SourceRequestFormPage({
                 <td style={{ padding: '7px 10px', fontWeight: 700, color: '#0f172a' }}>3. Regional Coordinator Review</td>
                 <td style={{ padding: '7px 10px' }}>{regCoordInitialAction?.actor?.full_name || 'Regional Coordinator'}</td>
                 <td style={{ padding: '7px 10px', color: regCoordInitialAction ? '#16a34a' : '#64748b', fontWeight: 700 }}>
-                  {regCoordInitialAction ? (req.required_reviews && req.required_reviews.length > 0 ? 'Assigned for Review' : 'Accepted & Verified') : 'Pending'}
+                  {regCoordInitialAction ? (req.required_reviews && req.required_reviews.length > 0 ? 'Assigned for Review' : 'Reviewed') : 'Pending'}
                 </td>
                 <td style={{ padding: '7px 10px', color: '#64748b' }}>
                   {regCoordInitialAction?.created_at ? new Date(regCoordInitialAction.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
@@ -773,13 +773,13 @@ export default async function SourceRequestFormPage({
                   {regCoordForwardAction?.actor?.full_name || regCoordInitialAction?.actor?.full_name || 'Regional Coordinator'}
                 </td>
                 <td style={{ padding: '7px 10px', color: regCoordForwardAction ? '#16a34a' : '#64748b', fontWeight: 700 }}>
-                  {regCoordForwardAction ? 'Endorsed & Forwarded' : 'Pending'}
+                  {regCoordForwardAction ? 'Reviewed' : 'Pending'}
                 </td>
                 <td style={{ padding: '7px 10px', color: '#64748b' }}>
                   {regCoordForwardAction?.created_at ? new Date(regCoordForwardAction.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                 </td>
                 <td style={{ padding: '7px 10px', color: '#475569' }}>
-                  {regCoordForwardAction?.comment || (regCoordForwardAction ? 'Endorsed and forwarded to Regional Head for approval' : '—')}
+                  {regCoordForwardAction?.comment || (regCoordForwardAction ? 'Reviewed and forwarded to Regional Head for approval' : '—')}
                 </td>
               </tr>
 
@@ -805,7 +805,7 @@ export default async function SourceRequestFormPage({
                   {finalHeadAction?.created_at ? new Date(finalHeadAction.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                 </td>
                 <td style={{ padding: '7px 10px', color: '#475569' }}>
-                  {finalHeadAction?.comment || (finalHeadAction ? 'Corporate sanction approved' : '—')}
+                  {finalHeadAction?.comment || (finalHeadAction ? 'Sanction Approved' : '—')}
                 </td>
               </tr>
 
