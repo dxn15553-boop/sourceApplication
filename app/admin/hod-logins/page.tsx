@@ -3,7 +3,7 @@ import { auth } from '@/auth';
 import { db } from '@/lib/db';
 import AdminHodClient from '@/app/admin/hod-logins/AdminHodClient';
 import AppShell from '@/components/layout/AppShell';
-import { inArray } from 'drizzle-orm';
+import { inArray, desc } from 'drizzle-orm';
 import { profiles } from '@/lib/db/schema';
 
 export const metadata = { title: 'Manage HOD & Manager Logins' };
@@ -28,7 +28,7 @@ export default async function AdminHodPage() {
       'regional_coordinator',
       'procurement_manager',
       'section_manager'
-    ]))
+    ])).orderBy(desc(profiles.created_at))
   ]);
 
   const standardDepartments = [
@@ -49,8 +49,10 @@ export default async function AdminHodPage() {
     // Find if the department exists in the DB
     const dbDept = allDepts.find(d => d.name.toLowerCase() === deptName.toLowerCase());
     
-    // Find the HOD profile if it exists
-    const hodProfile = dbDept?.profileDepartments.find(pd => pd.profile.role === 'hod')?.profile;
+    // Find the latest HOD profile if it exists
+    const hodLinks = (dbDept?.profileDepartments || []).filter(pd => pd.profile?.role === 'hod');
+    hodLinks.sort((a, b) => new Date(b.profile.created_at).getTime() - new Date(a.profile.created_at).getTime());
+    const hodProfile = hodLinks[0]?.profile;
 
     return {
       departmentName: deptName,

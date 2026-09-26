@@ -78,7 +78,7 @@ export const sourceRequests = pgTable('source_requests', {
   purpose_justification: text('purpose_justification'),
   status: workflowStatusEnum('status').notNull().default('Submitted'),
   current_assignee_role: roleEnum('current_assignee_role'),
-  assigned_employee_id: uuid('assigned_employee_id').references(() => profiles.id),
+  assigned_employee_id: uuid('assigned_employee_id').references(() => profiles.id, { onDelete: 'set null' }),
   
   // Financial & Logistics Fields
   pr_number: text('pr_number'),
@@ -114,7 +114,7 @@ export const requiredReviews = pgTable('required_reviews', {
   request_id: text('request_id').notNull().references(() => sourceRequests.id, { onDelete: 'cascade' }),
   department_id: uuid('department_id').notNull().references(() => departments.id),
   status: reviewStatusEnum('status').notNull().default('Pending'),
-  reviewer_id: uuid('reviewer_id').references(() => profiles.id),
+  reviewer_id: uuid('reviewer_id').references(() => profiles.id, { onDelete: 'set null' }),
   reviewed_at: timestamp('reviewed_at'),
   remarks: text('remarks'),
   attachment_path: text('attachment_path'),
@@ -133,14 +133,14 @@ export const vendorEvaluations = pgTable('vendor_evaluations', {
   l3_price: integer('l3_price'),
   selected_vendor: vendorSelectionEnum('selected_vendor').notNull(),
   selection_reason: text('selection_reason'),
-  selected_by: uuid('selected_by').notNull().references(() => profiles.id),
+  selected_by: uuid('selected_by').references(() => profiles.id, { onDelete: 'set null' }),
   created_at: timestamp('created_at').defaultNow().notNull(),
 });
 
 export const workflowActions = pgTable('workflow_actions', {
   id: uuid('id').defaultRandom().primaryKey(),
   request_id: text('request_id').notNull().references(() => sourceRequests.id, { onDelete: 'cascade' }),
-  actor_id: uuid('actor_id').references(() => profiles.id),
+  actor_id: uuid('actor_id').references(() => profiles.id, { onDelete: 'set null' }),
   action: workflowActionEnum('action').notNull(),
   comment: text('comment'),
   created_at: timestamp('created_at').defaultNow().notNull(),

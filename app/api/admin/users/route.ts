@@ -122,15 +122,32 @@ export async function DELETE(request: Request) {
 
     const { eq } = await import('drizzle-orm');
 
-    // First delete profileDepartments due to foreign key (if no cascade)
+    // Fetch profile to know email/name
+    const [targetProfile] = await db.select().from(profiles).where(eq(profiles.id, id)).limit(1);
+    if (!targetProfile) {
+      return Response.json({ success: true }, { status: 200 });
+    }
+
+    // First delete profileDepartments
     await db.delete(profileDepartments).where(eq(profileDepartments.profile_id, id));
     
-    // Then delete the profile
-    await db.delete(profiles).where(eq(profiles.id, id));
+    // Then attempt deleting the profile
+    try {
+      await db.delete(profiles).where(eq(profiles.id, id));
+    } catch (deleteErr: any) {
+      console.warn('Cannot hard-delete profile. Archiving instead:', deleteErr?.message);
+      const archivedEmail = `archived_${Date.now()}_${targetProfile.email}`;
+      await db.update(profiles).set({
+        email: archivedEmail,
+        role: 'user',
+        plaintext_password: null,
+        full_name: `${targetProfile.full_name} (Archived)`,
+      }).where(eq(profiles.id, id));
+    }
 
     return Response.json({ success: true }, { status: 200 });
   } catch (err: any) {
     console.error(err);
-    return Response.json({ error: 'Internal server error' }, { status: 500 });
+    return Response.json({ error: err?.message || 'Internal server error' }, { status: 500 });
   }
 }

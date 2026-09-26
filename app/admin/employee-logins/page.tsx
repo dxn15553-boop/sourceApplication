@@ -38,8 +38,10 @@ export default async function AdminEmployeePage() {
   const employeeList = combinedDepts.map(deptName => {
     const dbDept = allDepts.find(d => d.name.toLowerCase() === deptName.toLowerCase());
     
-    // Find the employee profile (user role) if it exists
-    const empProfile = dbDept?.profileDepartments.find(pd => pd.profile.role === 'user' || pd.profile.role === 'employee')?.profile;
+    // Find the latest employee profile (user role) if it exists
+    const empLinks = (dbDept?.profileDepartments || []).filter(pd => pd.profile?.role === 'user' || pd.profile?.role === 'employee');
+    empLinks.sort((a, b) => new Date(b.profile.created_at).getTime() - new Date(a.profile.created_at).getTime());
+    const empProfile = empLinks[0]?.profile;
 
     return {
       departmentName: deptName,
