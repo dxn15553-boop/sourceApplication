@@ -79,7 +79,7 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
       const json = await res.json();
       if (!res.ok) { setError(json.error ?? 'Failed to create login.'); return; }
       
-      setSuccess(`Employee login for "${departmentName}" created successfully.`);
+      setSuccess(`Source Requester login for "${departmentName}" created successfully.`);
       resetForm();
       setTimeout(() => { 
         setSuccess(null); 
@@ -167,7 +167,7 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
         return;
       }
 
-      setSuccess('Employee login updated successfully.');
+      setSuccess('Source Requester login updated successfully.');
       setTimeout(() => {
         setSuccess(null);
         setShowEdit(false);
@@ -179,7 +179,7 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
   }
 
   async function handleDelete(id: string, deptName: string) {
-    if (!confirm(`Are you sure you want to delete the Employee login for "${deptName}"?`)) return;
+    if (!confirm(`Are you sure you want to delete the Source Requester login for "${deptName}"?`)) return;
     setSaving(true);
     try {
       const res = await fetch('/api/admin/logins', {
@@ -203,7 +203,7 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
           onClick={() => { setShowCreate(true); resetForm(); }}
           disabled={availableDepartments.length === 0}
         >
-          <Plus size={15} /> Add Employee Login
+          <Plus size={15} /> Add Source Requester Login
         </button>
       </div>
 
@@ -228,13 +228,13 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
                     {emp.departmentName}
                   </span>
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-                    Employee / Requester
+                    Source Requester
                   </span>
                 </div>
               </div>
               {emp.empId && (
                 <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.5)', border: '1px solid var(--border)', padding: '6px', borderRadius: '8px', backdropFilter: 'blur(4px)' }}>
-                  <button className="btn-ghost" style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', color: 'var(--accent)' }} title="Edit Employee Login" onClick={() => handleOpenEditEmployee(emp)}>
+                  <button className="btn-ghost" style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', color: 'var(--accent)' }} title="Edit Source Requester Login" onClick={() => handleOpenEditEmployee(emp)}>
                     <Pencil size={14} />
                   </button>
                   <div style={{ width: '1px', height: '14px', background: 'var(--border)', alignSelf: 'center' }}></div>
@@ -242,7 +242,7 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
                     <KeyRound size={14} />
                   </button>
                   <div style={{ width: '1px', height: '14px', background: 'var(--border)', alignSelf: 'center' }}></div>
-                  <button className="btn-ghost" style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', color: 'var(--danger)' }} title="Delete Employee" onClick={() => handleDelete(emp.empId!, emp.departmentName)}>
+                  <button className="btn-ghost" style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', color: 'var(--danger)' }} title="Delete Source Requester" onClick={() => handleDelete(emp.empId!, emp.departmentName)}>
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -284,7 +284,7 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
         ))}
       </div>
 
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Add Employee Login">
+      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Add Source Requester Login">
         <form onSubmit={handleCreateSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {error && (
             <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8 }}>
@@ -328,7 +328,7 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
               <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 12 }}>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowCreate(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
-                  {saving ? 'Creating…' : 'Create Employee'}
+                  {saving ? 'Creating…' : 'Create Source Requester'}
                 </button>
               </div>
             </>
@@ -336,7 +336,7 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
         </form>
       </Modal>
 
-      <Modal open={showReset} onClose={() => setShowReset(false)} title="Reset Employee Password">
+      <Modal open={showReset} onClose={() => setShowReset(false)} title="Reset Source Requester Password">
         <form onSubmit={handleResetSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {error && (
              <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8 }}>
@@ -352,7 +352,7 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
            ) : (
              <>
                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 8px 0' }}>
-                 Resetting password for the <strong>{resetDeptName} Employee</strong> account.
+                 Resetting password for the <strong>{resetDeptName} Source Requester</strong> account.
                </p>
  
                <Input 
@@ -371,7 +371,7 @@ export default function AdminEmployeeClient({ employeeList }: AdminEmployeeClien
         </form>
       </Modal>
 
-      <Modal open={showEdit} onClose={() => setShowEdit(false)} title={`Edit Employee Login — ${editDeptName}`}>
+      <Modal open={showEdit} onClose={() => setShowEdit(false)} title={`Edit Source Requester Login — ${editDeptName}`}>
         <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {error && (
             <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8 }}>

@@ -24,7 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/search',         label: 'Search',          icon: <Search size={18} /> },
   { href: '/admin/users',           label: 'Manage Users',    icon: <Users size={18} />,      roles: ['admin'] },
   { href: '/admin/hod-logins',     label: 'HOD & Manager Logins', icon: <Users size={18} />,      roles: ['admin'] },
-  { href: '/admin/employee-logins', label: 'Employee Logins', icon: <Users size={18} />,      roles: ['admin'] },
+  { href: '/admin/employee-logins', label: 'Source Requester Logins', icon: <Users size={18} />,      roles: ['admin'] },
 ];
 
 interface SidebarProps {
@@ -101,11 +101,11 @@ export default function Sidebar({ profile, departmentName, isOpen, onClose }: Si
       <div style={{ padding: '14px 16px', borderTop: '1px solid rgba(255,255,255,0.07)', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #0ea5e9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-            {profile.full_name.charAt(0).toUpperCase()}
+            {(profile.full_name?.replace(/^Employee \(/i, 'Source Requester (') || 'U').charAt(0).toUpperCase()}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.88)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {profile.full_name}
+              {profile.full_name?.replace(/^Employee \(/i, 'Source Requester (')}
             </p>
             {departmentName && (
               <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -115,7 +115,7 @@ export default function Sidebar({ profile, departmentName, isOpen, onClose }: Si
           </div>
         </div>
         <span className="role-badge" style={{ marginBottom: 10, display: 'inline-flex' }}>
-          {ROLE_LABELS[profile.role]}
+          {ROLE_LABELS[profile.role] ?? 'Source Requester'}
         </span>
         <button
           onClick={handleSignOut}

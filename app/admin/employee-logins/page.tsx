@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import AdminEmployeeClient from '@/app/admin/employee-logins/AdminEmployeeClient';
 import AppShell from '@/components/layout/AppShell';
 
-export const metadata = { title: 'Manage Employee Logins' };
+export const metadata = { title: 'Manage Source Requester Logins' };
 
 export default async function AdminEmployeePage() {
   const session = await auth();
@@ -52,7 +52,7 @@ export default async function AdminEmployeePage() {
   });
 
   return (
-    <AppShell pageTitle="Manage Employee Logins" pageSubtitle="Create and manage Requester accounts for departments">
+    <AppShell pageTitle="Manage Source Requester Logins" pageSubtitle="Create and manage Source Requester accounts for departments">
       <AdminEmployeeClient employeeList={employeeList} />
     </AppShell>
   );

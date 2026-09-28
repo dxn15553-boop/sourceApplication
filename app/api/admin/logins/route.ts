@@ -114,7 +114,7 @@ export async function POST(request: Request) {
     }
 
     // 3. Upsert profile with cleanEmail
-    const fullName = role === 'hod' ? `HOD (${departmentName.trim()})` : `Employee (${departmentName.trim()})`;
+    const fullName = role === 'hod' ? `HOD (${departmentName.trim()})` : `Source Requester (${departmentName.trim()})`;
     const [existingProfile] = await db.select().from(profiles).where(eq(profiles.email, cleanEmail)).limit(1);
 
     let profileId: string;
@@ -232,7 +232,7 @@ export async function PUT(request: Request) {
       if (existingProfile.role === 'hod' || role === 'hod') {
         updateData.full_name = `HOD (${departmentName.trim()})`;
       } else if (existingProfile.role === 'employee' || existingProfile.role === 'user' || role === 'employee') {
-        updateData.full_name = `Employee (${departmentName.trim()})`;
+        updateData.full_name = `Source Requester (${departmentName.trim()})`;
       }
     }
 

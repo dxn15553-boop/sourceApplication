@@ -218,12 +218,12 @@ export const STATUS_CONFIG: Record<WorkflowStatus, {
 // ============================================================
 
 export const ROLE_LABELS: Record<Role, string> = {
-  user:                'Staff / Requester',
+  user:                'Source Requester',
   hod:                 'Head of Department (HOD)',
   final_head:          'Regional Head',
   procurement_manager: 'Procurement Manager',
   section_manager:     'Section Manager',
-  employee:            'Employee',
+  employee:            'Source Requester',
   admin:               'System Admin',
   regional_coordinator: 'Regional Coordinator',
 };
