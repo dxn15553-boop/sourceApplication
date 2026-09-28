@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
-import { Building2, Plus, Trash2, AlertCircle, CheckCircle, KeyRound, User, Eye, EyeOff } from 'lucide-react';
+import { Building2, Plus, Trash2, AlertCircle, CheckCircle, KeyRound, User, Eye, EyeOff, Pencil } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface HodEntry {
@@ -40,6 +40,15 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
   const [resetTargetId, setResetTargetId] = useState<string>('');
   const [resetDeptName, setResetDeptName] = useState<string>('');
   const [newPassword, setNewPassword] = useState('');
+  
+  const [showEdit, setShowEdit] = useState(false);
+  const [editTargetId, setEditTargetId] = useState<string>('');
+  const [editTitle, setEditTitle] = useState<string>('');
+  const [editRoleLabel, setEditRoleLabel] = useState<string>('');
+  const [editEmail, setEditEmail] = useState<string>('');
+  const [editPassword, setEditPassword] = useState<string>('');
+  const [editDeptName, setEditDeptName] = useState<string>('');
+  const [editRole, setEditRole] = useState<string>('');
   
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,6 +148,79 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
     }
   }
 
+  function handleOpenEditManager(m: ManagerEntry) {
+    setEditTargetId(m.profileId!);
+    setEditTitle(`Edit ${m.roleLabel} Login`);
+    setEditRoleLabel(m.roleLabel);
+    setEditRole(m.role);
+    setEditDeptName('');
+    setEditEmail(m.email || '');
+    setEditPassword('');
+    setError(null);
+    setSuccess(null);
+    setShowEdit(true);
+  }
+
+  function handleOpenEditHod(h: HodEntry) {
+    setEditTargetId(h.hodId!);
+    setEditTitle(`Edit ${h.departmentName} HOD Login`);
+    setEditRoleLabel('Head of Department (HOD)');
+    setEditRole('hod');
+    setEditDeptName(h.departmentName);
+    setEditEmail(h.hodEmail || '');
+    setEditPassword('');
+    setError(null);
+    setSuccess(null);
+    setShowEdit(true);
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    const cleanEmail = editEmail.trim().toLowerCase();
+    if (!cleanEmail) {
+      setError('Email address is required.');
+      return;
+    }
+    if (!cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (editPassword.trim() && editPassword.trim().length < 8) {
+      setError('New password must be at least 8 characters.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/logins', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profileId: editTargetId,
+          email: cleanEmail,
+          password: editPassword.trim() || undefined,
+          departmentName: editDeptName || undefined,
+          role: editRole || undefined,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? 'Failed to update login.');
+        return;
+      }
+
+      setSuccess('Login credentials updated successfully.');
+      setTimeout(() => {
+        setSuccess(null);
+        setShowEdit(false);
+        router.refresh();
+      }, 1200);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleDelete(id: string, deptName: string) {
     if (!confirm(`Are you sure you want to delete the HOD login for "${deptName}"?`)) return;
     setSaving(true);
@@ -196,6 +278,10 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
               </div>
               {m.profileId && (
                 <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.5)', border: '1px solid var(--border)', padding: '6px', borderRadius: '8px', backdropFilter: 'blur(4px)' }}>
+                  <button className="btn-ghost" style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', color: 'var(--accent)' }} title="Edit Login" onClick={() => handleOpenEditManager(m)}>
+                    <Pencil size={14} />
+                  </button>
+                  <div style={{ width: '1px', height: '14px', background: 'var(--border)', alignSelf: 'center' }}></div>
                   <button className="btn-ghost" style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', color: 'var(--accent)' }} title="Reset Password" onClick={() => { setResetTargetId(m.profileId!); setResetDeptName(m.roleLabel); setShowReset(true); setError(null); setSuccess(null); }}>
                     <KeyRound size={14} />
                   </button>
@@ -275,6 +361,10 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
               </div>
               {h.hodId && (
                 <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.5)', border: '1px solid var(--border)', padding: '6px', borderRadius: '8px', backdropFilter: 'blur(4px)' }}>
+                  <button className="btn-ghost" style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', color: 'var(--accent)' }} title="Edit Login" onClick={() => handleOpenEditHod(h)}>
+                    <Pencil size={14} />
+                  </button>
+                  <div style={{ width: '1px', height: '14px', background: 'var(--border)', alignSelf: 'center' }}></div>
                   <button className="btn-ghost" style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '4px', cursor: 'pointer', color: 'var(--accent)' }} title="Reset Password" onClick={() => { setResetTargetId(h.hodId!); setResetDeptName(h.departmentName); setShowReset(true); setError(null); setSuccess(null); }}>
                     <KeyRound size={14} />
                   </button>
@@ -446,6 +536,90 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
                </div>
              </>
            )}
+        </form>
+      </Modal>
+
+      <Modal open={showEdit} onClose={() => setShowEdit(false)} title={editTitle}>
+        <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {error && (
+            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8 }}>
+              <AlertCircle size={15} style={{ color: 'var(--danger)', flexShrink: 0 }} />
+              <p style={{ fontSize: 13, color: '#ef4444', margin: 0 }}>{error}</p>
+            </div>
+          )}
+          {success ? (
+            <div style={{ display: 'flex', gap: 8, padding: '10px 14px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: 8 }}>
+              <CheckCircle size={15} style={{ color: 'var(--success)', flexShrink: 0 }} />
+              <p style={{ fontSize: 13, color: '#10b981', margin: 0 }}>{success}</p>
+            </div>
+          ) : (
+            <>
+              {editDeptName ? (
+                <div style={{
+                  padding: '10px 14px',
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10
+                }}>
+                  <Building2 size={16} style={{ color: 'var(--success)' }} />
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Department</span>
+                    <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)' }}>{editDeptName}</p>
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '10px 14px',
+                  background: 'rgba(99, 102, 241, 0.08)',
+                  border: '1px solid rgba(99, 102, 241, 0.2)',
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10
+                }}>
+                  <User size={16} style={{ color: 'var(--accent)' }} />
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Role</span>
+                    <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: 'var(--text-primary)' }}>{editRoleLabel}</p>
+                  </div>
+                </div>
+              )}
+
+              <Input 
+                id="editEmail" 
+                label="Email Address *" 
+                type="email" 
+                placeholder="e.g. user@dxn.com" 
+                value={editEmail} 
+                onChange={e => setEditEmail(e.target.value)} 
+                required 
+              />
+
+              <div>
+                <Input 
+                  id="editPassword" 
+                  label="New Password (optional)" 
+                  type="password" 
+                  placeholder="Leave blank to keep existing password" 
+                  value={editPassword} 
+                  onChange={e => setEditPassword(e.target.value)} 
+                />
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0 2px' }}>
+                  ℹ️ Leave blank to keep current password unchanged, or enter at least 8 characters to update it.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 12 }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowEdit(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary btn-sm" disabled={saving}>
+                  {saving ? 'Saving Changes…' : 'Save Changes'}
+                </button>
+              </div>
+            </>
+          )}
         </form>
       </Modal>
     </>

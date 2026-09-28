@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { departments, profiles, profileDepartments } from '@/lib/db/schema';
 import { auth } from '@/auth';
 import bcrypt from 'bcryptjs';
-import { and, eq, ilike } from 'drizzle-orm';
+import { and, eq, ilike, ne } from 'drizzle-orm';
 
 export async function POST(request: Request) {
   try {
@@ -152,6 +152,96 @@ export async function POST(request: Request) {
     console.error('Error creating login:', error);
     const errorMessage = error?.message || error?.cause?.message || 'Internal server error';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const session = await auth();
+    const user = session?.user as any;
+    if (user?.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized. Admin only.' }, { status: 403 });
+    }
+
+    const { profileId, email, password, departmentName, role } = await request.json();
+
+    if (!profileId || !email) {
+      return NextResponse.json({ error: 'Profile ID and email are required.' }, { status: 400 });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail.includes('@') || !cleanEmail.includes('.')) {
+      return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 });
+    }
+
+    // 1. Fetch existing profile
+    const [existingProfile] = await db.select().from(profiles).where(eq(profiles.id, profileId)).limit(1);
+    if (!existingProfile) {
+      return NextResponse.json({ error: 'Profile not found.' }, { status: 404 });
+    }
+
+    // 2. Check if cleanEmail is already taken by another profile
+    const [emailCollision] = await db.select().from(profiles).where(
+      and(
+        eq(profiles.email, cleanEmail),
+        ne(profiles.id, profileId)
+      )
+    ).limit(1);
+
+    if (emailCollision) {
+      return NextResponse.json({ error: 'This email address is already in use by another account.' }, { status: 400 });
+    }
+
+    // 3. Prepare update data
+    const updateData: any = {
+      email: cleanEmail,
+    };
+
+    if (password && password.trim()) {
+      const cleanPassword = password.trim();
+      if (cleanPassword.length < 8) {
+        return NextResponse.json({ error: 'Password must be at least 8 characters.' }, { status: 400 });
+      }
+      updateData.password_hash = await bcrypt.hash(cleanPassword, 10);
+      updateData.plaintext_password = cleanPassword;
+    }
+
+    if (role) {
+      updateData.role = role;
+    }
+
+    // If departmentName is provided, update department link
+    if (departmentName && departmentName.trim()) {
+      let deptResult = await db.select().from(departments).where(ilike(departments.name, departmentName.trim())).limit(1);
+      let deptId = deptResult[0]?.id;
+
+      if (!deptId) {
+        const [newDept] = await db.insert(departments).values({
+          name: departmentName.trim(),
+        }).returning();
+        deptId = newDept.id;
+      }
+
+      // Re-link department
+      await db.delete(profileDepartments).where(eq(profileDepartments.profile_id, profileId));
+      await db.insert(profileDepartments).values({
+        profile_id: profileId,
+        department_id: deptId,
+      });
+
+      if (existingProfile.role === 'hod' || role === 'hod') {
+        updateData.full_name = `HOD (${departmentName.trim()})`;
+      } else if (existingProfile.role === 'employee' || existingProfile.role === 'user' || role === 'employee') {
+        updateData.full_name = `Employee (${departmentName.trim()})`;
+      }
+    }
+
+    await db.update(profiles).set(updateData).where(eq(profiles.id, profileId));
+
+    return NextResponse.json({ success: true, message: 'Login updated successfully.' }, { status: 200 });
+  } catch (error: any) {
+    console.error('Error updating login:', error);
+    return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 });
   }
 }
 
