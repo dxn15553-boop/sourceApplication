@@ -28,7 +28,9 @@ export async function GET() {
 
       // Find HOD profiles for the requester's department
       const homeHods = await db.select({
-        hodId: profiles.id
+        hodId: profiles.id,
+        email: profiles.email,
+        fullName: profiles.full_name,
       })
       .from(profiles)
       .innerJoin(profileDepartments, eq(profileDepartments.profile_id, profiles.id))
@@ -48,13 +50,26 @@ export async function GET() {
         });
 
         if (!existing) {
+          const alertTitle = 'Pending Approval Alert';
+          const alertMessage = `Request ${reqId} has been pending for approval in target department "${review.department.name}" for more than 48 hours.`;
           await db.insert(notifications).values({
             user_id: hod.hodId,
             request_id: reqId,
-            title: 'Pending Approval Alert',
-            message: `Request ${reqId} has been pending for approval in target department "${review.department.name}" for more than 48 hours.`,
+            title: alertTitle,
+            message: alertMessage,
           });
           notificationsCreated++;
+
+          if (hod.email) {
+            const { sendEmailNotification } = await import('@/lib/email');
+            await sendEmailNotification({
+              to: hod.email,
+              title: alertTitle,
+              message: alertMessage,
+              requestId: reqId,
+              recipientName: hod.fullName,
+            });
+          }
         }
       }
     }
