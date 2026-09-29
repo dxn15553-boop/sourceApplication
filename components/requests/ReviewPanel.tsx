@@ -42,7 +42,7 @@ export default function ReviewPanel({ reviewId, departmentName }: { reviewId: st
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action,
-          remarks,
+          remarks: remarks.trim() ? remarks.trim().toUpperCase() : undefined,
           attachment_path: attachmentPath,
           attachment_name: attachmentName,
         }),
@@ -73,7 +73,7 @@ export default function ReviewPanel({ reviewId, departmentName }: { reviewId: st
         </label>
         <textarea
           value={remarks}
-          onChange={e => setRemarks(e.target.value)}
+          onChange={e => setRemarks(e.target.value.toUpperCase())}
           placeholder="Add your review comments or return reasons here..."
           rows={3}
           style={{ width: '100%', resize: 'vertical' }}

@@ -102,13 +102,13 @@ export default function EditRequestModal({ open, onClose, request, onSaved }: Ed
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          requester_name: requesterName.trim(),
-          requester_designation: requesterDesignation.trim(),
+          requester_name: requesterName.trim().toUpperCase(),
+          requester_designation: requesterDesignation.trim().toUpperCase(),
           priority,
           request_date: requestDate || null,
           required_by_date: requiredByDate || null,
-          purpose_justification: purposeJustification.trim() || null,
-          description: description.trim(),
+          purpose_justification: purposeJustification.trim() ? purposeJustification.trim().toUpperCase() : null,
+          description: description.trim().toUpperCase(),
           attachment_path: allAttachments[0]?.path ?? null,
           attachment_name: allAttachments[0]?.name ?? null,
           attachments: allAttachments.length > 0 ? allAttachments : null,
@@ -153,7 +153,7 @@ export default function EditRequestModal({ open, onClose, request, onSaved }: Ed
               type="text"
               className="form-input"
               value={requesterName}
-              onChange={(e) => setRequesterName(e.target.value)}
+              onChange={(e) => setRequesterName(e.target.value.toUpperCase())}
               placeholder="Enter full name"
               required
             />
@@ -166,7 +166,7 @@ export default function EditRequestModal({ open, onClose, request, onSaved }: Ed
               type="text"
               className="form-input"
               value={requesterDesignation}
-              onChange={(e) => setRequesterDesignation(e.target.value)}
+              onChange={(e) => setRequesterDesignation(e.target.value.toUpperCase())}
               placeholder="Enter designation"
               required
             />
@@ -244,7 +244,7 @@ export default function EditRequestModal({ open, onClose, request, onSaved }: Ed
               className="form-input"
               placeholder="Explain the business need, purpose, or reason for this request..."
               value={purposeJustification}
-              onChange={(e) => setPurposeJustification(e.target.value)}
+              onChange={(e) => setPurposeJustification(e.target.value.toUpperCase())}
               style={{ resize: 'vertical', fontSize: 12.5 }}
             />
           </div>

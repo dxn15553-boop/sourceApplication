@@ -30,7 +30,7 @@ export default function POCreationPanel({ requestId }: POCreationPanelProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          po_number: poNumber,
+          po_number: poNumber.trim().toUpperCase(),
           po_date: poDate,
         }),
       });
@@ -64,7 +64,7 @@ export default function POCreationPanel({ requestId }: POCreationPanelProps) {
               type="text" 
               className="input" 
               value={poNumber} 
-              onChange={e => setPoNumber(e.target.value)} 
+              onChange={e => setPoNumber(e.target.value.toUpperCase())} 
               placeholder="e.g. PO-2026-8831"
               required 
             />

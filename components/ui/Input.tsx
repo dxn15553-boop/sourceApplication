@@ -32,7 +32,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             autoCorrect={isPassword ? 'off' : props.autoCorrect}
             spellCheck={isPassword ? false : props.spellCheck}
             className={`form-input ${error ? 'border-red-500' : ''} ${className}`}
-            style={isPassword ? { paddingRight: '2.5rem' } : undefined}
+            style={{
+              ...(isPassword ? { textTransform: 'none', paddingRight: '2.5rem' } : type === 'email' ? { textTransform: 'none' } : {}),
+              ...props.style
+            }}
             {...props}
           />
           {isPassword && (

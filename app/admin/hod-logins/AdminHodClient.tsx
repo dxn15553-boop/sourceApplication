@@ -480,7 +480,7 @@ export default function AdminHodClient({ hodList, managerList }: AdminHodClientP
                   required
                   placeholder="e.g. Regional Head or Safety Officer"
                   value={customDepartmentName}
-                  onChange={e => setCustomDepartmentName(e.target.value)}
+                  onChange={e => setCustomDepartmentName(e.target.value.toUpperCase())}
                 />
               )}
 

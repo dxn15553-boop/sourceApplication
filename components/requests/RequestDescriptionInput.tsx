@@ -101,33 +101,33 @@ export function formatItemsToString(items: RequestItem[]): string {
 
   return activeItems
     .map((it, idx) => {
-      const lines: string[] = [`Item ${idx + 1}: ${it.name?.trim() || '(No Item Name)'}`];
+      const lines: string[] = [`Item ${idx + 1}: ${it.name?.trim().toUpperCase() || '(NO ITEM NAME)'}`];
 
       const categoryDisplay =
         it.category === 'Others'
           ? it.otherCategory?.trim()
-            ? `Others - ${it.otherCategory.trim()}`
-            : 'Others'
-          : it.category?.trim() || 'New Material / Purchase';
+            ? `OTHERS - ${it.otherCategory.trim().toUpperCase()}`
+            : 'OTHERS'
+          : it.category?.trim().toUpperCase() || 'NEW MATERIAL PURCHASE';
 
       lines.push(`• Item Type: ${categoryDisplay}`);
 
       if (it.make?.trim()) {
-        lines.push(`• Make: ${it.make.trim()}`);
+        lines.push(`• Make: ${it.make.trim().toUpperCase()}`);
       }
       if (it.model?.trim()) {
-        lines.push(`• Model: ${it.model.trim()}`);
+        lines.push(`• Model: ${it.model.trim().toUpperCase()}`);
       }
       if (it.quantity?.trim()) {
         const resolvedUnit =
           it.unit === 'Other'
-            ? it.customUnit?.trim() || ''
-            : it.unit?.trim() || 'Nos';
+            ? it.customUnit?.trim().toUpperCase() || ''
+            : it.unit?.trim().toUpperCase() || 'NOS';
         const unitPart = resolvedUnit ? ` ${resolvedUnit}` : '';
-        lines.push(`• Quantity: ${it.quantity.trim()}${unitPart}`);
+        lines.push(`• Quantity: ${it.quantity.trim().toUpperCase()}${unitPart}`);
       }
       if (it.description?.trim()) {
-        lines.push(`• Description: ${it.description.trim()}`);
+        lines.push(`• Description: ${it.description.trim().toUpperCase()}`);
       }
       return lines.join('\n');
     })
@@ -286,10 +286,22 @@ export default function RequestDescriptionInput({
     fieldOrUpdates: keyof RequestItem | Partial<RequestItem>,
     val?: any
   ) => {
-    const updates =
-      typeof fieldOrUpdates === 'string'
-        ? { [fieldOrUpdates]: val }
-        : fieldOrUpdates;
+    let updates: Partial<RequestItem> = {};
+    if (typeof fieldOrUpdates === 'string') {
+      let finalVal = val;
+      if (typeof val === 'string' && fieldOrUpdates !== 'category') {
+        finalVal = val.toUpperCase();
+      }
+      updates = { [fieldOrUpdates]: finalVal };
+    } else {
+      updates = { ...fieldOrUpdates };
+      for (const k of Object.keys(updates) as (keyof RequestItem)[]) {
+        const v = updates[k];
+        if (typeof v === 'string' && k !== 'category') {
+          (updates as any)[k] = v.toUpperCase();
+        }
+      }
+    }
 
     const updated = items.map((it, i) => {
       if (i !== index) return it;

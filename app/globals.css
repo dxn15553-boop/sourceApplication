@@ -354,6 +354,7 @@ body {
   font-family: inherit;
   transition: all 0.2s ease;
   outline: none;
+  text-transform: uppercase;
 }
 .input:hover,
 .form-input:hover { border-color: rgba(99, 102, 241, 0.25); }
@@ -364,11 +365,45 @@ body {
   box-shadow: 0 0 0 4px rgba(99,102,241,0.08), 0 4px 12px rgba(99,102,241,0.04);
 }
 .input::placeholder,
-.form-input::placeholder { color: var(--text-faint); }
+.form-input::placeholder { color: var(--text-faint); text-transform: none; }
 .input:disabled,
 .form-input:disabled { background: var(--bg-subtle); opacity: 0.65; cursor: not-allowed; }
 
-.form-textarea { resize: vertical; min-height: 110px; line-height: 1.65; }
+.form-textarea { resize: vertical; min-height: 110px; line-height: 1.65; text-transform: uppercase; }
+
+/* Global rule: all form field entries shown in capital letters only */
+input:not([type="password"]):not([type="email"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="date"]):not([type="datetime-local"]):not([type="time"]):not([type="hidden"]),
+textarea,
+select,
+.input:not([type="password"]):not([type="email"]),
+.form-input:not([type="password"]):not([type="email"]),
+.form-textarea {
+  text-transform: uppercase;
+}
+
+/* Explicit exemption for sensitive password, email, and credential fields */
+input[type="password"],
+input[type="email"],
+input#email,
+input#password,
+input#newPassword,
+input#editPassword,
+input#editEmail,
+.input[type="password"],
+.input[type="email"],
+.form-input[type="password"],
+.form-input[type="email"] {
+  text-transform: none !important;
+}
+
+/* Keep placeholder text readable and unforced */
+input::placeholder,
+textarea::placeholder,
+.input::placeholder,
+.form-input::placeholder,
+.form-textarea::placeholder {
+  text-transform: none;
+}
 
 .form-select {
   appearance: none;

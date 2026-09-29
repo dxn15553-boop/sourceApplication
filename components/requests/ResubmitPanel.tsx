@@ -23,7 +23,7 @@ export default function ResubmitPanel({ request }: ResubmitPanelProps) {
       const res = await fetch(`/api/requests/${request.id}/action`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'resubmit', comment: note.trim() || undefined }),
+        body: JSON.stringify({ action: 'resubmit', comment: note.trim() ? note.trim().toUpperCase() : undefined }),
       });
       const json = await res.json();
       if (!res.ok) { setError(json.error ?? 'Resubmit failed.'); return; }
@@ -80,7 +80,7 @@ export default function ResubmitPanel({ request }: ResubmitPanelProps) {
         label="Add a note (optional)"
         placeholder="Describe what you have corrected or updated…"
         value={note}
-        onChange={e => setNote(e.target.value)}
+        onChange={e => setNote(e.target.value.toUpperCase())}
         rows={3}
       />
 

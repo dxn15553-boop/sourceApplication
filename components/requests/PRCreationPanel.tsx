@@ -30,7 +30,7 @@ export default function PRCreationPanel({ requestId }: PRCreationPanelProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          pr_number: prNumber,
+          pr_number: prNumber.trim().toUpperCase(),
           pr_date: prDate,
         }),
       });
@@ -64,7 +64,7 @@ export default function PRCreationPanel({ requestId }: PRCreationPanelProps) {
               type="text" 
               className="input" 
               value={prNumber} 
-              onChange={e => setPrNumber(e.target.value)} 
+              onChange={e => setPrNumber(e.target.value.toUpperCase())} 
               placeholder="e.g. PR-2026-1029"
               required 
             />

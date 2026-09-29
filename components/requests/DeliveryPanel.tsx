@@ -71,8 +71,8 @@ export default function DeliveryPanel({ requestId }: DeliveryPanelProps) {
           accepted_qty: Number(acceptedQty),
           rejected_qty: Number(rejectedQty),
           qc_status: qcStatus,
-          rejection_reason: rejectionReason,
-          qc_remarks: qcRemarks,
+          rejection_reason: rejectionReason.trim() ? rejectionReason.trim().toUpperCase() : undefined,
+          qc_remarks: qcRemarks.trim() ? qcRemarks.trim().toUpperCase() : undefined,
           promised_delivery_date: promisedDate || undefined,
           material_dispatch_date: dispatchDate || undefined,
           material_received_date: receivedDate || undefined,
@@ -206,7 +206,7 @@ export default function DeliveryPanel({ requestId }: DeliveryPanelProps) {
             <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
               Rejection Reason <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
-            <textarea className="form-input" value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} rows={2} required placeholder="Specify defects, damage, or non-compliance reasons..." />
+            <textarea className="form-input" value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value.toUpperCase())} rows={2} required placeholder="Specify defects, damage, or non-compliance reasons..." />
           </div>
         )}
 
@@ -214,7 +214,7 @@ export default function DeliveryPanel({ requestId }: DeliveryPanelProps) {
           <label style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>
             QC Remarks & Inspection Notes (Optional)
           </label>
-          <input type="text" className="form-input" value={qcRemarks} onChange={(e) => setQcRemarks(e.target.value)} placeholder="e.g. Visual inspection passed, dimension verified against drawing..." />
+          <input type="text" className="form-input" value={qcRemarks} onChange={(e) => setQcRemarks(e.target.value.toUpperCase())} placeholder="e.g. Visual inspection passed, dimension verified against drawing..." />
         </div>
 
         {/* Dates Row */}

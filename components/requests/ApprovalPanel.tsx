@@ -181,7 +181,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
     try {
       const payload: any = { 
         action, 
-        comment: comment.trim() || undefined, 
+        comment: comment.trim() ? comment.trim().toUpperCase() : undefined, 
         return_to: returnTo || undefined 
       };
       if (userRole === 'regional_coordinator') {
@@ -651,7 +651,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                 ? 'Explain why this request is being cancelled…'
                 : 'Describe what needs to be corrected or added…'}
               value={comment}
-              onChange={e => { setComment(e.target.value); if (e.target.value.trim()) setCommentError(''); }}
+              onChange={e => { setComment(e.target.value.toUpperCase()); if (e.target.value.trim()) setCommentError(''); }}
               error={commentError}
               rows={4}
               required
@@ -680,7 +680,7 @@ export default function ApprovalPanel({ request, userRole, allDepartments }: App
                   label="Comments / Remarks (Optional)"
                   placeholder={isRegionalHead || userRole === 'regional_coordinator' ? "Add any comments or notes for this approval (optional)…" : "Add any comments or notes for this acceptance (optional)…"}
                   value={comment}
-                  onChange={e => setComment(e.target.value)}
+                  onChange={e => setComment(e.target.value.toUpperCase())}
                   rows={3}
                 />
               </div>

@@ -72,15 +72,15 @@ export async function PATCH(
       updated_at: new Date(),
     };
 
-    if (requester_name !== undefined) updatePayload.requester_name = requester_name;
-    if (requester_designation !== undefined) updatePayload.requester_designation = requester_designation;
-    if (description !== undefined) updatePayload.description = description;
-    if (priority !== undefined) updatePayload.priority = priority;
+    if (requester_name !== undefined) updatePayload.requester_name = requester_name ? String(requester_name).trim().toUpperCase() : null;
+    if (requester_designation !== undefined) updatePayload.requester_designation = requester_designation ? String(requester_designation).trim().toUpperCase() : null;
+    if (description !== undefined) updatePayload.description = description ? String(description).trim().toUpperCase() : '';
+    if (priority !== undefined) updatePayload.priority = priority ? String(priority).trim().toUpperCase() : undefined;
     if (request_date !== undefined) {
       updatePayload.request_date = request_date ? new Date(request_date) : null;
     }
     if (required_by_date !== undefined) updatePayload.required_by_date = required_by_date ? new Date(required_by_date) : null;
-    if (purpose_justification !== undefined) updatePayload.purpose_justification = purpose_justification;
+    if (purpose_justification !== undefined) updatePayload.purpose_justification = purpose_justification ? String(purpose_justification).trim().toUpperCase() : null;
     
     // Support clearing the attachment (setting path and name to null)
     updatePayload.attachment_path = attachment_path === null ? null : (attachment_path || undefined);

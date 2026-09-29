@@ -52,14 +52,14 @@ export default function VendorEvaluationPanel({ requestId }: VendorEvaluationPan
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          l1_vendor: l1Vendor,
+          l1_vendor: l1Vendor.trim().toUpperCase(),
           l1_price: l1Price,
-          l2_vendor: l2Vendor || undefined,
+          l2_vendor: l2Vendor.trim() ? l2Vendor.trim().toUpperCase() : undefined,
           l2_price: l2Price || undefined,
-          l3_vendor: l3Vendor || undefined,
+          l3_vendor: l3Vendor.trim() ? l3Vendor.trim().toUpperCase() : undefined,
           l3_price: l3Price || undefined,
           selected_vendor: selectedVendor,
-          selection_reason: reason || undefined,
+          selection_reason: reason.trim() ? reason.trim().toUpperCase() : undefined,
         }),
       });
 
@@ -91,7 +91,7 @@ export default function VendorEvaluationPanel({ requestId }: VendorEvaluationPan
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: 'var(--text-primary)' }}>L1 (Lowest)</h3>
             <div style={{ marginBottom: 10 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Vendor Name *</label>
-              <input type="text" className="input" value={l1Vendor} onChange={e => setL1Vendor(e.target.value)} required />
+              <input type="text" className="input" value={l1Vendor} onChange={e => setL1Vendor(e.target.value.toUpperCase())} required />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Price *</label>
@@ -104,7 +104,7 @@ export default function VendorEvaluationPanel({ requestId }: VendorEvaluationPan
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: 'var(--text-primary)' }}>L2 Vendor</h3>
             <div style={{ marginBottom: 10 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Vendor Name</label>
-              <input type="text" className="input" value={l2Vendor} onChange={e => setL2Vendor(e.target.value)} />
+              <input type="text" className="input" value={l2Vendor} onChange={e => setL2Vendor(e.target.value.toUpperCase())} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Price</label>
@@ -117,7 +117,7 @@ export default function VendorEvaluationPanel({ requestId }: VendorEvaluationPan
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: 'var(--text-primary)' }}>L3 Vendor</h3>
             <div style={{ marginBottom: 10 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Vendor Name</label>
-              <input type="text" className="input" value={l3Vendor} onChange={e => setL3Vendor(e.target.value)} />
+              <input type="text" className="input" value={l3Vendor} onChange={e => setL3Vendor(e.target.value.toUpperCase())} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>Price</label>
@@ -151,7 +151,7 @@ export default function VendorEvaluationPanel({ requestId }: VendorEvaluationPan
                 label={`Reason for selecting ${selectedVendor} instead of L1 *`}
                 placeholder="Explain why the lowest bidder was not chosen (e.g. quality, lead time, compatibility)..."
                 value={reason}
-                onChange={e => setReason(e.target.value)}
+                onChange={e => setReason(e.target.value.toUpperCase())}
                 required
                 rows={3}
               />
