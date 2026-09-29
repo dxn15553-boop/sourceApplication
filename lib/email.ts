@@ -9,7 +9,13 @@ const APP_BASE_URL =
   process.env.NEXTAUTH_URL || 
   'https://sourceapplication.onrender.com';
 
-const DEFAULT_FROM = process.env.EMAIL_FROM || 'DXN Procurement <onboarding@resend.dev>';
+function getFromAddress(): string {
+  const raw = (process.env.EMAIL_FROM || 'DXN Procurement <onboarding@resend.dev>').trim();
+  if (raw.startsWith('<') && raw.endsWith('>')) {
+    return `DXN Procurement ${raw}`;
+  }
+  return raw;
+}
 
 export interface EmailNotificationPayload {
   to: string | string[];
@@ -160,7 +166,7 @@ export async function sendEmailNotification({
     `;
 
     const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM,
+      from: getFromAddress(),
       to: recipients,
       subject: `${title}${priorityBadge}`,
       html: htmlContent,
