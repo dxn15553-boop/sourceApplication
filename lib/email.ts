@@ -1,4 +1,15 @@
+import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
+
+function getSmtpTransporter() {
+  const user = (process.env.SMTP_USER || '').trim();
+  const pass = (process.env.SMTP_PASS || '').trim().replace(/\s+/g, '');
+  if (!user || !pass) return null;
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user, pass },
+  });
+}
 
 function getResendClient(): Resend | null {
   const apiKey = (process.env.RESEND_API_KEY || '').trim();
@@ -42,10 +53,12 @@ export async function sendEmailNotification({
   priority,
 }: EmailNotificationPayload) {
   try {
-    const resend = getResendClient();
-    if (!resend) {
-      console.warn('[Resend] RESEND_API_KEY is not set. Email notification skipped for:', to);
-      return { success: false, reason: 'RESEND_API_KEY not configured' };
+    const smtp = getSmtpTransporter();
+    const resend = !smtp ? getResendClient() : null;
+
+    if (!smtp && !resend) {
+      console.warn('[Email] Neither Gmail SMTP nor RESEND_API_KEY is configured. Email notification skipped for:', to);
+      return { success: false, reason: 'Email service not configured' };
     }
 
     // Clean recipients
@@ -168,6 +181,24 @@ export async function sendEmailNotification({
 </body>
 </html>
     `;
+
+    // 1. Try Gmail SMTP (Sends to ANY recipient without domain verification restrictions)
+    if (smtp) {
+      const fromAddr = process.env.EMAIL_FROM || `DXN Procurement <${process.env.SMTP_USER || 'dxn15553@gmail.com'}>`;
+      const info = await smtp.sendMail({
+        from: fromAddr,
+        to: recipients,
+        subject: `${title}${priorityBadge}`,
+        html: htmlContent,
+      });
+      console.log(`[Email SMTP] Notification delivered successfully to [${recipients.join(', ')}], MessageId: ${info.messageId}`);
+      return { success: true, messageId: info.messageId };
+    }
+
+    // 2. Fallback to Resend
+    if (!resend) {
+      return { success: false, reason: 'No active email provider' };
+    }
 
     let { data, error } = await resend.emails.send({
       from: getFromAddress(),
