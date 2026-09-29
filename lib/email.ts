@@ -1,7 +1,10 @@
 import { Resend } from 'resend';
 
-const resendApiKey = process.env.RESEND_API_KEY;
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
+function getResendClient(): Resend | null {
+  const apiKey = (process.env.RESEND_API_KEY || '').trim();
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+}
 
 const APP_BASE_URL = 
   process.env.APP_URL || 
@@ -39,6 +42,7 @@ export async function sendEmailNotification({
   priority,
 }: EmailNotificationPayload) {
   try {
+    const resend = getResendClient();
     if (!resend) {
       console.warn('[Resend] RESEND_API_KEY is not set. Email notification skipped for:', to);
       return { success: false, reason: 'RESEND_API_KEY not configured' };
@@ -165,12 +169,46 @@ export async function sendEmailNotification({
 </html>
     `;
 
-    const { data, error } = await resend.emails.send({
+    let { data, error } = await resend.emails.send({
       from: getFromAddress(),
       to: recipients,
       subject: `${title}${priorityBadge}`,
       html: htmlContent,
     });
+
+    // Automatic fallback for Resend testing sandbox (onboarding@resend.dev):
+    // Resend free tier only permits sending to the account owner's email.
+    // If blocked, automatically redirect to the registered account email with an informational banner.
+    if (error && (error as any).message?.includes('You can only send testing emails to your own email address')) {
+      const match = (error as any).message.match(/\(([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\)/);
+      const fallbackEmail = match ? match[1] : null;
+
+      if (fallbackEmail) {
+        console.warn(`[Resend Sandbox] Redirecting email from [${recipients.join(', ')}] to verified testing address [${fallbackEmail}]`);
+        const fallbackRes = await resend.emails.send({
+          from: getFromAddress(),
+          to: [fallbackEmail],
+          subject: `[Dev / Test Mode: Originally to ${recipients.join(', ')}] ${title}${priorityBadge}`,
+          html: `
+            <div style="background-color: #fef3c7; border: 1.5px solid #f59e0b; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+              <p style="margin: 0 0 6px 0; font-size: 13.5px; font-weight: 700; color: #92400e;">
+                ⚠️ Resend Sandbox Testing Delivery
+              </p>
+              <p style="margin: 0; font-size: 12.5px; color: #78350f; line-height: 1.5;">
+                This notification was originally addressed to: <strong>${recipients.join(', ')}</strong>.<br>
+                Delivered to your registered testing email (<strong>${fallbackEmail}</strong>) because custom domain verification has not been completed yet on Resend.
+                To send directly to all recipients without redirection, add and verify your custom domain at <a href="https://resend.com/domains" style="color: #4f46e5; font-weight: 600;">resend.com/domains</a>.
+              </p>
+            </div>
+          ` + htmlContent,
+        });
+
+        if (!fallbackRes.error) {
+          return { success: true, data: fallbackRes.data, redirectedTo: fallbackEmail };
+        }
+        error = fallbackRes.error;
+      }
+    }
 
     if (error) {
       console.error('[Resend] Error sending email:', error);
